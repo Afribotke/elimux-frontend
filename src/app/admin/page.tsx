@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { LayoutDashboard, Users, Building2, GraduationCap, MessageSquare, TrendingUp, Shield } from 'lucide-react'
+import { checkApiHealth } from '@/lib/api'
+import { LayoutDashboard, Users, Building2, GraduationCap, MessageSquare, TrendingUp, Shield, Server } from 'lucide-react'
 
 export default function AdminPage() {
   const [stats, setStats] = useState({
@@ -15,6 +16,11 @@ export default function AdminPage() {
     categories: 0,
   })
   const [loading, setLoading] = useState(true)
+  const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking')
+
+  useEffect(() => {
+    checkApiHealth().then(({ ok }) => setApiStatus(ok ? 'online' : 'offline'))
+  }, [])
 
   useEffect(() => {
     async function loadStats() {
@@ -67,7 +73,14 @@ export default function AdminPage() {
         <LayoutDashboard className='w-8 h-8 text-primary-400' />
         Admin Dashboard
       </h1>
-      <p className='text-gray-400 mb-8'>Overview of your ElimuX platform data</p>
+      <p className='text-gray-400 mb-2'>Overview of your ElimuX platform data</p>
+      <div className='flex items-center gap-2 mb-8 text-sm'>
+        <Server className='w-4 h-4 text-gray-400' />
+        <span className='text-gray-400'>Backend API:</span>
+        {apiStatus === 'checking' && <span className='text-gray-400'>Checking...</span>}
+        {apiStatus === 'online' && <span className='text-success flex items-center gap-1'><span className='w-2 h-2 rounded-full bg-success inline-block' />Connected</span>}
+        {apiStatus === 'offline' && <span className='text-danger flex items-center gap-1'><span className='w-2 h-2 rounded-full bg-danger inline-block' />Offline</span>}
+      </div>
 
       {loading ? (
         <div className='text-center py-12'>
