@@ -14,11 +14,11 @@ export default async function ProgramsPage() {
 
   return (
     <main className='min-h-screen py-12 px-4 max-w-6xl mx-auto'>
-      <h1 className='text-3xl font-bold text-white mb-2 flex items-center gap-3'>
+      <h1 className='text-3xl font-bold text-foreground mb-2 flex items-center gap-3'>
         <GraduationCap className='w-8 h-8 text-primary-400' />
         All Programs
       </h1>
-      <p className='text-gray-400 mb-8'>Browse all available programs from institutions worldwide</p>
+      <p className='text-muted mb-8'>Browse all available programs from institutions worldwide</p>
 
       {programs && programs.length > 0 ? (
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
@@ -28,7 +28,7 @@ export default async function ProgramsPage() {
         </div>
       ) : (
         <div className='text-center py-12'>
-          <p className='text-gray-400 text-lg'>No programs available yet.</p>
+          <p className='text-muted text-lg'>No programs available yet.</p>
         </div>
       )}
     </main>

@@ -86,26 +86,26 @@ export default function HomePage() {
             <Sparkles className='w-4 h-4' />
             AI-Powered Education Discovery
           </div>
-          <h1 className='text-4xl md:text-6xl font-bold text-white mb-4 leading-tight'>
+          <h1 className='text-4xl md:text-6xl font-bold text-foreground mb-4 leading-tight'>
             Discover Your Perfect{' '}
             <span className='text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-primary-600'>
               Education
             </span>
           </h1>
-          <p className='text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto'>
+          <p className='text-lg md:text-xl text-muted mb-10 max-w-2xl mx-auto'>
             Find universities, colleges, TVET institutes, and programs worldwide.
           </p>
           <SearchBar onSearch={handleSearch} countries={countries} categories={categories} />
         </div>
       </section>
 
-      <section className='py-12 px-4 bg-elimux-dark border-y border-white/10'>
+      <section className='py-12 px-4 bg-elimux-dark border-y border-border'>
         <div className='max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6'>
           {stats.map((stat, index) => (
             <div key={index} className='text-center'>
               <stat.icon className='w-8 h-8 text-primary-400 mx-auto mb-2' />
-              <p className='text-2xl font-bold text-white'>{stat.value}</p>
-              <p className='text-sm text-gray-400'>{stat.label}</p>
+              <p className='text-2xl font-bold text-foreground'>{stat.value}</p>
+              <p className='text-sm text-muted'>{stat.label}</p>
             </div>
           ))}
         </div>
@@ -116,13 +116,13 @@ export default function HomePage() {
           {loading ? (
             <div className='text-center py-12'>
               <div className='animate-spin w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full mx-auto mb-4' />
-              <p className='text-gray-400'>Searching...</p>
+              <p className='text-muted'>Searching...</p>
             </div>
           ) : (
             <>
               {programs.length > 0 && (
                 <div className='mb-12'>
-                  <h2 className='text-2xl font-bold text-white mb-6 flex items-center gap-2'>
+                  <h2 className='text-2xl font-bold text-foreground mb-6 flex items-center gap-2'>
                     <GraduationCap className='w-6 h-6 text-primary-400' />
                     Programs ({programs.length})
                   </h2>
@@ -135,7 +135,7 @@ export default function HomePage() {
               )}
               {institutions.length > 0 && (
                 <div>
-                  <h2 className='text-2xl font-bold text-white mb-6 flex items-center gap-2'>
+                  <h2 className='text-2xl font-bold text-foreground mb-6 flex items-center gap-2'>
                     <Building2 className='w-6 h-6 text-primary-400' />
                     Institutions ({institutions.length})
                   </h2>
@@ -148,7 +148,7 @@ export default function HomePage() {
               )}
               {programs.length === 0 && institutions.length === 0 && (
                 <div className='text-center py-12'>
-                  <p className='text-gray-400 text-lg'>No results found. Try a different search.</p>
+                  <p className='text-muted text-lg'>No results found. Try a different search.</p>
                 </div>
               )}
             </>
@@ -158,7 +158,7 @@ export default function HomePage() {
 
       {!hasSearched && (
         <section className='py-12 px-4 max-w-6xl mx-auto'>
-          <h2 className='text-2xl font-bold text-white mb-6 flex items-center gap-2'>
+          <h2 className='text-2xl font-bold text-foreground mb-6 flex items-center gap-2'>
             <TrendingUp className='w-6 h-6 text-primary-400' />
             Browse by Category
           </h2>
@@ -167,19 +167,19 @@ export default function HomePage() {
               <button
                 key={cat.id}
                 onClick={() => handleSearch('', '', cat.id)}
-                className='p-4 rounded-xl bg-elimux-card border border-gray-700/50 hover:border-primary-500/50 transition-all text-left'
+                className='p-4 rounded-xl bg-elimux-card border border-border hover:border-primary-500/50 transition-all text-left'
               >
-                <p className='text-sm font-medium text-white'>{cat.name}</p>
-                <p className='text-xs text-gray-400 mt-1'>Click to explore</p>
+                <p className='text-sm font-medium text-foreground'>{cat.name}</p>
+                <p className='text-xs text-muted mt-1'>Click to explore</p>
               </button>
             ))}
           </div>
         </section>
       )}
 
-      <footer className='py-8 px-4 border-t border-white/10 bg-elimux-dark'>
+      <footer className='py-8 px-4 border-t border-border bg-elimux-dark'>
         <div className='max-w-6xl mx-auto text-center'>
-          <p className='text-gray-400 text-sm'>&copy; 2026 ElimuX. Discover global education opportunities.</p>
+          <p className='text-muted text-sm'>&copy; 2026 ElimuX. Discover global education opportunities.</p>
         </div>
       </footer>
     </main>

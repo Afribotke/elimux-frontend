@@ -21,27 +21,27 @@ export default function SearchBar({ onSearch, countries, categories }: SearchBar
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto">
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-white/20">
+      <div className="bg-elimux-card/70 backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-border">
         <div className="flex flex-col md:flex-row gap-3">
           {/* Search Input */}
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
             <input
               type="text"
               placeholder="Search programs, universities, courses..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/90 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full pl-10 pr-4 py-3 rounded-xl bg-elimux-dark text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
           {/* Country Selector */}
           <div className="relative min-w-[180px]">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
             <select
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/90 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none cursor-pointer"
+              className="w-full pl-10 pr-4 py-3 rounded-xl bg-elimux-dark text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none cursor-pointer"
             >
               <option value="">All Countries</option>
               {countries.map((country) => (
@@ -54,11 +54,11 @@ export default function SearchBar({ onSearch, countries, categories }: SearchBar
 
           {/* Category Selector */}
           <div className="relative min-w-[180px]">
-            <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/90 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none cursor-pointer"
+              className="w-full pl-10 pr-4 py-3 rounded-xl bg-elimux-dark text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none cursor-pointer"
             >
               <option value="">All Categories</option>
               {categories.map((cat) => (

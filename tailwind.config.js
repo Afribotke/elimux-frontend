@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -9,21 +10,24 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          50: '#fffbea',
-          100: '#fff3c4',
-          200: '#ffe580',
-          300: '#ffdb33',
-          400: '#FFD700', // Rich Gold
-          500: '#FFC107', // Warm Yellow
-          600: '#FF8F00', // Amber
-          700: '#e07e00',
-          800: '#b86200',
-          900: '#8a4b08',
+          50: 'rgb(var(--primary-50) / <alpha-value>)',
+          100: 'rgb(var(--primary-100) / <alpha-value>)',
+          200: 'rgb(var(--primary-200) / <alpha-value>)',
+          300: 'rgb(var(--primary-300) / <alpha-value>)',
+          400: 'rgb(var(--primary-400) / <alpha-value>)', // Rich Gold (dark) / DarkGoldenrod (light)
+          500: 'rgb(var(--primary-500) / <alpha-value>)', // Warm Yellow (dark) / Goldenrod (light)
+          600: 'rgb(var(--primary-600) / <alpha-value>)', // Amber (dark) / deep gold (light)
+          700: 'rgb(var(--primary-700) / <alpha-value>)',
+          800: 'rgb(var(--primary-800) / <alpha-value>)',
+          900: 'rgb(var(--primary-900) / <alpha-value>)',
         },
+        foreground: 'rgb(var(--foreground) / <alpha-value>)',
+        muted: 'rgb(var(--muted) / <alpha-value>)',
+        border: 'rgb(var(--border) / <alpha-value>)',
         elimux: {
-          dark: '#0A0A0A',
-          card: '#1A1A1A',
-          accent: '#FF8F00',
+          dark: 'rgb(var(--elimux-dark) / <alpha-value>)',
+          card: 'rgb(var(--elimux-card) / <alpha-value>)',
+          accent: 'rgb(var(--elimux-accent) / <alpha-value>)',
           success: '#10b981',
           warning: '#f59e0b',
           danger: '#ef4444',

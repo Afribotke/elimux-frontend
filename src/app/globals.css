@@ -2,21 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 10, 10, 10;
-  --background-end-rgb: 10, 10, 10;
+:root,
+.dark {
+  --foreground: 255 255 255;
+  --muted: 156 163 175;
+  --border: 55 65 81;
+
+  --primary-50: 255 251 234;
+  --primary-100: 255 243 196;
+  --primary-200: 255 229 128;
+  --primary-300: 255 219 51;
+  --primary-400: 255 215 0;
+  --primary-500: 255 193 7;
+  --primary-600: 255 143 0;
+  --primary-700: 224 126 0;
+  --primary-800: 184 98 0;
+  --primary-900: 138 75 8;
+
+  --elimux-dark: 10 10 10;
+  --elimux-card: 26 26 26;
+  --elimux-accent: 255 143 0;
+
+  color-scheme: dark;
+}
+
+.light {
+  --foreground: 26 26 26;
+  --muted: 100 100 100;
+  --border: 224 224 224;
+
+  --primary-50: 255 251 240;
+  --primary-100: 250 240 210;
+  --primary-200: 240 214 170;
+  --primary-300: 229 194 103;
+  --primary-400: 184 134 11;
+  --primary-500: 218 165 32;
+  --primary-600: 166 116 10;
+  --primary-700: 140 95 8;
+  --primary-800: 107 72 6;
+  --primary-900: 74 50 4;
+
+  --elimux-dark: 255 255 255;
+  --elimux-card: 247 245 240;
+  --elimux-accent: 166 116 10;
+
+  color-scheme: light;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  color: rgb(var(--foreground));
+  background: rgb(var(--elimux-dark));
   min-height: 100vh;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 @layer utilities {
