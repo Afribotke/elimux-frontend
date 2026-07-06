@@ -25,17 +25,29 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => getInitialTheme())
+  // Fixed default matches what the static build (no `window`) and the
+  // pre-hydration bootstrap script both assume, so the first client
+  // render matches server output exactly - no hydration mismatch.
+  const [theme, setTheme] = useState<Theme>('dark')
 
+  // Sync to the real stored/system value after hydration completes.
+  // The bootstrap script in layout.tsx already set the correct class
+  // on <html> before paint, so this only updates React's own state
+  // (e.g. the toggle button's icon) - a normal post-hydration update,
+  // not part of the hydration diff.
   useEffect(() => {
-    const root = document.documentElement
-    root.classList.remove('dark', 'light')
-    root.classList.add(theme)
-    window.localStorage.setItem(STORAGE_KEY, theme)
-  }, [theme])
+    setTheme(getInitialTheme())
+  }, [])
 
   function toggleTheme() {
-    setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
+    setTheme((current) => {
+      const next: Theme = current === 'dark' ? 'light' : 'dark'
+      const root = document.documentElement
+      root.classList.remove('dark', 'light')
+      root.classList.add(next)
+      window.localStorage.setItem(STORAGE_KEY, next)
+      return next
+    })
   }
 
   return createElement(ThemeContext.Provider, { value: { theme, toggleTheme } }, children)
