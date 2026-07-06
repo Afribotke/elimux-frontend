@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { runAISearch, type SearchIntent } from '@/lib/aiSearch'
 import AISearchBar from '@/components/AISearchBar'
@@ -195,7 +196,9 @@ export default function AISearchPage() {
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {programs.map((program) => (
-                      <ProgramCard key={program.id} program={program} />
+                      <Link key={program.id} href={`/programs/${program.id}/`}>
+                        <ProgramCard program={program} />
+                      </Link>
                     ))}
                   </div>
                 </div>
@@ -209,7 +212,9 @@ export default function AISearchPage() {
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {institutions.map((inst) => (
-                      <InstitutionCard key={inst.id} institution={inst} />
+                      <Link key={inst.id} href={`/institutions/${inst.id}/`}>
+                        <InstitutionCard institution={inst} />
+                      </Link>
                     ))}
                   </div>
                 </div>

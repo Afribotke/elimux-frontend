@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import InstitutionCard from '@/components/InstitutionCard'
 import { Building2 } from 'lucide-react'
@@ -23,7 +24,9 @@ export default async function InstitutionsPage() {
       {institutions && institutions.length > 0 ? (
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
           {institutions.map((inst) => (
-            <InstitutionCard key={inst.id} institution={inst} />
+            <Link key={inst.id} href={`/institutions/${inst.id}/`}>
+              <InstitutionCard institution={inst} />
+            </Link>
           ))}
         </div>
       ) : (

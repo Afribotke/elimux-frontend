@@ -61,7 +61,7 @@ export default function FavoritesPage() {
     setShareTarget({
       name: item.name,
       description: item.description ?? null,
-      url: `${window.location.origin}/${type === 'program' ? 'programs' : 'institutions'}`,
+      url: `${window.location.origin}/${type === 'program' ? 'programs' : 'institutions'}/${item.id}/`,
       type,
     })
   }
@@ -122,7 +122,9 @@ export default function FavoritesPage() {
                         </button>
                         <FavoriteButton itemId={program.id} itemType="program" onToggle={loadFavorites} />
                       </div>
-                      <ProgramCard program={program} />
+                      <Link href={`/programs/${program.id}/`}>
+                        <ProgramCard program={program} />
+                      </Link>
                     </div>
                   ))}
                 </div>
@@ -148,7 +150,9 @@ export default function FavoritesPage() {
                         </button>
                         <FavoriteButton itemId={institution.id} itemType="institution" onToggle={loadFavorites} />
                       </div>
-                      <InstitutionCard institution={institution} />
+                      <Link href={`/institutions/${institution.id}/`}>
+                        <InstitutionCard institution={institution} />
+                      </Link>
                     </div>
                   ))}
                 </div>

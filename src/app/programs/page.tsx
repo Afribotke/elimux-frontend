@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import ProgramCard from '@/components/ProgramCard'
 import { GraduationCap } from 'lucide-react'
@@ -23,7 +24,9 @@ export default async function ProgramsPage() {
       {programs && programs.length > 0 ? (
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
           {programs.map((program) => (
-            <ProgramCard key={program.id} program={program} />
+            <Link key={program.id} href={`/programs/${program.id}/`}>
+              <ProgramCard program={program} />
+            </Link>
           ))}
         </div>
       ) : (
