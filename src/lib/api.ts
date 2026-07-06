@@ -10,3 +10,31 @@ export async function checkApiHealth(): Promise<{ ok: boolean; timestamp?: strin
     return { ok: false }
   }
 }
+
+async function adminPost(path: string, data: object, adminKey: string) {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-admin-key': adminKey,
+    },
+    body: JSON.stringify(data),
+  })
+
+  const json = await res.json().catch(() => null)
+
+  if (!res.ok || !json?.success) {
+    if (res.status === 403) throw new Error('Invalid admin key')
+    throw new Error(json?.error || `Request failed (${res.status})`)
+  }
+
+  return json.data
+}
+
+export function createInstitution(data: object, adminKey: string) {
+  return adminPost('/api/institutions', data, adminKey)
+}
+
+export function createProgram(data: object, adminKey: string) {
+  return adminPost('/api/programs', data, adminKey)
+}
