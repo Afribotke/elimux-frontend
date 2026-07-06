@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import SearchBar from '@/components/SearchBar'
 import ProgramCard from '@/components/ProgramCard'
 import InstitutionCard from '@/components/InstitutionCard'
-import { GraduationCap, Building2, Globe, Sparkles, TrendingUp, Award } from 'lucide-react'
+import { GraduationCap, Building2, Globe, Sparkles, TrendingUp, Award, ArrowRight } from 'lucide-react'
 
 export default function HomePage() {
   const [countries, setCountries] = useState<{ id: string; name: string; iso_code: string }[]>([])
@@ -96,6 +97,15 @@ export default function HomePage() {
             Find universities, colleges, TVET institutes, and programs worldwide.
           </p>
           <SearchBar onSearch={handleSearch} countries={countries} categories={categories} />
+
+          <Link
+            href='/ai-search'
+            className='inline-flex items-center gap-2 mt-6 text-sm font-medium text-primary-400 hover:text-primary-300 transition-colors'
+          >
+            <Sparkles className='w-4 h-4' />
+            Or describe what you want in your own words with AI Search
+            <ArrowRight className='w-4 h-4' />
+          </Link>
         </div>
       </section>
 
