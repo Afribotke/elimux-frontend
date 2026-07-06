@@ -80,7 +80,7 @@ export default function HomePage() {
 
   return (
     <main className='min-h-screen'>
-      <section className='relative py-20 px-4 bg-gradient-to-b from-elimux-dark to-gray-900'>
+      <section className='relative py-20 px-4 bg-gradient-to-b from-elimux-dark to-elimux-card'>
         <div className='max-w-6xl mx-auto text-center'>
           <div className='inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-400 text-sm mb-6'>
             <Sparkles className='w-4 h-4' />
@@ -99,7 +99,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className='py-12 px-4 bg-elimux-dark border-y border-gray-800'>
+      <section className='py-12 px-4 bg-elimux-dark border-y border-white/10'>
         <div className='max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6'>
           {stats.map((stat, index) => (
             <div key={index} className='text-center'>
@@ -177,7 +177,7 @@ export default function HomePage() {
         </section>
       )}
 
-      <footer className='py-8 px-4 border-t border-gray-800 bg-elimux-dark'>
+      <footer className='py-8 px-4 border-t border-white/10 bg-elimux-dark'>
         <div className='max-w-6xl mx-auto text-center'>
           <p className='text-gray-400 text-sm'>&copy; 2026 ElimuX. Discover global education opportunities.</p>
         </div>

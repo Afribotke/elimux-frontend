@@ -9,21 +9,21 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
+          50: '#fffbea',
+          100: '#fff3c4',
+          200: '#ffe580',
+          300: '#ffdb33',
+          400: '#FFD700', // Rich Gold
+          500: '#FFC107', // Warm Yellow
+          600: '#FF8F00', // Amber
+          700: '#e07e00',
+          800: '#b86200',
+          900: '#8a4b08',
         },
         elimux: {
-          dark: '#0f172a',
-          card: '#1e293b',
-          accent: '#3b82f6',
+          dark: '#0A0A0A',
+          card: '#1A1A1A',
+          accent: '#FF8F00',
           success: '#10b981',
           warning: '#f59e0b',
           danger: '#ef4444',
