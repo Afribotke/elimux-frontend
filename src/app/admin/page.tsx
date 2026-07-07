@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { checkApiHealth, createInstitution, createProgram } from '@/lib/api'
 import InstitutionForm, { type InstitutionFormData } from '@/components/InstitutionForm'
 import ProgramForm, { type ProgramFormData } from '@/components/ProgramForm'
-import { LayoutDashboard, Users, Building2, GraduationCap, MessageSquare, TrendingUp, Shield, Server, KeyRound, CheckCircle2 } from 'lucide-react'
+import { LayoutDashboard, Users, Building2, GraduationCap, MessageSquare, TrendingUp, Shield, Server, KeyRound, CheckCircle2, Settings2 } from 'lucide-react'
 
 const ADMIN_KEY_STORAGE = 'elimux-admin-key'
 
@@ -187,23 +188,39 @@ export default function AdminPage() {
           <Building2 className='w-8 h-8 text-primary-400 mb-3' />
           <h3 className='text-lg font-bold text-foreground mb-1'>Add Institution</h3>
           <p className='text-sm text-muted mb-3'>Add a new university, college, or TVET institute</p>
-          <button
-            onClick={() => setShowInstitutionForm(true)}
-            className='px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors'
-          >
-            Add Institution
-          </button>
+          <div className='flex gap-2'>
+            <button
+              onClick={() => setShowInstitutionForm(true)}
+              className='px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors'
+            >
+              Add Institution
+            </button>
+            <Link
+              href='/admin/institutions'
+              className='px-4 py-2 rounded-lg border border-border text-muted hover:text-foreground text-sm font-medium transition-colors flex items-center gap-1'
+            >
+              <Settings2 className='w-4 h-4' /> Manage
+            </Link>
+          </div>
         </div>
         <div className='bg-elimux-card rounded-xl p-5 border border-border'>
           <GraduationCap className='w-8 h-8 text-elimux-success mb-3' />
           <h3 className='text-lg font-bold text-foreground mb-1'>Add Program</h3>
           <p className='text-sm text-muted mb-3'>Add a new course or program to an institution</p>
-          <button
-            onClick={() => setShowProgramForm(true)}
-            className='px-4 py-2 rounded-lg bg-elimux-success/20 text-elimux-success text-sm font-medium'
-          >
-            Add Program
-          </button>
+          <div className='flex gap-2'>
+            <button
+              onClick={() => setShowProgramForm(true)}
+              className='px-4 py-2 rounded-lg bg-elimux-success/20 text-elimux-success text-sm font-medium'
+            >
+              Add Program
+            </button>
+            <Link
+              href='/admin/programs'
+              className='px-4 py-2 rounded-lg border border-border text-muted hover:text-foreground text-sm font-medium transition-colors flex items-center gap-1'
+            >
+              <Settings2 className='w-4 h-4' /> Manage
+            </Link>
+          </div>
         </div>
         <div className='bg-elimux-card rounded-xl p-5 border border-border'>
           <MessageSquare className='w-8 h-8 text-elimux-warning mb-3' />
