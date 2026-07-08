@@ -69,7 +69,7 @@ export default function HomePage() {
     try {
       let programsQuery = supabase
         .from('programs')
-        .select('*, institution:institutions(name, city, country:countries(name)), category:program_categories(name, color, icon)')
+        .select('*, institution:institutions!inner(name, city, country:countries(name)), category:program_categories(name, color, icon)')
         .eq('is_active', true)
 
       if (query) programsQuery = programsQuery.ilike('name', `%${query}%`)
