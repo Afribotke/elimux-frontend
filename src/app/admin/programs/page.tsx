@@ -9,13 +9,12 @@ import {
   updateProgram,
   deleteProgram,
 } from '@/lib/api'
+import { useAdminKey } from '@/components/admin/AdminKeyContext'
 import AddProgramForm, {
   type ProgramFormData,
   type ProgramFormInitialData,
 } from '@/components/admin/AddProgramForm'
-import { ArrowLeft, GraduationCap, KeyRound, Pencil, Trash2, Plus, Search } from 'lucide-react'
-
-const ADMIN_KEY_STORAGE = 'elimux-admin-key'
+import { ArrowLeft, GraduationCap, Pencil, Trash2, Plus, Search } from 'lucide-react'
 
 interface ProgramRow {
   id: string
@@ -36,7 +35,7 @@ interface ProgramRow {
 }
 
 export default function AdminProgramsPage() {
-  const [adminKey, setAdminKey] = useState('')
+  const { adminKey } = useAdminKey()
   const [programs, setPrograms] = useState<ProgramRow[]>([])
   const [totalPages, setTotalPages] = useState(1)
   const [page, setPage] = useState(1)
@@ -50,11 +49,6 @@ export default function AdminProgramsPage() {
 
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<ProgramFormInitialData | null>(null)
-
-  useEffect(() => {
-    const stored = window.sessionStorage.getItem(ADMIN_KEY_STORAGE)
-    if (stored) setAdminKey(stored)
-  }, [])
 
   useEffect(() => {
     async function loadReferenceData() {
@@ -85,11 +79,6 @@ export default function AdminProgramsPage() {
   useEffect(() => {
     loadPrograms()
   }, [loadPrograms])
-
-  function handleAdminKeyChange(value: string) {
-    setAdminKey(value)
-    window.sessionStorage.setItem(ADMIN_KEY_STORAGE, value)
-  }
 
   function flashSuccess(message: string) {
     setSuccessMessage(message)
@@ -157,17 +146,6 @@ export default function AdminProgramsPage() {
         >
           <Plus className="w-4 h-4" /> Add Program
         </button>
-      </div>
-
-      <div className="flex items-center gap-2 mb-6">
-        <KeyRound className="w-4 h-4 text-muted flex-shrink-0" />
-        <input
-          type="password"
-          value={adminKey}
-          onChange={(e) => handleAdminKeyChange(e.target.value)}
-          placeholder="Admin key (required to add/edit/delete)"
-          className="w-full max-w-sm px-3 py-1.5 text-sm rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
-        />
       </div>
 
       <div className="relative mb-6 max-w-sm">

@@ -4,11 +4,28 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { checkApiHealth, createInstitution, createProgram } from '@/lib/api'
+import { useAdminKey } from '@/components/admin/AdminKeyContext'
 import InstitutionForm, { type InstitutionFormData } from '@/components/InstitutionForm'
 import ProgramForm, { type ProgramFormData } from '@/components/ProgramForm'
-import { LayoutDashboard, Users, Building2, GraduationCap, MessageSquare, TrendingUp, Shield, Server, KeyRound, CheckCircle2, Settings2 } from 'lucide-react'
+import { LayoutDashboard, Users, Building2, GraduationCap, MessageSquare, TrendingUp, Shield, Server, CheckCircle2, Settings2, Star, ShieldQuestion } from 'lucide-react'
 
-const ADMIN_KEY_STORAGE = 'elimux-admin-key'
+interface RecentReview {
+  id: string
+  title: string | null
+  rating: number
+  reviewer_name: string | null
+  is_verified: boolean
+  created_at: string
+  program: { name: string } | null
+  institution: { name: string } | null
+}
+
+interface TopProgram {
+  id: string
+  name: string
+  review_count: number
+  avg_rating: number
+}
 
 export default function AdminPage() {
   const [stats, setStats] = useState({
@@ -23,7 +40,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking')
 
-  const [adminKey, setAdminKey] = useState('')
+  const { adminKey } = useAdminKey()
   const [showInstitutionForm, setShowInstitutionForm] = useState(false)
   const [showProgramForm, setShowProgramForm] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -33,13 +50,13 @@ export default function AdminPage() {
   const [institutionsList, setInstitutionsList] = useState<{ id: string; name: string }[]>([])
   const [programCategories, setProgramCategories] = useState<{ id: string; name: string }[]>([])
 
-  useEffect(() => {
-    checkApiHealth().then(({ ok }) => setApiStatus(ok ? 'online' : 'offline'))
-  }, [])
+  const [recentReviews, setRecentReviews] = useState<RecentReview[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(true)
+  const [topPrograms, setTopPrograms] = useState<TopProgram[]>([])
+  const [topProgramsLoading, setTopProgramsLoading] = useState(true)
 
   useEffect(() => {
-    const stored = window.sessionStorage.getItem(ADMIN_KEY_STORAGE)
-    if (stored) setAdminKey(stored)
+    checkApiHealth().then(({ ok }) => setApiStatus(ok ? 'online' : 'offline'))
   }, [])
 
   useEffect(() => {
@@ -95,10 +112,50 @@ export default function AdminPage() {
     loadStats()
   }, [])
 
-  function handleAdminKeyChange(value: string) {
-    setAdminKey(value)
-    window.sessionStorage.setItem(ADMIN_KEY_STORAGE, value)
-  }
+  useEffect(() => {
+    async function loadRecentReviews() {
+      const { data } = await supabase
+        .from('reviews')
+        .select('id, title, rating, reviewer_name, is_verified, created_at, program:programs(name), institution:institutions(name)')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(5)
+      if (data) setRecentReviews(data as unknown as RecentReview[])
+      setReviewsLoading(false)
+    }
+    loadRecentReviews()
+  }, [])
+
+  useEffect(() => {
+    // program_ratings is a view (no FK), so top program names need a second lookup query.
+    async function loadTopPrograms() {
+      const { data: ratings } = await supabase
+        .from('program_ratings')
+        .select('program_id, review_count, avg_rating')
+        .order('review_count', { ascending: false })
+        .limit(5)
+
+      if (!ratings || ratings.length === 0) {
+        setTopProgramsLoading(false)
+        return
+      }
+
+      const ids = ratings.map((r) => r.program_id)
+      const { data: programs } = await supabase.from('programs').select('id, name').in('id', ids)
+      const nameById = new Map((programs || []).map((p) => [p.id, p.name]))
+
+      setTopPrograms(
+        ratings.map((r) => ({
+          id: r.program_id,
+          name: nameById.get(r.program_id) || 'Unknown program',
+          review_count: r.review_count,
+          avg_rating: r.avg_rating,
+        }))
+      )
+      setTopProgramsLoading(false)
+    }
+    loadTopPrograms()
+  }, [])
 
   function flashSuccess(message: string) {
     setSuccessMessage(message)
@@ -146,17 +203,6 @@ export default function AdminPage() {
         {apiStatus === 'offline' && <span className='text-elimux-danger flex items-center gap-1'><span className='w-2 h-2 rounded-full bg-elimux-danger inline-block' />Offline</span>}
       </div>
 
-      <div className='flex items-center gap-2 mb-8'>
-        <KeyRound className='w-4 h-4 text-muted flex-shrink-0' />
-        <input
-          type='password'
-          value={adminKey}
-          onChange={(e) => handleAdminKeyChange(e.target.value)}
-          placeholder='Admin key (required to add institutions/programs)'
-          className='w-full max-w-sm px-3 py-1.5 text-sm rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500'
-        />
-      </div>
-
       {successMessage && (
         <div className='mb-6 px-4 py-2 rounded-lg bg-elimux-success/10 border border-elimux-success/30 text-elimux-success text-sm flex items-center gap-2'>
           <CheckCircle2 className='w-4 h-4' />
@@ -180,6 +226,78 @@ export default function AdminPage() {
           ))}
         </div>
       )}
+
+      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12'>
+        {/* Recent Reviews (pending moderation) */}
+        <div>
+          <h2 className='text-xl font-bold text-foreground mb-4 flex items-center gap-2'>
+            <ShieldQuestion className='w-5 h-5 text-primary-400' />
+            Recent Reviews
+          </h2>
+          {reviewsLoading ? (
+            <div className='text-center py-8'>
+              <div className='animate-spin w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full mx-auto' />
+            </div>
+          ) : recentReviews.length === 0 ? (
+            <p className='text-muted text-sm bg-elimux-card rounded-xl p-4 border border-border'>No reviews yet.</p>
+          ) : (
+            <div className='bg-elimux-card border border-border rounded-xl divide-y divide-border'>
+              {recentReviews.map((review) => (
+                <div key={review.id} className='p-4'>
+                  <div className='flex items-start justify-between gap-2 mb-1'>
+                    <p className='text-sm font-medium text-foreground'>
+                      {review.title || 'Untitled review'}
+                    </p>
+                    <span
+                      className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full flex-shrink-0 ${
+                        review.is_verified
+                          ? 'bg-elimux-success/10 text-elimux-success'
+                          : 'bg-elimux-warning/10 text-elimux-warning'
+                      }`}
+                    >
+                      {review.is_verified ? 'Verified' : 'Unverified'}
+                    </span>
+                  </div>
+                  <p className='text-xs text-muted mb-1'>
+                    {review.program?.name || review.institution?.name || 'Unknown target'} &middot;{' '}
+                    {review.reviewer_name || 'Anonymous'} &middot; {review.rating}/5
+                  </p>
+                  <p className='text-xs text-muted'>{new Date(review.created_at).toLocaleDateString()}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Most Reviewed Programs - real search-query analytics don't exist yet
+            (no search-logging table), so this uses actual review counts instead
+            of fabricating "top searches" data. */}
+        <div>
+          <h2 className='text-xl font-bold text-foreground mb-4 flex items-center gap-2'>
+            <Star className='w-5 h-5 text-primary-400' />
+            Most Reviewed Programs
+          </h2>
+          {topProgramsLoading ? (
+            <div className='text-center py-8'>
+              <div className='animate-spin w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full mx-auto' />
+            </div>
+          ) : topPrograms.length === 0 ? (
+            <p className='text-muted text-sm bg-elimux-card rounded-xl p-4 border border-border'>No reviewed programs yet.</p>
+          ) : (
+            <div className='bg-elimux-card border border-border rounded-xl divide-y divide-border'>
+              {topPrograms.map((program) => (
+                <div key={program.id} className='p-4 flex items-center justify-between gap-2'>
+                  <p className='text-sm font-medium text-foreground'>{program.name}</p>
+                  <p className='text-xs text-muted flex-shrink-0'>
+                    {program.avg_rating.toFixed(1)} <Star className='w-3 h-3 inline text-elimux-warning fill-elimux-warning -mt-0.5' />{' '}
+                    ({program.review_count})
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Quick Actions */}
       <h2 className='text-xl font-bold text-foreground mb-4'>Quick Actions</h2>

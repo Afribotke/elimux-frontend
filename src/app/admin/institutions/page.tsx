@@ -9,13 +9,12 @@ import {
   updateInstitution,
   deleteInstitution,
 } from '@/lib/api'
+import { useAdminKey } from '@/components/admin/AdminKeyContext'
 import AddInstitutionForm, {
   type InstitutionFormData,
   type InstitutionFormInitialData,
 } from '@/components/admin/AddInstitutionForm'
-import { ArrowLeft, Building2, KeyRound, Pencil, Trash2, Plus, Search } from 'lucide-react'
-
-const ADMIN_KEY_STORAGE = 'elimux-admin-key'
+import { ArrowLeft, Building2, Pencil, Trash2, Plus, Search } from 'lucide-react'
 
 interface InstitutionRow {
   id: string
@@ -32,7 +31,7 @@ interface InstitutionRow {
 }
 
 export default function AdminInstitutionsPage() {
-  const [adminKey, setAdminKey] = useState('')
+  const { adminKey } = useAdminKey()
   const [institutions, setInstitutions] = useState<InstitutionRow[]>([])
   const [totalPages, setTotalPages] = useState(1)
   const [page, setPage] = useState(1)
@@ -46,11 +45,6 @@ export default function AdminInstitutionsPage() {
 
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<InstitutionFormInitialData | null>(null)
-
-  useEffect(() => {
-    const stored = window.sessionStorage.getItem(ADMIN_KEY_STORAGE)
-    if (stored) setAdminKey(stored)
-  }, [])
 
   useEffect(() => {
     async function loadReferenceData() {
@@ -81,11 +75,6 @@ export default function AdminInstitutionsPage() {
   useEffect(() => {
     loadInstitutions()
   }, [loadInstitutions])
-
-  function handleAdminKeyChange(value: string) {
-    setAdminKey(value)
-    window.sessionStorage.setItem(ADMIN_KEY_STORAGE, value)
-  }
 
   function flashSuccess(message: string) {
     setSuccessMessage(message)
@@ -149,17 +138,6 @@ export default function AdminInstitutionsPage() {
         >
           <Plus className="w-4 h-4" /> Add Institution
         </button>
-      </div>
-
-      <div className="flex items-center gap-2 mb-6">
-        <KeyRound className="w-4 h-4 text-muted flex-shrink-0" />
-        <input
-          type="password"
-          value={adminKey}
-          onChange={(e) => handleAdminKeyChange(e.target.value)}
-          placeholder="Admin key (required to add/edit/delete)"
-          className="w-full max-w-sm px-3 py-1.5 text-sm rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
-        />
       </div>
 
       <div className="relative mb-6 max-w-sm">
