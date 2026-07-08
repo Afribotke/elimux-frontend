@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { Suspense, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import ProgramCard from '@/components/ProgramCard';
 import { Loader2, Filter, Search } from 'lucide-react';
@@ -39,23 +40,49 @@ interface FilterState {
   maxFees: string;
 }
 
-export default function ProgramsPage() {
+function ProgramsPageInner() {
+  const searchParams = useSearchParams();
+
   const [programs, setPrograms] = useState<Program[]>([]);
   const [categories, setCategories] = useState<{id: string; name: string}[]>([]);
   const [countries, setCountries] = useState<{id: string; name: string}[]>([]);
   const [levels, setLevels] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<FilterState>({
-    category: '',
-    country: '',
-    level: '',
-    search: '',
-    minFees: '',
-    maxFees: '',
+  // Seeded from the URL on first render (not a useEffect) so a shared/bookmarked
+  // link with ?country=... renders filtered immediately, instead of fetching
+  // once unfiltered and then re-fetching filtered a moment later.
+  const [filters, setFilters] = useState<FilterState>(() => ({
+    category: searchParams.get('category') || '',
+    country: searchParams.get('country') || '',
+    level: searchParams.get('level') || '',
+    search: searchParams.get('search') || '',
+    minFees: searchParams.get('minFees') || '',
+    maxFees: searchParams.get('maxFees') || '',
+  }));
+  const [page, setPage] = useState(() => {
+    const fromUrl = parseInt(searchParams.get('page') || '1', 10);
+    return Number.isFinite(fromUrl) && fromUrl > 0 ? fromUrl : 1;
   });
-  const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const PAGE_SIZE = 12;
+
+  // Keep the URL in sync as filters/page change, so the current view stays
+  // shareable/bookmarkable. replaceState (not push) so filtering doesn't spam
+  // browser history, and it doesn't feed back into useSearchParams() above.
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (filters.country) params.set('country', filters.country);
+    if (filters.category) params.set('category', filters.category);
+    if (filters.level) params.set('level', filters.level);
+    if (filters.search) params.set('search', filters.search);
+    if (filters.minFees) params.set('minFees', filters.minFees);
+    if (filters.maxFees) params.set('maxFees', filters.maxFees);
+    if (page > 1) params.set('page', page.toString());
+
+    const query = params.toString();
+    const newUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+    window.history.replaceState({}, '', newUrl);
+  }, [filters, page]);
 
   // Fetch filter options
   useEffect(() => {
@@ -266,5 +293,19 @@ export default function ProgramsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ProgramsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex justify-center py-24">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        </div>
+      }
+    >
+      <ProgramsPageInner />
+    </Suspense>
   );
 }
