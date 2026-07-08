@@ -133,3 +133,62 @@ export function updateProgram(id: string, data: object, adminKey: string) {
 export function deleteProgram(id: string, adminKey: string) {
   return request<{ message: string }>(`/api/programs/${id}`, { method: 'DELETE' }, adminKey)
 }
+
+// Reviews
+
+export interface ReviewRow {
+  id: string
+  program_id: string | null
+  institution_id: string | null
+  user_id: string | null
+  reviewer_name: string | null
+  reviewer_email: string | null
+  rating: number
+  title: string | null
+  content: string | null
+  pros: string[] | null
+  cons: string[] | null
+  would_recommend: boolean | null
+  is_verified: boolean
+  helpful_count: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface ReviewListResponse {
+  reviews: ReviewRow[]
+  meta: ApiListMeta
+}
+
+export interface ReviewListParams {
+  program_id?: string
+  institution_id?: string
+  page?: number
+  limit?: number
+}
+
+export function listReviews(params: ReviewListParams = {}) {
+  return request<ReviewListResponse>(`/api/reviews${buildQuery(params)}`)
+}
+
+export interface CreateReviewInput {
+  program_id?: string
+  institution_id?: string
+  reviewer_name?: string
+  reviewer_email?: string
+  rating: number
+  title?: string
+  content?: string
+  pros?: string[]
+  cons?: string[]
+  would_recommend?: boolean | null
+}
+
+export function createReview(data: CreateReviewInput) {
+  return request<ReviewRow>('/api/reviews', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export function markReviewHelpful(id: string) {
+  return request<{ success: boolean }>(`/api/reviews/${id}/helpful`, { method: 'POST' })
+}

@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import DetailActions from '@/components/DetailActions'
+import { ReviewsSection } from '@/components/ReviewsSection'
 import { Clock, DollarSign, MapPin, BookOpen, ArrowLeft, GraduationCap, ClipboardList } from 'lucide-react'
 
 export async function generateStaticParams() {
@@ -114,6 +115,10 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
               <p className="text-muted leading-relaxed">{program.requirements}</p>
             </div>
           )}
+        </div>
+
+        <div className="mt-8">
+          <ReviewsSection programId={program.id} />
         </div>
       </div>
     </main>
