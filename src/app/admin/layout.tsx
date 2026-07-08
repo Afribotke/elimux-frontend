@@ -1,9 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AdminKeyProvider, useAdminKey } from '@/components/admin/AdminKeyContext'
-import { LayoutDashboard, Building2, GraduationCap, MessageSquare, Users, BarChart3, KeyRound } from 'lucide-react'
+import { LayoutDashboard, Building2, GraduationCap, MessageSquare, Users, BarChart3, Lock, KeyRound } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
@@ -17,18 +18,74 @@ const COMING_SOON_ITEMS = [
   { label: 'Analytics', icon: BarChart3 },
 ]
 
-function AdminKeyBar() {
+const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
+
+function AdminGate({ children }: { children: React.ReactNode }) {
   const { adminKey, setAdminKey } = useAdminKey()
+  const [inputKey, setInputKey] = useState('')
+  const [error, setError] = useState('')
+  const [checking, setChecking] = useState(false)
+
+  async function verifyKey() {
+    if (!inputKey.trim()) return
+    setChecking(true)
+    setError('')
+
+    try {
+      const res = await fetch(`${API_URL}/api/admin/verify`, {
+        headers: { 'X-Admin-Key': inputKey.trim() },
+      })
+
+      if (res.ok) {
+        // setAdminKey already persists to sessionStorage under the shared
+        // 'elimux-admin-key' key - no separate write needed here.
+        setAdminKey(inputKey.trim())
+      } else {
+        setError('Invalid admin key')
+      }
+    } catch {
+      setError('Network error — try again')
+    }
+    setChecking(false)
+  }
+
+  if (adminKey) return <>{children}</>
+
   return (
-    <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
-      <KeyRound className="w-4 h-4 text-muted flex-shrink-0" />
-      <input
-        type="password"
-        value={adminKey}
-        onChange={(e) => setAdminKey(e.target.value)}
-        placeholder="Admin key (required to add/edit/delete)"
-        className="w-full max-w-sm px-3 py-1.5 text-sm rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
-      />
+    <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4">
+      <div className="bg-elimux-card rounded-2xl border border-border p-8 max-w-md w-full">
+        <div className="flex items-center justify-center mb-6">
+          <div className="w-12 h-12 bg-primary-500/10 rounded-full flex items-center justify-center">
+            <Lock className="w-6 h-6 text-primary-400" />
+          </div>
+        </div>
+        <h1 className="text-2xl font-bold text-center text-foreground mb-2">Admin Access</h1>
+        <p className="text-muted text-center mb-6">Enter your admin key to access the dashboard</p>
+
+        <div className="space-y-4">
+          <div className="relative">
+            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+            <input
+              type="password"
+              placeholder="Admin key"
+              value={inputKey}
+              onChange={(e) => setInputKey(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && verifyKey()}
+              className="w-full pl-10 pr-4 py-3 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+            />
+          </div>
+
+          {error && <p className="text-elimux-danger text-sm">{error}</p>}
+
+          <button
+            onClick={verifyKey}
+            disabled={checking || !inputKey.trim()}
+            className="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
+          >
+            {checking ? 'Verifying...' : 'Access Dashboard'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -71,13 +128,12 @@ function AdminNav() {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <AdminKeyProvider>
-      <div className="min-h-screen flex flex-col">
-        <AdminKeyBar />
-        <div className="flex flex-1">
+      <AdminGate>
+        <div className="flex min-h-screen">
           <AdminNav />
           <div className="flex-1 min-w-0">{children}</div>
         </div>
-      </div>
+      </AdminGate>
     </AdminKeyProvider>
   )
 }
