@@ -8,6 +8,13 @@ import ProgramCard from '@/components/ProgramCard'
 import InstitutionCard from '@/components/InstitutionCard'
 import { GraduationCap, Building2, Globe, Sparkles, TrendingUp, Award, ArrowRight } from 'lucide-react'
 
+interface StatCounts {
+  programs: number
+  institutions: number
+  countries: number
+  categories: number
+}
+
 export default function HomePage() {
   const [countries, setCountries] = useState<{ id: string; name: string; iso_code: string }[]>([])
   const [categories, setCategories] = useState<{ id: string; name: string; icon: string | null }[]>([])
@@ -15,6 +22,7 @@ export default function HomePage() {
   const [institutions, setInstitutions] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
+  const [statCounts, setStatCounts] = useState<StatCounts | null>(null)
 
   useEffect(() => {
     async function loadReferenceData() {
@@ -34,7 +42,24 @@ export default function HomePage() {
       if (categoriesData) setCategories(categoriesData)
     }
 
+    async function loadStats() {
+      const [programsRes, institutionsRes, countriesRes, categoriesRes] = await Promise.all([
+        supabase.from('programs').select('*', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('institutions').select('*', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('countries').select('*', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('program_categories').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      ])
+
+      setStatCounts({
+        programs: programsRes.count ?? 0,
+        institutions: institutionsRes.count ?? 0,
+        countries: countriesRes.count ?? 0,
+        categories: categoriesRes.count ?? 0,
+      })
+    }
+
     loadReferenceData()
+    loadStats()
   }, [])
 
   async function handleSearch(query: string, countryId: string, categoryId: string) {
@@ -73,10 +98,10 @@ export default function HomePage() {
   }
 
   const stats = [
-    { icon: Globe, label: 'Countries', value: '100+' },
-    { icon: Building2, label: 'Institutions', value: 'Coming Soon' },
-    { icon: GraduationCap, label: 'Programs', value: 'Coming Soon' },
-    { icon: Award, label: 'Categories', value: '20+' },
+    { icon: Globe, label: 'Countries', value: statCounts ? statCounts.countries.toLocaleString() : '…' },
+    { icon: Building2, label: 'Institutions', value: statCounts ? statCounts.institutions.toLocaleString() : '…' },
+    { icon: GraduationCap, label: 'Programs', value: statCounts ? statCounts.programs.toLocaleString() : '…' },
+    { icon: Award, label: 'Categories', value: statCounts ? statCounts.categories.toLocaleString() : '…' },
   ]
 
   return (
@@ -98,14 +123,23 @@ export default function HomePage() {
           </p>
           <SearchBar onSearch={handleSearch} countries={countries} categories={categories} />
 
-          <Link
-            href='/ai-search'
-            className='inline-flex items-center gap-2 mt-6 text-sm font-medium text-primary-400 hover:text-primary-300 transition-colors'
-          >
-            <Sparkles className='w-4 h-4' />
-            Or describe what you want in your own words with AI Search
-            <ArrowRight className='w-4 h-4' />
-          </Link>
+          <div className='flex flex-col sm:flex-row items-center justify-center gap-4 mt-6'>
+            <Link
+              href='/programs'
+              className='inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary-500 text-white font-medium hover:bg-primary-600 transition-colors'
+            >
+              <GraduationCap className='w-4 h-4' />
+              Explore Programs
+            </Link>
+            <Link
+              href='/ai-search'
+              className='inline-flex items-center gap-2 text-sm font-medium text-primary-400 hover:text-primary-300 transition-colors'
+            >
+              <Sparkles className='w-4 h-4' />
+              Or describe what you want in your own words with AI Search
+              <ArrowRight className='w-4 h-4' />
+            </Link>
+          </div>
         </div>
       </section>
 
