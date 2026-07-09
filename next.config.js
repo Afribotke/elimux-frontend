@@ -5,7 +5,14 @@ const nextConfig = {
   images: {
     unoptimized: true
   },
-  trailingSlash: true
+  trailingSlash: true,
+  // Reduce memory usage during build
+  staticPageGenerationTimeout: 120,
+  experimental: {
+    // Limit concurrent page generation
+    workerThreads: false,
+    cpus: 2
+  }
 }
 
 module.exports = nextConfig

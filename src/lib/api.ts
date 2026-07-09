@@ -193,6 +193,129 @@ export function markReviewHelpful(id: string) {
   return request<{ success: boolean }>(`/api/reviews/${id}/helpful`, { method: 'POST' })
 }
 
+// Institution onboarding applications
+
+export interface InstitutionApplyInput {
+  name: string
+  type_id: string
+  country_id: string
+  city: string
+  website: string
+  email: string
+  phone: string
+  description: string
+}
+
+export interface InstitutionApplyResult {
+  id: string
+  access_token: string
+  status: string
+  submitted_at: string
+}
+
+export function applyInstitution(data: InstitutionApplyInput) {
+  return request<{ data: InstitutionApplyResult; message: string }>(
+    '/api/institutions/apply',
+    { method: 'POST', body: JSON.stringify(data) }
+  )
+}
+
+export interface ProgramApplyInput {
+  institution_application_id: string
+  name: string
+  category_id: string
+  level: string
+  duration_months: number | null
+  tuition_fees: number | null
+  currency: string
+  description: string
+  requirements: string
+}
+
+export function applyProgram(data: ProgramApplyInput) {
+  return request<{ data: { id: string; status: string; submitted_at: string }; message: string }>(
+    '/api/programs/apply',
+    { method: 'POST', body: JSON.stringify(data) }
+  )
+}
+
+export interface ProgramApplicationStatus {
+  id: string
+  name: string
+  level: string | null
+  duration_months: number | null
+  tuition_fees: number | null
+  currency: string | null
+  status: 'pending' | 'approved' | 'rejected'
+  admin_notes: string | null
+  submitted_at: string
+}
+
+export interface InstitutionApplicationStatus {
+  id: string
+  name: string
+  type_id: string | null
+  country_id: string | null
+  city: string | null
+  website: string | null
+  email: string
+  phone: string | null
+  description: string | null
+  status: 'pending' | 'approved' | 'rejected'
+  admin_notes: string | null
+  submitted_at: string
+  reviewed_at: string | null
+  programs: ProgramApplicationStatus[]
+}
+
+export function getApplicationStatus(token: string) {
+  return request<{ data: InstitutionApplicationStatus }>(`/api/institutions/apply/${token}`)
+}
+
+// Applications (admin review)
+
+export interface AdminInstitutionApplication extends InstitutionApplicationStatus {
+  type?: { name: string } | null
+  country?: { name: string } | null
+}
+
+export function listAdminApplications(adminKey: string, status?: string) {
+  const query = status ? `?status=${encodeURIComponent(status)}` : ''
+  return request<{ data: AdminInstitutionApplication[] }>(`/api/admin/applications${query}`, {}, adminKey)
+}
+
+export function approveApplication(id: string, adminKey: string, admin_notes?: string) {
+  return request<{ data: AdminInstitutionApplication; message: string }>(
+    `/api/admin/applications/${id}/approve`,
+    { method: 'POST', body: JSON.stringify({ admin_notes }) },
+    adminKey
+  )
+}
+
+export function rejectApplication(id: string, adminKey: string, admin_notes?: string) {
+  return request<{ data: AdminInstitutionApplication; message: string }>(
+    `/api/admin/applications/${id}/reject`,
+    { method: 'POST', body: JSON.stringify({ admin_notes }) },
+    adminKey
+  )
+}
+
+export function approveProgramApplication(id: string, adminKey: string, admin_notes?: string) {
+  return request<{ data: ProgramApplicationStatus; message: string }>(
+    `/api/admin/applications/programs/${id}/approve`,
+    { method: 'POST', body: JSON.stringify({ admin_notes }) },
+    adminKey
+  )
+}
+
+export function rejectProgramApplication(id: string, adminKey: string, admin_notes?: string) {
+  return request<{ data: ProgramApplicationStatus; message: string }>(
+    `/api/admin/applications/programs/${id}/reject`,
+    { method: 'POST', body: JSON.stringify({ admin_notes }) },
+    adminKey
+  )
+}
+
 // Subscription plans (admin)
 
 export interface SubscriptionPlanRow {
