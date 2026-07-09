@@ -192,3 +192,48 @@ export function createReview(data: CreateReviewInput) {
 export function markReviewHelpful(id: string) {
   return request<{ success: boolean }>(`/api/reviews/${id}/helpful`, { method: 'POST' })
 }
+
+// Subscription plans (admin)
+
+export interface SubscriptionPlanRow {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  price_kes: number
+  price_usd: number | null
+  currency: string
+  duration_months: number
+  features: string[] | null
+  is_active: boolean
+  created_at: string
+  subscriber_count: number
+}
+
+export function listAdminPlans(adminKey: string) {
+  return request<{ data: SubscriptionPlanRow[] }>('/api/admin/plans', {}, adminKey)
+}
+
+export function createPlan(data: object, adminKey: string) {
+  return request<{ data: SubscriptionPlanRow; message: string }>(
+    '/api/admin/plans',
+    { method: 'POST', body: JSON.stringify(data) },
+    adminKey
+  )
+}
+
+export function updatePlan(id: string, data: object, adminKey: string) {
+  return request<{ data: SubscriptionPlanRow; message: string }>(
+    `/api/admin/plans/${id}`,
+    { method: 'PUT', body: JSON.stringify(data) },
+    adminKey
+  )
+}
+
+export function deactivatePlan(id: string, adminKey: string) {
+  return request<{ data: SubscriptionPlanRow; message: string }>(
+    `/api/admin/plans/${id}`,
+    { method: 'DELETE' },
+    adminKey
+  )
+}
