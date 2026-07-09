@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import ProgramCard from '@/components/ProgramCard';
+import ProgramCardSkeleton from '@/components/ProgramCardSkeleton';
 import { Loader2, Filter, Search } from 'lucide-react';
 
 interface Program {
@@ -181,7 +182,7 @@ function ProgramsPageInner() {
                 placeholder="Search programs..."
                 value={filters.search}
                 onChange={(e) => { setFilters(f => ({ ...f, search: e.target.value })); setPage(1); }}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
@@ -189,7 +190,7 @@ function ProgramsPageInner() {
             <select
               value={filters.category}
               onChange={(e) => { setFilters(f => ({ ...f, category: e.target.value })); setPage(1); }}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Categories</option>
               {categories.map(c => (
@@ -201,7 +202,7 @@ function ProgramsPageInner() {
             <select
               value={filters.country}
               onChange={(e) => { setFilters(f => ({ ...f, country: e.target.value })); setPage(1); }}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Countries</option>
               {countries.map(c => (
@@ -213,7 +214,7 @@ function ProgramsPageInner() {
             <select
               value={filters.level}
               onChange={(e) => { setFilters(f => ({ ...f, level: e.target.value })); setPage(1); }}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Levels</option>
               {levels.map(l => (
@@ -229,14 +230,14 @@ function ProgramsPageInner() {
               placeholder="Min fees (USD)"
               value={filters.minFees}
               onChange={(e) => { setFilters(f => ({ ...f, minFees: e.target.value })); setPage(1); }}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-blue-500"
             />
             <input
               type="number"
               placeholder="Max fees (USD)"
               value={filters.maxFees}
               onChange={(e) => { setFilters(f => ({ ...f, maxFees: e.target.value })); setPage(1); }}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -249,8 +250,10 @@ function ProgramsPageInner() {
 
         {/* Programs Grid */}
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+              <ProgramCardSkeleton key={i} />
+            ))}
           </div>
         ) : programs.length === 0 ? (
           <div className="text-center py-12">
@@ -275,7 +278,7 @@ function ProgramsPageInner() {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+              className="px-4 py-2.5 min-h-[44px] border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
             >
               Previous
             </button>
@@ -285,7 +288,7 @@ function ProgramsPageInner() {
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+              className="px-4 py-2.5 min-h-[44px] border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
             >
               Next
             </button>

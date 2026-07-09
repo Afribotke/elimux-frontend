@@ -27,6 +27,8 @@ export default function InstitutionCard({ institution }: InstitutionCardProps) {
               src={institution.logo_url}
               alt={institution.name}
               className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
             />
           ) : (
             <Globe className="w-8 h-8 text-muted" />

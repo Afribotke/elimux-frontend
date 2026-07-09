@@ -49,7 +49,7 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
           <div className="flex items-start gap-4">
             <div className="w-16 h-16 rounded-lg bg-muted/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
               {institution.logo_url ? (
-                <img src={institution.logo_url} alt={institution.name} className="w-full h-full object-cover" />
+                <img src={institution.logo_url} alt={institution.name} className="w-full h-full object-cover" decoding="async" />
               ) : (
                 <Globe className="w-8 h-8 text-muted" />
               )}

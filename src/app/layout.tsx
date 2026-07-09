@@ -1,12 +1,32 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/lib/theme'
 import ThemeToggle from '@/components/ThemeToggle'
+import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
+import MobileNav from '@/components/MobileNav'
 
 export const metadata: Metadata = {
   title: 'ElimuX - Discover Global Education',
   description: 'Find universities, colleges, TVET institutes, and programs worldwide. AI-powered education discovery platform.',
   keywords: 'education, university, college, TVET, programs, courses, study abroad, Kenya, Africa',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'ElimuX',
+  },
+  icons: {
+    icon: '/icon-192x192.png',
+    apple: '/apple-touch-icon.png',
+  },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#ffc107',
 }
 
 const themeInitScript = `(function(){try{var t=localStorage.getItem('elimux-theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.classList.add(t);}catch(e){document.documentElement.classList.add('dark');}})();`
@@ -19,6 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="antialiased">
@@ -29,7 +50,9 @@ export default function RootLayout({
               <ThemeToggle />
             </div>
           </header>
-          {children}
+          <div className="pb-16 md:pb-0">{children}</div>
+          <MobileNav />
+          <ServiceWorkerRegister />
         </ThemeProvider>
       </body>
     </html>

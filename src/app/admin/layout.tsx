@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AdminKeyProvider, useAdminKey } from '@/components/admin/AdminKeyContext'
-import { LayoutDashboard, Building2, GraduationCap, MessageSquare, Users, BarChart3, Lock, KeyRound, Tag } from 'lucide-react'
+import { LayoutDashboard, Building2, GraduationCap, MessageSquare, Users, BarChart3, Lock, KeyRound, Tag, Menu, X } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
@@ -91,17 +91,18 @@ function AdminGate({ children }: { children: React.ReactNode }) {
   )
 }
 
-function AdminNav() {
+function AdminNavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname()
   return (
-    <nav className="flex flex-col gap-1 p-4 w-56 flex-shrink-0 border-r border-border">
+    <>
       {NAV_ITEMS.map((item) => {
         const active = item.exact ? pathname === item.href : pathname.startsWith(item.href)
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            onClick={onNavigate}
+            className={`flex items-center gap-2 px-3 py-3 md:py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
               active ? 'bg-primary-500/10 text-primary-400' : 'text-muted hover:text-foreground hover:bg-muted/10'
             }`}
           >
@@ -114,7 +115,7 @@ function AdminNav() {
         {COMING_SOON_ITEMS.map((item) => (
           <div
             key={item.label}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted/50 cursor-not-allowed"
+            className="flex items-center gap-2 px-3 py-3 md:py-2 rounded-lg text-sm text-muted/50 cursor-not-allowed"
           >
             <item.icon className="w-4 h-4" />
             {item.label}
@@ -122,7 +123,52 @@ function AdminNav() {
           </div>
         ))}
       </div>
-    </nav>
+    </>
+  )
+}
+
+function AdminNav() {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <nav className="hidden md:flex flex-col gap-1 p-4 w-56 flex-shrink-0 border-r border-border">
+        <AdminNavLinks />
+      </nav>
+
+      {/* Mobile top bar with hamburger */}
+      <div className="md:hidden flex items-center justify-between px-4 h-14 border-b border-border">
+        <span className="font-semibold text-foreground">Admin</span>
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Open admin menu"
+          className="flex items-center justify-center w-11 h-11 rounded-lg hover:bg-muted/10 text-foreground"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* Mobile drawer */}
+      {open && (
+        <div className="md:hidden fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+          <nav className="absolute top-0 left-0 bottom-0 w-72 max-w-[80%] bg-elimux-dark border-r border-border p-4 flex flex-col gap-1 overflow-y-auto">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-semibold text-foreground">Admin Menu</span>
+              <button
+                onClick={() => setOpen(false)}
+                aria-label="Close admin menu"
+                className="flex items-center justify-center w-11 h-11 rounded-lg hover:bg-muted/10 text-foreground"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <AdminNavLinks onNavigate={() => setOpen(false)} />
+          </nav>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -130,7 +176,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <AdminKeyProvider>
       <AdminGate>
-        <div className="flex min-h-screen">
+        <div className="flex flex-col md:flex-row min-h-screen">
           <AdminNav />
           <div className="flex-1 min-w-0">{children}</div>
         </div>
