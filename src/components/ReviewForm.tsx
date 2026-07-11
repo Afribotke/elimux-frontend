@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Star } from 'lucide-react';
 import { createReview } from '@/lib/api';
 import { trackEvent } from '@/lib/analytics';
+import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 
 export function ReviewForm({
   programId,
@@ -25,6 +26,8 @@ export function ReviewForm({
   const [wouldRecommend, setWouldRecommend] = useState<boolean | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [queued, setQueued] = useState(false);
+  const { queueAction } = useBackgroundSync();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,23 +35,22 @@ export function ReviewForm({
 
     setSubmitting(true);
     setError(null);
-    try {
-      await createReview({
-        program_id: programId,
-        institution_id: institutionId,
-        reviewer_name: reviewerName || undefined,
-        reviewer_email: reviewerEmail || undefined,
-        rating,
-        title,
-        content,
-        pros: pros.split(',').map((p) => p.trim()).filter(Boolean),
-        cons: cons.split(',').map((c) => c.trim()).filter(Boolean),
-        would_recommend: wouldRecommend,
-      });
+    setQueued(false);
 
-      trackEvent('review', { institution_id: institutionId, program_id: programId, rating });
+    const reviewPayload = {
+      program_id: programId,
+      institution_id: institutionId,
+      reviewer_name: reviewerName || undefined,
+      reviewer_email: reviewerEmail || undefined,
+      rating,
+      title,
+      content,
+      pros: pros.split(',').map((p) => p.trim()).filter(Boolean),
+      cons: cons.split(',').map((c) => c.trim()).filter(Boolean),
+      would_recommend: wouldRecommend,
+    };
 
-      onSubmit();
+    function resetFields() {
       setRating(0);
       setTitle('');
       setContent('');
@@ -57,8 +59,32 @@ export function ReviewForm({
       setPros('');
       setCons('');
       setWouldRecommend(null);
+    }
+
+    try {
+      if (!navigator.onLine) throw new TypeError('offline');
+      await createReview(reviewPayload);
+
+      trackEvent('review', { institution_id: institutionId, program_id: programId, rating });
+
+      onSubmit();
+      resetFields();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to submit review');
+      // A network failure (offline, unreachable) gets queued for
+      // useBackgroundSync to replay - distinct from the server actively
+      // rejecting the review (validation, etc.), which stays a hard error
+      // since resubmitting the same payload later would fail the same way.
+      if (!navigator.onLine || err instanceof TypeError) {
+        try {
+          await queueAction('review', reviewPayload);
+          setQueued(true);
+          resetFields();
+        } catch {
+          setError('Failed to save your review - please try again');
+        }
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to submit review');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -70,6 +96,12 @@ export function ReviewForm({
 
       {error && (
         <div className="mb-4 px-4 py-2 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
+      )}
+
+      {queued && (
+        <div className="mb-4 px-4 py-2 rounded-lg bg-blue-50 text-blue-700 text-sm">
+          You&apos;re offline — your review will be submitted automatically once you&apos;re back online.
+        </div>
       )}
 
       <div className="mb-4">

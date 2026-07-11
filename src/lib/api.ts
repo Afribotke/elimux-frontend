@@ -490,6 +490,22 @@ export function getReferralStatus(code: string) {
   return request<{ data: ReferralRow }>(`/api/gamification/referrals/${encodeURIComponent(code)}`)
 }
 
+// Favorites
+
+export function addFavorite(itemId: string, itemType: 'program' | 'institution') {
+  return request<{ success: boolean; data: unknown }>('/api/favorites', {
+    method: 'POST',
+    body: JSON.stringify({ item_id: itemId, item_type: itemType }),
+  })
+}
+
+export function removeFavorite(itemId: string, itemType: 'program' | 'institution') {
+  return request<{ success: boolean; message: string }>('/api/favorites', {
+    method: 'DELETE',
+    body: JSON.stringify({ item_id: itemId, item_type: itemType }),
+  })
+}
+
 // Sponsor ads
 
 export interface SponsorAdRow {

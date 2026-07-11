@@ -8,6 +8,7 @@ import PointsDisplay from '@/components/PointsDisplay'
 import InstallPrompt from '@/components/InstallPrompt'
 import OfflineIndicator from '@/components/OfflineIndicator'
 import PushNotificationToggle from '@/components/PushNotificationToggle'
+import BackgroundSyncManager from '@/components/BackgroundSyncManager'
 
 export const metadata: Metadata = {
   title: 'ElimuX - Discover Global Education',
@@ -63,6 +64,7 @@ export default function RootLayout({
           <MobileNav />
           <ServiceWorkerRegister />
           <InstallPrompt />
+          <BackgroundSyncManager />
         </ThemeProvider>
       </body>
     </html>
