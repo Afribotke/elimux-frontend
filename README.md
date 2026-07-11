@@ -35,7 +35,7 @@ Prefer `lib/api.ts` for new features unless the data is a simple public read RLS
 | `/leaderboard` | Gamification leaderboard, badges, referrals. |
 | `/institution-onboarding` | Public self-service application form for institutions. |
 | `/about`, `/contact` | Static content. |
-| `/admin/*` | Gated by `AdminKeyProvider`/`AdminGate` in `src/app/admin/layout.tsx` (sessionStorage-cached admin key, verified against `/api/admin/verify`). Sub-pages: `institutions`, `programs`, `pricing`, `reviews`, `ads` (`AdManager` — sponsor ad campaigns). |
+| `/admin/*` | Gated by `AdminKeyProvider`/`AdminGate` in `src/app/admin/layout.tsx` (sessionStorage-cached admin key, verified against `/api/admin/verify`). Sub-pages: `institutions`, `programs`, `pricing`, `reviews`, `ads` (`AdManager` — sponsor ad campaigns), `revenue`, `users`, `searches`, `institutions-performance` (analytics dashboard — see below). |
 
 ## Key components
 
@@ -45,6 +45,48 @@ Prefer `lib/api.ts` for new features unless the data is a simple public read RLS
 - `AdminKeyContext` — holds the admin key in React context + `sessionStorage`; every admin page reads
   it via `useAdminKey()` and passes it to `lib/api.ts` calls.
 - `ServiceWorkerRegister` / `public/sw.js`, `public/manifest.json` — PWA support.
+- `components/admin/charts/` (`LineChart`, `PieChart`, `RankedBarList`) — hand-rolled SVG, not a
+  library. See "Analytics Events Tracking" below for the data that feeds them.
+
+## Analytics Events Tracking
+
+The admin dashboard (`/admin`, `/admin/revenue`, `/admin/users`, `/admin/searches`,
+`/admin/institutions-performance`) reads from `elimux-backend`'s `analytics_events` table via
+`GET /api/admin/analytics/*`. That table is only ever populated by events this app tracks — to
+record one, use `trackEvent` from `src/lib/analytics.ts`:
+
+```typescript
+import { trackEvent } from '@/lib/analytics'
+
+// Track a search
+trackEvent('search', { query: 'medicine', filters: { country: 'Kenya' } })
+
+// Track a page view
+trackEvent('page_view', { path: '/institutions/123', institution_id: '123' })
+
+// Track a payment
+trackEvent('payment', { plan: 'premium', amount: 500, currency: 'KES' })
+```
+
+- **Fire-and-forget.** `trackEvent` returns `void`, not a promise to await — a tracking failure must
+  never block or break the page it's called from.
+- **No device ID to pass.** It posts to `elimux-backend`'s `POST /api/admin/analytics/track` without
+  `user_device_id`; the backend derives it server-side from the request (same IP+UA fingerprint
+  `favorites`/`gamification` already use), so callers never compute one.
+- **`event_type` is one of** `search | page_view | click | application | review | share | payment` —
+  anything else is rejected with `400` by the backend. `metadata` is a free-form JSON object; there's
+  no fixed schema, but `GET /api/admin/analytics/searches` specifically reads `metadata.query` and
+  `metadata.result_count` for a `search` event, and `GET /api/admin/analytics/institutions` reads
+  `metadata.institution_id` for a `page_view` event — match those keys if you want those two
+  breakdowns to pick the event up.
+
+**Current state**: only one call site exists today — `elimux-backend`'s `POST /api/ai-search` logs a
+`search` event server-side on every call. Nothing in this repo calls `trackEvent` yet, so
+`page_view`/`click`/`application`/`review`/`share`/`payment` events, and searches from the homepage's
+client-side Supabase search (which never touches the backend), are not tracked. Wiring `trackEvent`
+into those flows is unstarted work, not a bug — add the call at the point of action (e.g. `SponsorAdBanner`'s
+click handler already exists for ad clicks specifically via `trackAdClick` in `lib/api.ts`, a separate,
+older mechanism from the sponsor-ads feature; don't conflate the two).
 
 ## Environment variables
 
