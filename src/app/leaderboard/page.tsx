@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Trophy, Medal, RefreshCw, ArrowRight } from 'lucide-react'
 import { listLeaderboard, type LeaderboardEntry } from '@/lib/api'
 import BadgeShowcase from '@/components/BadgeShowcase'
+import ReferralGenerator from '@/components/ReferralGenerator'
 
 const RANK_STYLES: Record<number, { badge: string; row: string }> = {
   1: { badge: 'bg-yellow-500/15 border-yellow-500/40 text-yellow-400', row: 'border-yellow-500/20 bg-yellow-500/5' },
@@ -122,6 +123,8 @@ export default function LeaderboardPage() {
         )}
 
         <BadgeShowcase className="mt-12" />
+
+        <ReferralGenerator className="mt-12" />
       </div>
     </main>
   )
