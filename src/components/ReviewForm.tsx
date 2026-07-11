@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Star } from 'lucide-react';
 import { createReview } from '@/lib/api';
 import { trackEvent } from '@/lib/analytics';
-import { useBackgroundSync } from '@/hooks/useBackgroundSync';
+import { queueAction } from '@/lib/pwaQueue';
 
 export function ReviewForm({
   programId,
@@ -27,7 +27,6 @@ export function ReviewForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [queued, setQueued] = useState(false);
-  const { queueAction } = useBackgroundSync();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

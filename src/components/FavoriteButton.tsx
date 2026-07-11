@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Bookmark, BookmarkCheck } from 'lucide-react'
 import { addFavorite, removeFavorite } from '@/lib/api'
-import { useBackgroundSync } from '@/hooks/useBackgroundSync'
+import { queueAction } from '@/lib/pwaQueue'
 
 interface FavoriteButtonProps {
   itemId: string
@@ -14,7 +14,6 @@ interface FavoriteButtonProps {
 export default function FavoriteButton({ itemId, itemType, onToggle }: FavoriteButtonProps) {
   const [isFavorite, setIsFavorite] = useState(false)
   const storageKey = `elimux-favorites-${itemType}`
-  const { queueAction } = useBackgroundSync()
 
   useEffect(() => {
     const stored = localStorage.getItem(storageKey)
