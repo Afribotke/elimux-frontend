@@ -5,6 +5,9 @@ import ThemeToggle from '@/components/ThemeToggle'
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
 import MobileNav from '@/components/MobileNav'
 import PointsDisplay from '@/components/PointsDisplay'
+import InstallPrompt from '@/components/InstallPrompt'
+import OfflineIndicator from '@/components/OfflineIndicator'
+import PushNotificationToggle from '@/components/PushNotificationToggle'
 
 export const metadata: Metadata = {
   title: 'ElimuX - Discover Global Education',
@@ -49,14 +52,17 @@ export default function RootLayout({
             <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
               <span className="font-bold text-foreground">ElimuX</span>
               <div className="flex items-center gap-2">
+                <PushNotificationToggle />
                 <PointsDisplay />
                 <ThemeToggle />
               </div>
             </div>
           </header>
+          <OfflineIndicator />
           <div className="pb-16 md:pb-0">{children}</div>
           <MobileNav />
           <ServiceWorkerRegister />
+          <InstallPrompt />
         </ThemeProvider>
       </body>
     </html>

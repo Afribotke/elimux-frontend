@@ -638,3 +638,19 @@ export interface AnalyticsInstitutions {
 export function getAnalyticsInstitutions(adminKey: string) {
   return request<{ data: AnalyticsInstitutions }>('/api/admin/analytics/institutions', {}, adminKey)
 }
+
+// PWA push subscriptions
+
+export function subscribePush(deviceId: string, subscription: PushSubscriptionJSON, preferences?: Record<string, unknown>) {
+  return request<{ data: unknown }>('/api/pwa/subscribe', {
+    method: 'POST',
+    body: JSON.stringify({ device_id: deviceId, subscription, preferences }),
+  })
+}
+
+export function unsubscribePush(deviceId: string) {
+  return request<{ message: string }>('/api/pwa/subscribe', {
+    method: 'DELETE',
+    body: JSON.stringify({ device_id: deviceId }),
+  })
+}
