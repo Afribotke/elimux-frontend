@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { applyInstitution, applyProgram, getApplicationStatus, type InstitutionApplicationStatus } from '@/lib/api'
+import { applyInstitution, applyProgram, getApplicationStatus, type InstitutionApplicationStatus, type ProgramApplyInput } from '@/lib/api'
 import { trackEvent } from '@/lib/analytics'
+import { queueAction } from '@/lib/pwaQueue'
 import {
   Building2,
   GraduationCap,
@@ -95,6 +96,7 @@ export default function InstitutionOnboardingPage() {
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [queuedProgramCount, setQueuedProgramCount] = useState(0)
 
   const [statusToken, setStatusToken] = useState('')
   const [statusResult, setStatusResult] = useState<InstitutionApplicationStatus | null>(null)
@@ -148,23 +150,33 @@ export default function InstitutionOnboardingPage() {
     if (!institutionApplicationId) return
     setSubmitting(true)
     setError(null)
+    setQueuedProgramCount(0)
     try {
       const validPrograms = programs.filter((p) => p.name.trim() !== '')
-      await Promise.all(
-        validPrograms.map((p) =>
-          applyProgram({
-            institution_application_id: institutionApplicationId,
-            name: p.name,
-            category_id: p.category_id,
-            level: p.level,
-            duration_months: p.duration_months ? Number(p.duration_months) : null,
-            tuition_fees: p.tuition_fees ? Number(p.tuition_fees) : null,
-            currency: p.currency,
-            description: p.description,
-            requirements: '',
-          })
-        )
-      )
+      const programInputs: ProgramApplyInput[] = validPrograms.map((p) => ({
+        institution_application_id: institutionApplicationId,
+        name: p.name,
+        category_id: p.category_id,
+        level: p.level,
+        duration_months: p.duration_months ? Number(p.duration_months) : null,
+        tuition_fees: p.tuition_fees ? Number(p.tuition_fees) : null,
+        currency: p.currency,
+        description: p.description,
+        requirements: '',
+      }))
+
+      // allSettled, not all: by this point the institution application itself
+      // already exists (step 1 succeeded), so one program failing to submit
+      // (offline, mid-flight) shouldn't block the ones that did, or block
+      // finishing the flow - each failure gets queued individually instead.
+      const results = await Promise.allSettled(programInputs.map((input) => applyProgram(input)))
+      const failedInputs = programInputs.filter((_, i) => results[i].status === 'rejected')
+
+      if (failedInputs.length > 0) {
+        await Promise.all(failedInputs.map((input) => queueAction('application', input as unknown as Record<string, unknown>)))
+        setQueuedProgramCount(failedInputs.length)
+      }
+
       // institution_id (not institution_application_id) because that's what's named
       // in the spec - but no real institutions.id exists yet at this point: this
       // application is pending review, and only gets a real institution row (and
@@ -598,6 +610,12 @@ export default function InstitutionOnboardingPage() {
                 <p className="text-muted mb-6">
                   Our team will review your application. Save the token below to check your status anytime.
                 </p>
+                {queuedProgramCount > 0 && (
+                  <p className="text-sm text-primary-400 mb-6 bg-primary-500/10 rounded-lg px-4 py-2 max-w-md mx-auto">
+                    {queuedProgramCount} program{queuedProgramCount === 1 ? '' : 's'} couldn&apos;t be submitted right now
+                    and will be added automatically once you&apos;re back online.
+                  </p>
+                )}
                 <div className="flex items-center gap-2 bg-elimux-dark rounded-lg border border-border p-3 max-w-md mx-auto">
                   <code className="text-xs text-foreground flex-1 truncate text-left">{accessToken}</code>
                   <button

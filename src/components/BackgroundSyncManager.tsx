@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { useBackgroundSync, type QueuedAction } from '@/hooks/useBackgroundSync'
-import { addFavorite, removeFavorite, createReview } from '@/lib/api'
+import { addFavorite, removeFavorite, createReview, applyProgram } from '@/lib/api'
 
 // The one place that knows how to redo each queueable action_type - see
 // useBackgroundSync's doc comment for why this can't live in the hook itself.
@@ -20,11 +20,19 @@ async function replayAction(action: QueuedAction): Promise<void> {
     case 'review':
       await createReview(payload as Parameters<typeof createReview>[0])
       return
+    case 'application':
+      // Only program applications are ever queued (institution-onboarding's
+      // handleFinalSubmit) - the institution_application itself has to exist
+      // online-first (step 1 gates step 2 in the UI), so there's nothing
+      // upstream of this that could fail offline and need replaying.
+      await applyProgram(payload as Parameters<typeof applyProgram>[0])
+      return
     default:
-      // application/share aren't queued by anything yet, so nothing should
-      // reach here today - throw rather than silently drop, so if that
-      // changes before a replay handler is added, the action stays pending
-      // (and visibly unsynced) instead of vanishing.
+      // share is never queued - ShareModal's three actions (copy link,
+      // WhatsApp, mailto:) don't call the backend at all, so there's no
+      // network mutation to protect. Throw rather than silently drop, so if
+      // that changes before a replay handler is added, the action stays
+      // pending (and visibly unsynced) instead of vanishing.
       throw new Error(`No replay handler for action_type "${action.action_type}"`)
   }
 }
