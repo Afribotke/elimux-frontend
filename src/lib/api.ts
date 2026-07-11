@@ -316,6 +316,33 @@ export function rejectProgramApplication(id: string, adminKey: string, admin_not
   )
 }
 
+// Reviews (admin moderation)
+
+export interface AdminReview {
+  id: string
+  reviewer_name: string | null
+  is_anonymous: boolean
+  rating: number
+  title: string | null
+  content: string
+  status: 'pending' | 'approved' | 'rejected'
+  created_at: string
+  program?: { name: string } | null
+  institution?: { name: string } | null
+}
+
+export function listAdminReviews(adminKey: string, status = 'pending') {
+  return request<{ data: AdminReview[] }>(`/api/admin/reviews?status=${encodeURIComponent(status)}`, {}, adminKey)
+}
+
+export function updateReviewStatus(id: string, status: 'approved' | 'rejected', adminKey: string) {
+  return request<{ data: AdminReview; message: string }>(
+    `/api/admin/reviews/${id}`,
+    { method: 'PATCH', body: JSON.stringify({ status }) },
+    adminKey
+  )
+}
+
 // Subscription plans (admin)
 
 export interface SubscriptionPlanRow {

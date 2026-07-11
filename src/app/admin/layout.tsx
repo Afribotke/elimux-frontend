@@ -11,10 +11,10 @@ const NAV_ITEMS = [
   { href: '/admin/institutions', label: 'Institutions', icon: Building2, exact: false },
   { href: '/admin/programs', label: 'Programs', icon: GraduationCap, exact: false },
   { href: '/admin/pricing', label: 'Pricing', icon: Tag, exact: false },
+  { href: '/admin/reviews', label: 'Reviews', icon: MessageSquare, exact: false },
 ]
 
 const COMING_SOON_ITEMS = [
-  { label: 'Reviews', icon: MessageSquare },
   { label: 'Users', icon: Users },
   { label: 'Analytics', icon: BarChart3 },
 ]
