@@ -360,3 +360,104 @@ export function deactivatePlan(id: string, adminKey: string) {
     adminKey
   )
 }
+
+// Gamification
+
+export type GamificationActionType = 'search' | 'review' | 'share' | 'referral' | 'login'
+
+export interface GamificationBadge {
+  id: string
+  name: string
+  description: string | null
+  icon: string | null
+  criteria_type: string
+  criteria_threshold: number
+  points_reward: number | null
+  is_active: boolean
+}
+
+export interface GamificationPointRow {
+  id: string
+  action_type: GamificationActionType
+  points_earned: number
+  metadata: Record<string, unknown> | null
+  created_at: string
+}
+
+export interface AwardPointsResult {
+  data: GamificationPointRow
+  total_points: number
+  badges_earned: GamificationBadge[]
+}
+
+export interface EarnedBadge {
+  badge_id: string
+  earned_at: string
+  badge: GamificationBadge
+}
+
+export interface MyGamificationState {
+  total_points: number
+  badges: EarnedBadge[]
+}
+
+export interface LeaderboardEntry {
+  rank: number
+  display_name: string
+  total_points: number
+  actions_count: number
+  last_activity_at: string
+}
+
+export interface ReferralRow {
+  id: string
+  referrer_code: string
+  referrer_email: string
+  referred_email: string | null
+  status: 'pending' | 'completed'
+  reward_given: boolean
+  created_at: string
+  completed_at: string | null
+}
+
+// Current device's point total + earned badges. Read-only, no side effects -
+// safe to call on every page load (e.g. to populate a header points badge).
+export function getMyGamificationState() {
+  return request<MyGamificationState>('/api/gamification/me')
+}
+
+export function awardPoints(
+  action_type: GamificationActionType,
+  opts: { metadata?: Record<string, unknown>; display_name?: string; email?: string } = {}
+) {
+  return request<AwardPointsResult>('/api/gamification/points', {
+    method: 'POST',
+    body: JSON.stringify({ action_type, ...opts }),
+  })
+}
+
+export function listLeaderboard(limit = 20) {
+  return request<{ data: LeaderboardEntry[] }>(`/api/gamification/leaderboard${buildQuery({ limit })}`)
+}
+
+export function listBadges() {
+  return request<{ data: GamificationBadge[] }>('/api/gamification/badges')
+}
+
+export function createReferral(referrer_email: string) {
+  return request<{ data: ReferralRow; message: string }>('/api/gamification/referrals', {
+    method: 'POST',
+    body: JSON.stringify({ referrer_email }),
+  })
+}
+
+export function redeemReferral(referrer_code: string, referred_email: string) {
+  return request<{ data: ReferralRow; message: string }>('/api/gamification/referrals', {
+    method: 'POST',
+    body: JSON.stringify({ referrer_code, referred_email }),
+  })
+}
+
+export function getReferralStatus(code: string) {
+  return request<{ data: ReferralRow }>(`/api/gamification/referrals/${encodeURIComponent(code)}`)
+}

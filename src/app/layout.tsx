@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/lib/theme'
 import ThemeToggle from '@/components/ThemeToggle'
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
 import MobileNav from '@/components/MobileNav'
+import PointsDisplay from '@/components/PointsDisplay'
 
 export const metadata: Metadata = {
   title: 'ElimuX - Discover Global Education',
@@ -47,7 +48,10 @@ export default function RootLayout({
           <header className="sticky top-0 z-40 border-b border-border bg-elimux-dark/80 backdrop-blur-sm">
             <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
               <span className="font-bold text-foreground">ElimuX</span>
-              <ThemeToggle />
+              <div className="flex items-center gap-2">
+                <PointsDisplay />
+                <ThemeToggle />
+              </div>
             </div>
           </header>
           <div className="pb-16 md:pb-0">{children}</div>
