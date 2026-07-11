@@ -7,11 +7,31 @@ import TrackPageView from '@/components/TrackPageView'
 import { MapPin, Users, Globe, Star, CheckCircle, ArrowLeft, GraduationCap } from 'lucide-react'
 
 export async function generateStaticParams() {
-  const { data } = await supabase.from('institutions').select('id').eq('is_active', true)
+  // Supabase/PostgREST caps an unpaginated select at 1000 rows - with 8,968+
+  // active institutions, a single unpaginated query silently truncated the
+  // static path list, 404ing every institution past the first 1000. Page
+  // through with .range() until a page comes back short.
+  const pageSize = 1000
+  const allIds: string[] = []
+  let page = 0
+
+  while (true) {
+    const { data } = await supabase
+      .from('institutions')
+      .select('id')
+      .eq('is_active', true)
+      .range(page * pageSize, (page + 1) * pageSize - 1)
+
+    if (!data || data.length === 0) break
+    allIds.push(...data.map((institution) => institution.id))
+    if (data.length < pageSize) break
+    page++
+  }
+
   // output: 'export' requires at least one static path per dynamic route;
   // fall back to a placeholder that correctly 404s when no institutions exist yet.
-  if (!data || data.length === 0) return [{ id: '_placeholder' }]
-  return data.map((institution) => ({ id: institution.id }))
+  if (allIds.length === 0) return [{ id: '_placeholder' }]
+  return allIds.map((id) => ({ id }))
 }
 
 export default async function InstitutionDetailPage({ params }: { params: Promise<{ id: string }> }) {
