@@ -547,3 +547,94 @@ export function updateSponsorAd(id: string, data: Partial<CreateSponsorAdInput> 
 export function trackAdClick(id: string) {
   return request<{ success: boolean }>(`/api/sponsor-ads/${id}/click`, { method: 'POST' })
 }
+
+// Admin analytics
+
+export interface AnalyticsOverview {
+  total_users: number
+  total_searches: { today: number; week: number; month: number }
+  total_revenue_kes: number
+  total_reviews: number
+  total_applications: { institution_applications: number; program_applications: number; total: number }
+}
+
+export function getAnalyticsOverview(adminKey: string) {
+  return request<{ data: AnalyticsOverview }>('/api/admin/analytics/overview', {}, adminKey)
+}
+
+export interface RevenueByPlan {
+  plan: string
+  revenue_kes: number
+}
+
+export interface PaymentHistoryRow {
+  id: string
+  amount: number
+  currency: string
+  status: string
+  payment_method: string | null
+  created_at: string
+  subscriber?: { email: string } | null
+  subscription?: { plan?: { name: string } | null } | null
+}
+
+export interface AnalyticsRevenue {
+  mrr_kes: number
+  revenue_by_plan: RevenueByPlan[]
+  payment_history: PaymentHistoryRow[]
+}
+
+export function getAnalyticsRevenue(adminKey: string) {
+  return request<{ data: AnalyticsRevenue }>('/api/admin/analytics/revenue', {}, adminKey)
+}
+
+export type ActivityLevel = 'none' | 'low' | 'medium' | 'high'
+
+export interface AnalyticsUserRow {
+  device_id: string
+  activity_count: number
+  activity_level: ActivityLevel
+  last_active: string
+}
+
+export function getAnalyticsUsers(adminKey: string, level?: ActivityLevel) {
+  const query = level ? `?level=${encodeURIComponent(level)}` : ''
+  return request<{ data: AnalyticsUserRow[]; meta: { total: number } }>(`/api/admin/analytics/users${query}`, {}, adminKey)
+}
+
+export interface SearchTermRow {
+  term: string
+  count: number
+}
+
+export interface SearchTrendPoint {
+  date: string
+  count: number
+}
+
+export interface AnalyticsSearches {
+  popular_terms: SearchTermRow[]
+  zero_result_searches: SearchTermRow[]
+  trend: SearchTrendPoint[]
+}
+
+export function getAnalyticsSearches(adminKey: string) {
+  return request<{ data: AnalyticsSearches }>('/api/admin/analytics/searches', {}, adminKey)
+}
+
+export interface InstitutionRankRow {
+  institution_id: string
+  name: string
+  count: number
+  avg_rating?: number
+}
+
+export interface AnalyticsInstitutions {
+  by_page_views: InstitutionRankRow[]
+  by_applications: InstitutionRankRow[]
+  by_reviews: InstitutionRankRow[]
+}
+
+export function getAnalyticsInstitutions(adminKey: string) {
+  return request<{ data: AnalyticsInstitutions }>('/api/admin/analytics/institutions', {}, adminKey)
+}

@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { checkApiHealth, createInstitution, createProgram } from '@/lib/api'
+import { checkApiHealth, createInstitution, createProgram, getAnalyticsOverview, getAnalyticsSearches, type AnalyticsOverview, type SearchTrendPoint } from '@/lib/api'
 import { useAdminKey } from '@/components/admin/AdminKeyContext'
 import InstitutionForm, { type InstitutionFormData } from '@/components/InstitutionForm'
 import ProgramForm, { type ProgramFormData } from '@/components/ProgramForm'
 import AdminApplications from '@/components/admin/AdminApplications'
-import { LayoutDashboard, Users, Building2, GraduationCap, MessageSquare, TrendingUp, Shield, Server, CheckCircle2, Settings2, Star, ShieldQuestion } from 'lucide-react'
+import StatCard from '@/components/admin/StatCard'
+import LineChart from '@/components/admin/charts/LineChart'
+import { LayoutDashboard, Users, Building2, GraduationCap, MessageSquare, TrendingUp, Shield, Server, CheckCircle2, Settings2, Star, ShieldQuestion, DollarSign, Search, FileCheck2 } from 'lucide-react'
 
 interface RecentReview {
   id: string
@@ -55,6 +57,10 @@ export default function AdminPage() {
   const [reviewsLoading, setReviewsLoading] = useState(true)
   const [topPrograms, setTopPrograms] = useState<TopProgram[]>([])
   const [topProgramsLoading, setTopProgramsLoading] = useState(true)
+
+  const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null)
+  const [searchTrend, setSearchTrend] = useState<SearchTrendPoint[]>([])
+  const [analyticsLoading, setAnalyticsLoading] = useState(true)
 
   useEffect(() => {
     checkApiHealth().then(({ ok }) => setApiStatus(ok ? 'online' : 'offline'))
@@ -112,6 +118,23 @@ export default function AdminPage() {
   useEffect(() => {
     loadStats()
   }, [])
+
+  useEffect(() => {
+    if (!adminKey) return
+    async function loadAnalytics() {
+      setAnalyticsLoading(true)
+      try {
+        const [overviewRes, searchesRes] = await Promise.all([getAnalyticsOverview(adminKey), getAnalyticsSearches(adminKey)])
+        setAnalytics(overviewRes.data)
+        setSearchTrend(searchesRes.data.trend)
+      } catch {
+        setAnalytics(null)
+      } finally {
+        setAnalyticsLoading(false)
+      }
+    }
+    loadAnalytics()
+  }, [adminKey])
 
   useEffect(() => {
     async function loadRecentReviews() {
@@ -209,6 +232,39 @@ export default function AdminPage() {
           <CheckCircle2 className='w-4 h-4' />
           {successMessage}
         </div>
+      )}
+
+      <div className='flex items-center justify-between mb-4'>
+        <h2 className='text-xl font-bold text-foreground'>Platform Analytics</h2>
+        <div className='flex gap-3 text-sm'>
+          <Link href='/admin/revenue' className='text-primary-400 hover:text-primary-300'>Revenue</Link>
+          <Link href='/admin/users' className='text-primary-400 hover:text-primary-300'>Users</Link>
+          <Link href='/admin/searches' className='text-primary-400 hover:text-primary-300'>Searches</Link>
+          <Link href='/admin/institutions-performance' className='text-primary-400 hover:text-primary-300'>Institutions</Link>
+        </div>
+      </div>
+
+      {analyticsLoading ? (
+        <div className='text-center py-8 mb-12'>
+          <div className='animate-spin w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full mx-auto' />
+        </div>
+      ) : !analytics ? (
+        <p className='text-sm text-muted bg-elimux-card rounded-xl p-4 border border-border mb-12'>Failed to load analytics.</p>
+      ) : (
+        <>
+          <div className='grid grid-cols-2 md:grid-cols-5 gap-4 mb-6'>
+            <StatCard icon={Users} label='Users (device IDs)' value={analytics.total_users.toLocaleString()} />
+            <StatCard icon={DollarSign} label='Revenue (KES)' value={analytics.total_revenue_kes.toLocaleString()} color='text-elimux-success' />
+            <StatCard icon={Search} label='Searches (month)' value={analytics.total_searches.month.toLocaleString()} color='text-elimux-warning' />
+            <StatCard icon={Star} label='Reviews' value={analytics.total_reviews.toLocaleString()} />
+            <StatCard icon={FileCheck2} label='Applications' value={analytics.total_applications.total.toLocaleString()} color='text-elimux-success' />
+          </div>
+
+          <div className='bg-elimux-card rounded-xl p-5 border border-border mb-12'>
+            <h3 className='text-sm font-medium text-foreground mb-4'>Search activity (last 30 days)</h3>
+            <LineChart data={searchTrend.map((t) => ({ date: t.date, value: t.count }))} label='searches per day' />
+          </div>
+        </>
       )}
 
       {loading ? (

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AdminKeyProvider, useAdminKey } from '@/components/admin/AdminKeyContext'
-import { LayoutDashboard, Building2, GraduationCap, MessageSquare, Users, BarChart3, Lock, KeyRound, Tag, Megaphone, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Building2, GraduationCap, MessageSquare, Users, BarChart3, Lock, KeyRound, Tag, Megaphone, DollarSign, Search, Menu, X } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
@@ -13,11 +13,10 @@ const NAV_ITEMS = [
   { href: '/admin/pricing', label: 'Pricing', icon: Tag, exact: false },
   { href: '/admin/reviews', label: 'Reviews', icon: MessageSquare, exact: false },
   { href: '/admin/ads', label: 'Sponsor Ads', icon: Megaphone, exact: false },
-]
-
-const COMING_SOON_ITEMS = [
-  { label: 'Users', icon: Users },
-  { label: 'Analytics', icon: BarChart3 },
+  { href: '/admin/revenue', label: 'Revenue', icon: DollarSign, exact: false },
+  { href: '/admin/users', label: 'Users', icon: Users, exact: false },
+  { href: '/admin/searches', label: 'Searches', icon: Search, exact: false },
+  { href: '/admin/institutions-performance', label: 'Institution Performance', icon: BarChart3, exact: false },
 ]
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
@@ -112,18 +111,6 @@ function AdminNavLinks({ onNavigate }: { onNavigate?: () => void }) {
           </Link>
         )
       })}
-      <div className="mt-2 pt-2 border-t border-border">
-        {COMING_SOON_ITEMS.map((item) => (
-          <div
-            key={item.label}
-            className="flex items-center gap-2 px-3 py-3 md:py-2 rounded-lg text-sm text-muted/50 cursor-not-allowed"
-          >
-            <item.icon className="w-4 h-4" />
-            {item.label}
-            <span className="ml-auto text-[10px] uppercase tracking-wide">Soon</span>
-          </div>
-        ))}
-      </div>
     </>
   )
 }
