@@ -54,6 +54,8 @@ export type Tables = {
     longitude: number | null
     is_verified: boolean
     is_active: boolean
+    is_featured: boolean
+    featured_until: string | null
     founded_year: number | null
     student_count: number | null
     created_at: string

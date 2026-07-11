@@ -71,6 +71,7 @@ export interface InstitutionListParams {
   search?: string
   country_id?: string
   type_id?: string
+  featured?: boolean
 }
 
 export function listInstitutions(params: InstitutionListParams = {}) {
@@ -487,4 +488,62 @@ export function redeemReferral(referrer_code: string, referred_email: string) {
 
 export function getReferralStatus(code: string) {
   return request<{ data: ReferralRow }>(`/api/gamification/referrals/${encodeURIComponent(code)}`)
+}
+
+// Sponsor ads
+
+export interface SponsorAdRow {
+  id: string
+  sponsor_id: string | null
+  title: string
+  description: string | null
+  image_url: string | null
+  target_url: string
+  placement: string
+  start_date: string
+  end_date: string
+  is_active: boolean
+  click_count: number
+  created_at: string
+  updated_at: string
+  sponsor?: { name: string; logo_url: string | null } | null
+}
+
+export function listSponsorAds(placement: string) {
+  return request<{ data: SponsorAdRow[] }>(`/api/sponsor-ads${buildQuery({ placement })}`)
+}
+
+export function listAdminSponsorAds(adminKey: string) {
+  return request<{ data: SponsorAdRow[] }>('/api/sponsor-ads/admin', {}, adminKey)
+}
+
+export interface CreateSponsorAdInput {
+  sponsor_id?: string | null
+  title: string
+  description?: string
+  image_url?: string
+  target_url: string
+  placement: string
+  start_date: string
+  end_date: string
+}
+
+export function createSponsorAd(data: CreateSponsorAdInput, adminKey: string) {
+  return request<{ data: SponsorAdRow; message: string }>(
+    '/api/sponsor-ads',
+    { method: 'POST', body: JSON.stringify(data) },
+    adminKey
+  )
+}
+
+export function updateSponsorAd(id: string, data: Partial<CreateSponsorAdInput> & { is_active?: boolean }, adminKey: string) {
+  return request<{ data: SponsorAdRow; message: string }>(
+    `/api/sponsor-ads/${id}`,
+    { method: 'PATCH', body: JSON.stringify(data) },
+    adminKey
+  )
+}
+
+export function trackAdClick(id: string) {
+  return request<{ success: boolean }>(`/api/sponsor-ads/${id}/click`, { method: 'POST' })
 }

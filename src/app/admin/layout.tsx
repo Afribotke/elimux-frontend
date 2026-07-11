@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AdminKeyProvider, useAdminKey } from '@/components/admin/AdminKeyContext'
-import { LayoutDashboard, Building2, GraduationCap, MessageSquare, Users, BarChart3, Lock, KeyRound, Tag, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Building2, GraduationCap, MessageSquare, Users, BarChart3, Lock, KeyRound, Tag, Megaphone, Menu, X } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: '/admin/programs', label: 'Programs', icon: GraduationCap, exact: false },
   { href: '/admin/pricing', label: 'Pricing', icon: Tag, exact: false },
   { href: '/admin/reviews', label: 'Reviews', icon: MessageSquare, exact: false },
+  { href: '/admin/ads', label: 'Sponsor Ads', icon: Megaphone, exact: false },
 ]
 
 const COMING_SOON_ITEMS = [

@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase'
 import SearchBar from '@/components/SearchBar'
 import ProgramCard from '@/components/ProgramCard'
 import InstitutionCard from '@/components/InstitutionCard'
+import FeaturedInstitutionCard from '@/components/FeaturedInstitutionCard'
+import SponsorAdBanner from '@/components/SponsorAdBanner'
 import { GraduationCap, Building2, Globe, Sparkles, TrendingUp, Award, ArrowRight } from 'lucide-react'
 
 interface StatCounts {
@@ -155,6 +157,10 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className='py-8 px-4 max-w-6xl mx-auto'>
+        <SponsorAdBanner placement='homepage' />
+      </section>
+
       {hasSearched && (
         <section className='py-12 px-4 max-w-6xl mx-auto'>
           {loading ? (
@@ -164,6 +170,9 @@ export default function HomePage() {
             </div>
           ) : (
             <>
+              <div className='mb-8'>
+                <SponsorAdBanner placement='search' />
+              </div>
               {programs.length > 0 && (
                 <div className='mb-12'>
                   <h2 className='text-2xl font-bold text-foreground mb-6 flex items-center gap-2'>
@@ -188,7 +197,11 @@ export default function HomePage() {
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                     {institutions.map((inst) => (
                       <Link key={inst.id} href={`/institutions/${inst.id}/`}>
-                        <InstitutionCard institution={inst} />
+                        {inst.is_featured ? (
+                          <FeaturedInstitutionCard institution={inst} />
+                        ) : (
+                          <InstitutionCard institution={inst} />
+                        )}
                       </Link>
                     ))}
                   </div>
