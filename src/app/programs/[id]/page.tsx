@@ -6,11 +6,30 @@ import { ReviewsSection } from '@/components/ReviewsSection'
 import { Clock, DollarSign, MapPin, BookOpen, ArrowLeft, GraduationCap, ClipboardList } from 'lucide-react'
 
 export async function generateStaticParams() {
-  const { data } = await supabase.from('programs').select('id').eq('is_active', true)
+  // Same fix as institutions/[id]: Supabase/PostgREST caps an unpaginated select
+  // at 1000 rows. Programs are currently well under that, but page through
+  // regardless so this doesn't silently 404 pages again once the catalog grows.
+  const pageSize = 1000
+  const allIds: string[] = []
+  let page = 0
+
+  while (true) {
+    const { data } = await supabase
+      .from('programs')
+      .select('id')
+      .eq('is_active', true)
+      .range(page * pageSize, (page + 1) * pageSize - 1)
+
+    if (!data || data.length === 0) break
+    allIds.push(...data.map((program) => program.id))
+    if (data.length < pageSize) break
+    page++
+  }
+
   // output: 'export' requires at least one static path per dynamic route;
   // fall back to a placeholder that correctly 404s when no programs exist yet.
-  if (!data || data.length === 0) return [{ id: '_placeholder' }]
-  return data.map((program) => ({ id: program.id }))
+  if (allIds.length === 0) return [{ id: '_placeholder' }]
+  return allIds.map((id) => ({ id }))
 }
 
 export default async function ProgramDetailPage({ params }: { params: Promise<{ id: string }> }) {
