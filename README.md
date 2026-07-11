@@ -80,13 +80,20 @@ trackEvent('payment', { plan: 'premium', amount: 500, currency: 'KES' })
   `metadata.institution_id` for a `page_view` event — match those keys if you want those two
   breakdowns to pick the event up.
 
-**Current state**: only one call site exists today — `elimux-backend`'s `POST /api/ai-search` logs a
-`search` event server-side on every call. Nothing in this repo calls `trackEvent` yet, so
-`page_view`/`click`/`application`/`review`/`share`/`payment` events, and searches from the homepage's
-client-side Supabase search (which never touches the backend), are not tracked. Wiring `trackEvent`
-into those flows is unstarted work, not a bug — add the call at the point of action (e.g. `SponsorAdBanner`'s
-click handler already exists for ad clicks specifically via `trackAdClick` in `lib/api.ts`, a separate,
-older mechanism from the sponsor-ads feature; don't conflate the two).
+**Call sites today**:
+
+| Event | Fires from | Notes |
+|---|---|---|
+| `search` | `elimux-backend`'s `POST /api/ai-search` (server-side) | Every AI search call. |
+| `search` | `app/page.tsx`'s `handleSearch` | The homepage's direct-Supabase search *and* the "Browse by Category" buttons (same function, `query: ''`) — `result_count` included so zero-result searches show up here too. |
+| `page_view` | `components/TrackPageView.tsx`, rendered from `institutions/[id]/page.tsx` | That page is an async server component (statically exported), so `trackEvent` can't be called directly in its body — it'd fire once per *build*, not per visitor. `TrackPageView` defers to a client-side `useEffect` instead; reuse this pattern for any other static page that needs page-view tracking. |
+| `review` | `components/ReviewForm.tsx`, after `createReview` succeeds | `{ institution_id, program_id, rating }`. |
+| `share` | `components/ShareModal.tsx`, all three share actions | `platform` is `copy_link` \| `whatsapp` \| `email`. Separate from `trackAdClick` in `lib/api.ts`, which is an older, unrelated mechanism specifically for sponsor-ad clicks — don't conflate the two. |
+| `application` | `institution-onboarding/page.tsx`'s `handleFinalSubmit`, after programs submit | Metadata key is `institution_application_id`, not `institution_id` — at submit time this is a pending application with no real `institutions.id` yet; it only gets one if an admin approves it (`institution_applications.created_institution_id`). |
+| `payment` | `payments/callback/page.tsx`, only when `verifyPayment` returns `status: 'success'` | `plan` reads the subscription's plan slug/name off the verify response. |
+
+Not yet wired: `click` has no call site anywhere. `page_view` only covers the institution detail page —
+programs, the homepage, and other static pages don't track views.
 
 ## Environment variables
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { applyInstitution, applyProgram, getApplicationStatus, type InstitutionApplicationStatus } from '@/lib/api'
+import { trackEvent } from '@/lib/analytics'
 import {
   Building2,
   GraduationCap,
@@ -164,6 +165,11 @@ export default function InstitutionOnboardingPage() {
           })
         )
       )
+      // institution_id (not institution_application_id) because that's what's named
+      // in the spec - but no real institutions.id exists yet at this point: this
+      // application is pending review, and only gets a real institution row (and
+      // institution_applications.created_institution_id) once an admin approves it.
+      trackEvent('application', { institution_application_id: institutionApplicationId, program_count: validPrograms.length })
       setStep(4)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit programs')

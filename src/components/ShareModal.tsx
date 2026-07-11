@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { X, Link2, Check, MessageCircle, Mail } from 'lucide-react'
+import { trackEvent } from '@/lib/analytics'
 
 interface ShareItem {
   name: string
@@ -26,17 +27,20 @@ export default function ShareModal({ isOpen, onClose, item }: ShareModalProps) {
   async function handleCopyLink() {
     await navigator.clipboard.writeText(item.url)
     setCopied(true)
+    trackEvent('share', { platform: 'copy_link', url: item.url, item_type: item.type })
     setTimeout(() => setCopied(false), 2000)
   }
 
   function handleWhatsApp() {
     const message = encodeURIComponent(`${shareText}\n${item.url}`)
+    trackEvent('share', { platform: 'whatsapp', url: item.url, item_type: item.type })
     window.open(`https://wa.me/?text=${message}`, '_blank', 'noopener,noreferrer')
   }
 
   function handleEmail() {
     const subject = encodeURIComponent(shareText)
     const body = encodeURIComponent(`${shareText}\n\n${item.description || ''}\n\n${item.url}`)
+    trackEvent('share', { platform: 'email', url: item.url, item_type: item.type })
     window.location.href = `mailto:?subject=${subject}&body=${body}`
   }
 

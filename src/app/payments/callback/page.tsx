@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 import { verifyPayment } from '@/lib/payments'
+import { trackEvent } from '@/lib/analytics'
 
 function PaymentCallbackContent() {
   const searchParams = useSearchParams()
@@ -23,6 +24,13 @@ function PaymentCallbackContent() {
     verifyPayment(reference)
       .then((result) => {
         setStatus(result.status === 'success' ? 'success' : 'failed')
+        if (result.status === 'success') {
+          trackEvent('payment', {
+            plan: result.payment.subscription?.plan?.slug || result.payment.subscription?.plan?.name || null,
+            amount: result.payment.amount,
+            currency: result.payment.currency,
+          })
+        }
       })
       .catch((err) => {
         setStatus('failed')

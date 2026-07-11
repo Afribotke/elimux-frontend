@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import ProgramCard from '@/components/ProgramCard'
 import DetailActions from '@/components/DetailActions'
+import TrackPageView from '@/components/TrackPageView'
 import { MapPin, Users, Globe, Star, CheckCircle, ArrowLeft, GraduationCap } from 'lucide-react'
 
 export async function generateStaticParams() {
@@ -36,6 +37,7 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
 
   return (
     <main className="min-h-screen py-12 px-4">
+      <TrackPageView eventType="page_view" metadata={{ path: `/institutions/${id}`, institution_id: id }} />
       <div className="max-w-4xl mx-auto">
         <Link
           href="/institutions"

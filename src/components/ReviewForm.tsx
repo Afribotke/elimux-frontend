@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Star } from 'lucide-react';
 import { createReview } from '@/lib/api';
+import { trackEvent } from '@/lib/analytics';
 
 export function ReviewForm({
   programId,
@@ -44,6 +45,8 @@ export function ReviewForm({
         cons: cons.split(',').map((c) => c.trim()).filter(Boolean),
         would_recommend: wouldRecommend,
       });
+
+      trackEvent('review', { institution_id: institutionId, program_id: programId, rating });
 
       onSubmit();
       setRating(0);

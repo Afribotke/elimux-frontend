@@ -8,6 +8,7 @@ import ProgramCard from '@/components/ProgramCard'
 import InstitutionCard from '@/components/InstitutionCard'
 import FeaturedInstitutionCard from '@/components/FeaturedInstitutionCard'
 import SponsorAdBanner from '@/components/SponsorAdBanner'
+import { trackEvent } from '@/lib/analytics'
 import { GraduationCap, Building2, Globe, Sparkles, TrendingUp, Award, ArrowRight } from 'lucide-react'
 
 interface StatCounts {
@@ -92,6 +93,12 @@ export default function HomePage() {
 
       setPrograms(programsData || [])
       setInstitutions(institutionsData || [])
+
+      trackEvent('search', {
+        query,
+        filters: { country_id: countryId || null, category_id: categoryId || null },
+        result_count: (programsData?.length || 0) + (institutionsData?.length || 0),
+      })
     } catch (error) {
       console.error('Search error:', error)
     } finally {
