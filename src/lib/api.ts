@@ -655,6 +655,104 @@ export function getAnalyticsInstitutions(adminKey: string) {
   return request<{ data: AnalyticsInstitutions }>('/api/admin/analytics/institutions', {}, adminKey)
 }
 
+// Data scraper (admin)
+
+export interface ScraperJob {
+  id: string
+  institution_id: string
+  source_url: string
+  status: 'pending' | 'running' | 'completed' | 'failed'
+  programs_found: number
+  programs_updated: number
+  programs_created: number
+  errors: { message: string }[] | null
+  started_at: string | null
+  completed_at: string | null
+  created_at: string
+  institution?: { name: string } | null
+}
+
+export interface ProgramChange {
+  id: string
+  institution_id: string
+  program_id: string | null
+  change_type: 'new' | 'updated' | 'deleted'
+  field_name: string | null
+  old_value: string | null
+  new_value: string | null
+  confidence_score: number
+  status: 'pending' | 'approved' | 'rejected'
+  reviewed_by: string | null
+  reviewed_at: string | null
+  created_at: string
+  institution?: { name: string } | null
+  program?: { name: string } | null
+}
+
+export interface ScrapingSource {
+  id: string
+  institution_id: string
+  source_type: 'api' | 'website' | 'rss'
+  url: string
+  crawl_frequency: 'daily' | 'weekly' | 'monthly'
+  last_crawled_at: string | null
+  is_active: boolean
+  selectors: Record<string, unknown> | null
+  created_at: string
+  institution?: { name: string } | null
+}
+
+export function runScraper(institution_id: string, source_url: string, adminKey: string) {
+  return request<{ data: { job: ScraperJob; changes_filed: number } }>(
+    '/api/admin/scraper/run',
+    { method: 'POST', body: JSON.stringify({ institution_id, source_url }) },
+    adminKey
+  )
+}
+
+export function listScraperJobs(adminKey: string, params: { institution_id?: string; status?: string; page?: number; limit?: number } = {}) {
+  return request<ApiListResponse<ScraperJob>>(`/api/admin/scraper/jobs${buildQuery(params)}`, {}, adminKey)
+}
+
+export function listProgramChanges(adminKey: string, params: { status?: string; institution_id?: string } = {}) {
+  return request<{ data: ProgramChange[] }>(`/api/admin/scraper/changes${buildQuery(params)}`, {}, adminKey)
+}
+
+export function approveChange(id: string, adminKey: string) {
+  return request<{ data: ProgramChange; message: string }>(`/api/admin/scraper/changes/${id}/approve`, { method: 'POST' }, adminKey)
+}
+
+export function rejectChange(id: string, adminKey: string) {
+  return request<{ data: ProgramChange; message: string }>(`/api/admin/scraper/changes/${id}/reject`, { method: 'POST' }, adminKey)
+}
+
+export interface CreateScrapingSourceInput {
+  institution_id: string
+  url: string
+  source_type?: 'api' | 'website' | 'rss'
+  crawl_frequency?: 'daily' | 'weekly' | 'monthly'
+}
+
+export function listScrapingSources(adminKey: string, institution_id?: string) {
+  return request<{ data: ScrapingSource[] }>(`/api/admin/scraper/sources${buildQuery({ institution_id })}`, {}, adminKey)
+}
+
+export function createScrapingSource(data: CreateScrapingSourceInput, adminKey: string) {
+  return request<{ data: ScrapingSource }>('/api/admin/scraper/sources', { method: 'POST', body: JSON.stringify(data) }, adminKey)
+}
+
+export function updateScrapingSource(id: string, data: Partial<CreateScrapingSourceInput> & { is_active?: boolean }, adminKey: string) {
+  return request<{ data: ScrapingSource; message: string }>(
+    `/api/admin/scraper/sources/${id}`,
+    { method: 'PATCH', body: JSON.stringify(data) },
+    adminKey
+  )
+}
+
+export function deleteScrapingSource(id: string, adminKey: string) {
+  return request<{ message: string }>(`/api/admin/scraper/sources/${id}`, { method: 'DELETE' }, adminKey)
+}
+
 // PWA push subscriptions
 
 export function subscribePush(deviceId: string, subscription: PushSubscriptionJSON, preferences?: Record<string, unknown>) {
