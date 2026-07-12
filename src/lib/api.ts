@@ -753,6 +753,90 @@ export function deleteScrapingSource(id: string, adminKey: string) {
   return request<{ message: string }>(`/api/admin/scraper/sources/${id}`, { method: 'DELETE' }, adminKey)
 }
 
+// Scholarships
+
+export interface ScholarshipRow {
+  id: string
+  title: string
+  provider: string
+  provider_logo_url: string | null
+  description: string | null
+  eligibility: string | null
+  benefits: string | null
+  amount: string | null
+  currency: string
+  coverage_type: string | null
+  institution_id: string | null
+  country_id: string | null
+  study_levels: string[] | null
+  disciplines: string[] | null
+  target_groups: string[] | null
+  application_opens: string | null
+  application_deadline: string
+  notification_date: string | null
+  application_url: string | null
+  application_process: string | null
+  required_documents: string[] | null
+  status: string
+  is_featured: boolean
+  source_url: string | null
+  created_at: string
+  updated_at: string
+  institution?: { name: string } | null
+  country?: { name: string } | null
+}
+
+export interface ScholarshipListParams {
+  country_id?: string
+  study_level?: string
+  discipline?: string
+  deadline_after?: string
+  keyword?: string
+  limit?: number
+  offset?: number
+}
+
+export interface ScholarshipListResponse {
+  data: ScholarshipRow[]
+  meta: { limit: number; offset: number; total: number }
+}
+
+export function listScholarships(params: ScholarshipListParams = {}) {
+  return request<ScholarshipListResponse>(`/api/scholarships${buildQuery(params)}`)
+}
+
+export function favoriteScholarship(id: string) {
+  return request<{ data: unknown }>(`/api/scholarships/${id}/favorite`, { method: 'POST' })
+}
+
+export function unfavoriteScholarship(id: string) {
+  return request<{ message: string }>(`/api/scholarships/${id}/favorite`, { method: 'DELETE' })
+}
+
+export interface ScholarshipFavoriteRow {
+  id: string
+  created_at: string
+  scholarship: ScholarshipRow
+}
+
+export function listScholarshipFavorites() {
+  return request<{ data: ScholarshipFavoriteRow[] }>('/api/scholarships/favorites')
+}
+
+export interface CreateScholarshipAlertInput {
+  email?: string
+  keywords?: string
+  country_id?: string
+  study_level?: string
+}
+
+export function createScholarshipAlert(data: CreateScholarshipAlertInput) {
+  return request<{ data: unknown; message: string }>('/api/scholarships/alerts', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
 // PWA push subscriptions
 
 export function subscribePush(deviceId: string, subscription: PushSubscriptionJSON, preferences?: Record<string, unknown>) {
