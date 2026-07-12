@@ -1,4 +1,5 @@
 import { MapPin, Users, Globe, Star, CheckCircle } from 'lucide-react'
+import AccreditationBadgeList from './AccreditationBadgeList'
 
 interface InstitutionCardProps {
   institution: {
@@ -11,12 +12,20 @@ interface InstitutionCardProps {
     is_verified: boolean
     founded_year: number | null
     student_count: number | null
-    type?: { name: string; icon: string | null } | null
-    country?: { name: string; flag_emoji: string | null } | null
+    type?: { name: string; icon?: string | null } | null
+    country?: { name: string; flag_emoji?: string | null } | null
+    accreditations?: {
+      accreditation_status: string
+      body?: { name: string; code: string | null; logo_url: string | null } | null
+    }[]
   }
 }
 
 export default function InstitutionCard({ institution }: InstitutionCardProps) {
+  const accreditationBadges = (institution.accreditations || [])
+    .filter((a) => a.accreditation_status === 'active' && a.body)
+    .map((a) => ({ code: a.body!.code, name: a.body!.name, logo_url: a.body!.logo_url }))
+
   return (
     <div className="bg-elimux-card rounded-xl p-5 border border-border hover:border-primary-500/50 transition-all hover:shadow-lg hover:shadow-primary-500/10">
       <div className="flex items-start gap-4">
@@ -51,6 +60,13 @@ export default function InstitutionCard({ institution }: InstitutionCardProps) {
             <p className="text-sm text-primary-400 mb-1">
               {institution.type.name}
             </p>
+          )}
+
+          {/* Accreditation badges */}
+          {accreditationBadges.length > 0 && (
+            <div className="mb-2">
+              <AccreditationBadgeList accreditations={accreditationBadges} />
+            </div>
           )}
 
           {/* Location */}

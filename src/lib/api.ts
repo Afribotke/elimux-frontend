@@ -44,9 +44,13 @@ export async function checkApiHealth(): Promise<{ ok: boolean; timestamp?: strin
   }
 }
 
-type InstitutionRow = Tables['institutions'] & {
+export type InstitutionRow = Tables['institutions'] & {
   type?: { name: string; icon?: string | null } | null
   country?: { name: string; flag_emoji?: string | null } | null
+  accreditations?: {
+    accreditation_status: string
+    body?: { name: string; code: string | null; logo_url: string | null } | null
+  }[]
 }
 
 type ProgramRow = Tables['programs'] & {
@@ -72,6 +76,7 @@ export interface InstitutionListParams {
   country_id?: string
   type_id?: string
   featured?: boolean
+  accreditation_body_id?: string
 }
 
 export function listInstitutions(params: InstitutionListParams = {}) {
@@ -835,6 +840,108 @@ export function createScholarshipAlert(data: CreateScholarshipAlertInput) {
     method: 'POST',
     body: JSON.stringify(data),
   })
+}
+
+// Accreditation bodies
+
+export interface AccreditationBodyRow {
+  id: string
+  name: string
+  code: string | null
+  description: string | null
+  logo_url: string | null
+  website_url: string | null
+  country_id: string | null
+  body_type: string
+  is_active: boolean
+  created_at: string
+  country?: { name: string; flag_emoji: string | null } | null
+}
+
+export interface AccreditedInstitutionRow {
+  id: string
+  accreditation_number: string | null
+  accreditation_status: string
+  valid_from: string | null
+  valid_until: string | null
+  document_url: string | null
+  institution: {
+    id: string
+    name: string
+    slug: string | null
+    logo_url: string | null
+    city: string | null
+    type?: { name: string } | null
+  } | null
+}
+
+export interface AccreditationBodyDetail extends AccreditationBodyRow {
+  institutions: AccreditedInstitutionRow[]
+}
+
+export interface AccreditationBodyListParams {
+  country_id?: string
+  body_type?: string
+}
+
+export function listAccreditationBodies(params: AccreditationBodyListParams = {}) {
+  return request<{ data: AccreditationBodyRow[] }>(`/api/accreditation-bodies${buildQuery(params)}`)
+}
+
+export function getAccreditationBody(id: string) {
+  return request<{ data: AccreditationBodyDetail }>(`/api/accreditation-bodies/${id}`)
+}
+
+export interface CreateAccreditationBodyInput {
+  name: string
+  code?: string
+  description?: string
+  logo_url?: string
+  website_url?: string
+  country_id?: string
+  body_type: 'university' | 'tvet' | 'secondary' | 'professional'
+  is_active?: boolean
+}
+
+export function createAccreditationBody(data: CreateAccreditationBodyInput, adminKey: string) {
+  return request<{ data: AccreditationBodyRow; message: string }>(
+    '/api/admin/accreditation-bodies',
+    { method: 'POST', body: JSON.stringify(data) },
+    adminKey
+  )
+}
+
+export interface InstitutionAccreditationRow {
+  id: string
+  accreditation_number: string | null
+  accreditation_status: string
+  valid_from: string | null
+  valid_until: string | null
+  document_url: string | null
+  created_at: string
+  body: { id: string; name: string; code: string | null; logo_url: string | null; body_type: string } | null
+}
+
+export function listInstitutionAccreditations(institutionId: string) {
+  return request<{ data: InstitutionAccreditationRow[] }>(`/api/institutions/${institutionId}/accreditations`)
+}
+
+export interface CreateInstitutionAccreditationInput {
+  institution_id: string
+  body_id: string
+  accreditation_number?: string
+  accreditation_status?: string
+  valid_from?: string
+  valid_until?: string
+  document_url?: string
+}
+
+export function createInstitutionAccreditation(data: CreateInstitutionAccreditationInput, adminKey: string) {
+  return request<{ data: unknown; message: string }>(
+    '/api/admin/institution-accreditations',
+    { method: 'POST', body: JSON.stringify(data) },
+    adminKey
+  )
 }
 
 // PWA push subscriptions

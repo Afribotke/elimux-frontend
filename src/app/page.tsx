@@ -83,7 +83,9 @@ export default function HomePage() {
 
       let institutionsQuery = supabase
         .from('institutions')
-        .select('*, type:institution_types(name, icon), country:countries(name, flag_emoji)')
+        .select(
+          '*, type:institution_types(name, icon), country:countries(name, flag_emoji), accreditations:institution_accreditations(accreditation_status, body:accreditation_bodies(name, code, logo_url))'
+        )
         .eq('is_active', true)
 
       if (query) institutionsQuery = institutionsQuery.ilike('name', `%${query}%`)

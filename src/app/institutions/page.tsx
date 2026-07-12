@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import InstitutionCard from '@/components/InstitutionCard'
 import FeaturedInstitutionCard from '@/components/FeaturedInstitutionCard'
+import InstitutionsBrowser from '@/components/institutions/InstitutionsBrowser'
 import SponsorAdBanner from '@/components/SponsorAdBanner'
 import { listInstitutions } from '@/lib/api'
 import { Building2 } from 'lucide-react'
@@ -12,7 +12,9 @@ export default async function InstitutionsPage() {
   const [{ data: institutions }, featuredResult] = await Promise.all([
     supabase
       .from('institutions')
-      .select('*, type:institution_types(name, icon), country:countries(name, flag_emoji)')
+      .select(
+        '*, type:institution_types(name, icon), country:countries(name, flag_emoji), accreditations:institution_accreditations(accreditation_status, body:accreditation_bodies(name, code, logo_url))'
+      )
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(24),
@@ -46,20 +48,7 @@ export default async function InstitutionsPage() {
         </div>
       )}
 
-      {institutions && institutions.length > 0 ? (
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-          {institutions.map((inst) => (
-            <Link key={inst.id} href={`/institutions/${inst.id}/`}>
-              <InstitutionCard institution={inst} />
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <div className='text-center py-12'>
-          <p className='text-muted text-lg'>No institutions available yet.</p>
-          <p className='text-sm text-muted mt-2'>Institutions will appear here once added to the database.</p>
-        </div>
-      )}
+      <InstitutionsBrowser initialInstitutions={institutions || []} />
     </main>
   )
 }

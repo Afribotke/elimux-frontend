@@ -4,7 +4,18 @@ import Link from 'next/link'
 import ProgramCard from '@/components/ProgramCard'
 import DetailActions from '@/components/DetailActions'
 import TrackPageView from '@/components/TrackPageView'
-import { MapPin, Users, Globe, Star, CheckCircle, ArrowLeft, GraduationCap } from 'lucide-react'
+import AccreditationStatusBadge from '@/components/AccreditationStatusBadge'
+import { MapPin, Users, Globe, Star, CheckCircle, ArrowLeft, GraduationCap, ShieldCheck, FileText } from 'lucide-react'
+
+interface InstitutionAccreditationJoinRow {
+  id: string
+  accreditation_number: string | null
+  accreditation_status: string
+  valid_from: string | null
+  valid_until: string | null
+  document_url: string | null
+  body: { id: string; name: string; code: string | null; logo_url: string | null; body_type: string } | null
+}
 
 export async function generateStaticParams() {
   // Supabase/PostgREST caps an unpaginated select at 1000 rows - with 8,968+
@@ -54,6 +65,15 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
     .eq('institution_id', id)
     .eq('is_active', true)
     .order('name')
+
+  const { data: accreditations } = await supabase
+    .from('institution_accreditations')
+    .select(
+      'id, accreditation_number, accreditation_status, valid_from, valid_until, document_url, body:accreditation_bodies(id, name, code, logo_url, body_type)'
+    )
+    .eq('institution_id', id)
+    .order('created_at', { ascending: false })
+    .returns<InstitutionAccreditationJoinRow[]>()
 
   return (
     <main className="min-h-screen py-12 px-4">
@@ -132,6 +152,66 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
             </div>
           </div>
         </div>
+
+        {accreditations && accreditations.length > 0 && (
+          <div className="bg-elimux-card rounded-2xl p-6 md:p-8 border border-border mb-8">
+            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-primary-400" />
+              Accreditation ({accreditations.length})
+            </h2>
+
+            <div className="space-y-3">
+              {accreditations.map((a) => (
+                <div
+                  key={a.id}
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border border-border"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {a.body?.logo_url ? (
+                      <img
+                        src={a.body.logo_url}
+                        alt=""
+                        className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <ShieldCheck className="w-9 h-9 text-muted flex-shrink-0" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-semibold text-foreground truncate">{a.body?.name || 'Accreditation body'}</p>
+                      {a.accreditation_number && (
+                        <p className="text-xs text-muted">No. {a.accreditation_number}</p>
+                      )}
+                      {(a.valid_from || a.valid_until) && (
+                        <p className="text-xs text-muted">
+                          {a.valid_from ? new Date(a.valid_from).toLocaleDateString() : '—'}
+                          {' – '}
+                          {a.valid_until ? new Date(a.valid_until).toLocaleDateString() : 'Ongoing'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <AccreditationStatusBadge status={a.accreditation_status} />
+                    {a.document_url && (
+                      <a
+                        href={a.document_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Document
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
           <GraduationCap className="w-5 h-5 text-primary-400" />
