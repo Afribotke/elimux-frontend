@@ -3,7 +3,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import ScholarshipFavoriteButton from '@/components/scholarships/ScholarshipFavoriteButton'
 import ScholarshipCard from '@/components/scholarships/ScholarshipCard'
-import { Calendar, Wallet, MapPin, ArrowLeft, ExternalLink, ClipboardList } from 'lucide-react'
+import ScholarshipAlertForm from '@/components/scholarships/ScholarshipAlertForm'
+import { Calendar, Wallet, MapPin, ArrowLeft, ExternalLink, ClipboardList, Bell } from 'lucide-react'
 
 export async function generateStaticParams() {
   // Same pagination fix as programs/[id] and institutions/[id]: PostgREST
@@ -153,6 +154,17 @@ export default async function ScholarshipDetailPage({ params }: { params: Promis
               <ExternalLink className="w-4 h-4" />
             </a>
           )}
+        </div>
+
+        <div className="mt-8 bg-elimux-card rounded-2xl p-6 md:p-8 border border-border">
+          <h2 className="text-lg font-bold text-foreground mb-1 flex items-center gap-2">
+            <Bell className="w-5 h-5 text-primary-400" />
+            Get Alerted
+          </h2>
+          <p className="text-sm text-muted mb-5">
+            Get notified by email when scholarships like this one are added.
+          </p>
+          <ScholarshipAlertForm defaultKeywords={scholarship.title} defaultCountryId={scholarship.country_id} />
         </div>
 
         {related && related.length > 0 && (

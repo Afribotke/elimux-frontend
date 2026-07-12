@@ -6,7 +6,8 @@ import { useSearchParams } from 'next/navigation'
 import { listScholarships, type ScholarshipRow, type ScholarshipListParams } from '@/lib/api'
 import ScholarshipCard from '@/components/scholarships/ScholarshipCard'
 import ScholarshipFilters from '@/components/scholarships/ScholarshipFilters'
-import { Loader2, Award } from 'lucide-react'
+import ScholarshipAlertModal from '@/components/scholarships/ScholarshipAlertModal'
+import { Loader2, Award, Bell } from 'lucide-react'
 
 const PAGE_SIZE = 12
 
@@ -24,6 +25,7 @@ function ScholarshipsPageInner() {
     deadline_after: searchParams.get('deadline_after') || '',
   }))
   const [offset, setOffset] = useState(0)
+  const [alertModalOpen, setAlertModalOpen] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams()
@@ -72,8 +74,15 @@ function ScholarshipsPageInner() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-4">
             <ScholarshipFilters filters={filters} onChange={handleFiltersChange} />
+            <button
+              onClick={() => setAlertModalOpen(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-lg border border-border text-foreground hover:border-primary-500/50 transition-all"
+            >
+              <Bell className="w-4 h-4 text-primary-400" />
+              Create Alert
+            </button>
           </div>
 
           <div className="lg:col-span-3">
@@ -122,6 +131,12 @@ function ScholarshipsPageInner() {
           </div>
         </div>
       </div>
+
+      <ScholarshipAlertModal
+        isOpen={alertModalOpen}
+        onClose={() => setAlertModalOpen(false)}
+        defaultKeywords={filters.keyword}
+      />
     </main>
   )
 }
