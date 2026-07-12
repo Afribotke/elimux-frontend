@@ -9,6 +9,9 @@ import InstallPrompt from '@/components/InstallPrompt'
 import OfflineIndicator from '@/components/OfflineIndicator'
 import PushNotificationToggle from '@/components/PushNotificationToggle'
 import BackgroundSyncManager from '@/components/BackgroundSyncManager'
+import PoweredByHeaderBadge from '@/components/PoweredByHeaderBadge'
+import Footer from '@/components/Footer'
+import AppLoadingScreen from '@/components/AppLoadingScreen'
 
 export const metadata: Metadata = {
   title: 'ElimuX - Discover Global Education',
@@ -49,9 +52,13 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <ThemeProvider>
+          <AppLoadingScreen />
           <header className="sticky top-0 z-40 border-b border-border bg-elimux-dark/80 backdrop-blur-sm">
             <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-              <span className="font-bold text-foreground">ElimuX</span>
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="font-bold text-foreground flex-shrink-0">ElimuX</span>
+                <PoweredByHeaderBadge />
+              </div>
               <div className="flex items-center gap-2">
                 <PushNotificationToggle />
                 <PointsDisplay />
@@ -60,7 +67,10 @@ export default function RootLayout({
             </div>
           </header>
           <OfflineIndicator />
-          <div className="pb-16 md:pb-0">{children}</div>
+          <div className="pb-16 md:pb-0">
+            {children}
+            <Footer />
+          </div>
           <MobileNav />
           <ServiceWorkerRegister />
           <InstallPrompt />

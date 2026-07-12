@@ -247,14 +247,6 @@ export default function HomePage() {
         </section>
       )}
 
-      <footer className='py-8 px-4 border-t border-border bg-elimux-dark'>
-        <div className='max-w-6xl mx-auto text-center'>
-          <p className='text-muted text-sm mb-2'>&copy; 2026 ElimuX. Discover global education opportunities.</p>
-          <Link href='/institution-onboarding' className='text-sm text-primary-400 hover:text-primary-300 transition-colors'>
-            Are you an institution? List your programs on ElimuX
-          </Link>
-        </div>
-      </footer>
     </main>
   )
 }

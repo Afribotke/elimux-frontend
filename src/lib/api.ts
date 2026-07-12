@@ -944,6 +944,83 @@ export function createInstitutionAccreditation(data: CreateInstitutionAccreditat
   )
 }
 
+// Major sponsor ("Powered by")
+
+export interface MajorSponsorPublic {
+  name: string
+  logo_url: string | null
+  tagline: string | null
+  website_url: string | null
+  tier: string
+  show_in_header: boolean
+  show_in_footer: boolean
+  show_in_loading: boolean
+  show_in_email: boolean
+}
+
+export function getMajorSponsor() {
+  return request<{ data: MajorSponsorPublic | null }>('/api/major-sponsor')
+}
+
+export interface MajorSponsorRow {
+  id: string
+  organization_name: string
+  logo_url: string | null
+  tagline: string | null
+  website_url: string | null
+  sponsorship_tier: 'platinum' | 'gold' | 'silver' | 'bronze'
+  start_date: string | null
+  end_date: string | null
+  show_in_header: boolean
+  show_in_footer: boolean
+  show_in_loading: boolean
+  show_in_email: boolean
+  is_active: boolean
+  created_at: string
+}
+
+export function listAdminMajorSponsors(adminKey: string) {
+  return request<{ data: MajorSponsorRow[] }>('/api/admin/major-sponsors', {}, adminKey)
+}
+
+export interface CreateMajorSponsorInput {
+  organization_name: string
+  logo_url?: string
+  tagline?: string
+  website_url?: string
+  sponsorship_tier: 'platinum' | 'gold' | 'silver' | 'bronze'
+  start_date?: string
+  end_date?: string
+  show_in_header?: boolean
+  show_in_footer?: boolean
+  show_in_loading?: boolean
+  show_in_email?: boolean
+}
+
+export function createMajorSponsor(data: CreateMajorSponsorInput, adminKey: string) {
+  return request<{ data: MajorSponsorRow; message: string }>(
+    '/api/admin/major-sponsors',
+    { method: 'POST', body: JSON.stringify(data) },
+    adminKey
+  )
+}
+
+export function updateMajorSponsor(id: string, data: Partial<CreateMajorSponsorInput> & { is_active?: boolean }, adminKey: string) {
+  return request<{ data: MajorSponsorRow; message: string }>(
+    `/api/admin/major-sponsors/${id}`,
+    { method: 'PATCH', body: JSON.stringify(data) },
+    adminKey
+  )
+}
+
+export function activateMajorSponsor(id: string, adminKey: string) {
+  return request<{ data: MajorSponsorRow; message: string }>(
+    `/api/admin/major-sponsors/${id}/activate`,
+    { method: 'PATCH' },
+    adminKey
+  )
+}
+
 // PWA push subscriptions
 
 export function subscribePush(deviceId: string, subscription: PushSubscriptionJSON, preferences?: Record<string, unknown>) {
