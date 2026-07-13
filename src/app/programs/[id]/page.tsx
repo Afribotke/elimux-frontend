@@ -3,7 +3,9 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import DetailActions from '@/components/DetailActions'
 import { ReviewsSection } from '@/components/ReviewsSection'
-import { Clock, DollarSign, MapPin, BookOpen, ArrowLeft, GraduationCap, ClipboardList } from 'lucide-react'
+import BackButton from '@/components/BackButton'
+import Breadcrumbs from '@/components/Breadcrumbs'
+import { Clock, DollarSign, MapPin, BookOpen, GraduationCap, ClipboardList } from 'lucide-react'
 
 export async function generateStaticParams() {
   // Same fix as institutions/[id]: Supabase/PostgREST caps an unpaginated select
@@ -51,13 +53,15 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
   return (
     <main className="min-h-screen py-12 px-4">
       <div className="max-w-3xl mx-auto">
-        <Link
-          href="/programs"
-          className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          All Programs
-        </Link>
+        <BackButton fallbackHref="/programs" label="All Programs" className="mb-2" />
+        <Breadcrumbs
+          items={[
+            { label: 'Home', href: '/' },
+            { label: 'Programs', href: '/programs' },
+            { label: program.name, href: `/programs/${program.id}` },
+          ]}
+          className="px-0 mb-6"
+        />
 
         <div className="bg-elimux-card rounded-2xl p-6 md:p-8 border border-border">
           <div className="flex items-start justify-between gap-4 mb-4">

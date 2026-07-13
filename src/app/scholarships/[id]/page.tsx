@@ -4,7 +4,9 @@ import Link from 'next/link'
 import ScholarshipFavoriteButton from '@/components/scholarships/ScholarshipFavoriteButton'
 import ScholarshipCard from '@/components/scholarships/ScholarshipCard'
 import ScholarshipAlertForm from '@/components/scholarships/ScholarshipAlertForm'
-import { Calendar, Wallet, MapPin, ArrowLeft, ExternalLink, ClipboardList, Bell } from 'lucide-react'
+import BackButton from '@/components/BackButton'
+import Breadcrumbs from '@/components/Breadcrumbs'
+import { Calendar, Wallet, MapPin, ExternalLink, ClipboardList, Bell } from 'lucide-react'
 
 export async function generateStaticParams() {
   // Same pagination fix as programs/[id] and institutions/[id]: PostgREST
@@ -63,13 +65,15 @@ export default async function ScholarshipDetailPage({ params }: { params: Promis
   return (
     <main className="min-h-screen py-12 px-4">
       <div className="max-w-3xl mx-auto">
-        <Link
-          href="/scholarships"
-          className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          All Scholarships
-        </Link>
+        <BackButton fallbackHref="/scholarships" label="All Scholarships" className="mb-2" />
+        <Breadcrumbs
+          items={[
+            { label: 'Home', href: '/' },
+            { label: 'Scholarships', href: '/scholarships' },
+            { label: scholarship.title, href: `/scholarships/${scholarship.id}` },
+          ]}
+          className="px-0 mb-6"
+        />
 
         <div className="bg-elimux-card rounded-2xl p-6 md:p-8 border border-border">
           <div className="flex items-start justify-between gap-4 mb-4">

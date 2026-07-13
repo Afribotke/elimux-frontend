@@ -5,7 +5,9 @@ import ProgramCard from '@/components/ProgramCard'
 import DetailActions from '@/components/DetailActions'
 import TrackPageView from '@/components/TrackPageView'
 import AccreditationStatusBadge from '@/components/AccreditationStatusBadge'
-import { MapPin, Users, Globe, Star, CheckCircle, ArrowLeft, GraduationCap, ShieldCheck, FileText } from 'lucide-react'
+import BackButton from '@/components/BackButton'
+import Breadcrumbs from '@/components/Breadcrumbs'
+import { MapPin, Users, Globe, Star, CheckCircle, GraduationCap, ShieldCheck, FileText } from 'lucide-react'
 
 interface InstitutionAccreditationJoinRow {
   id: string
@@ -79,13 +81,15 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
     <main className="min-h-screen py-12 px-4">
       <TrackPageView eventType="page_view" metadata={{ path: `/institutions/${id}`, institution_id: id }} />
       <div className="max-w-4xl mx-auto">
-        <Link
-          href="/institutions"
-          className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          All Institutions
-        </Link>
+        <BackButton fallbackHref="/institutions" label="All Institutions" className="mb-2" />
+        <Breadcrumbs
+          items={[
+            { label: 'Home', href: '/' },
+            { label: 'Institutions', href: '/institutions' },
+            { label: institution.name, href: `/institutions/${institution.id}` },
+          ]}
+          className="px-0 mb-6"
+        />
 
         <div className="bg-elimux-card rounded-2xl p-6 md:p-8 border border-border mb-8">
           <div className="flex items-start gap-4">

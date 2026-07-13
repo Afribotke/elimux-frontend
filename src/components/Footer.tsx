@@ -28,6 +28,13 @@ export default function Footer() {
           </a>
         )}
 
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted">
+          <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
+          <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+          <Link href="/accreditation-bodies" className="hover:text-foreground transition-colors">Accreditation Bodies</Link>
+          <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
+        </div>
+
         <div>
           <p className="text-muted text-sm mb-2">&copy; 2026 ElimuX. Discover global education opportunities.</p>
           <Link href="/institution-onboarding" className="text-sm text-primary-400 hover:text-primary-300 transition-colors">

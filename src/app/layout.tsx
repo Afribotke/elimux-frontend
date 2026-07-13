@@ -10,6 +10,7 @@ import OfflineIndicator from '@/components/OfflineIndicator'
 import PushNotificationToggle from '@/components/PushNotificationToggle'
 import BackgroundSyncManager from '@/components/BackgroundSyncManager'
 import PoweredByHeaderBadge from '@/components/PoweredByHeaderBadge'
+import DesktopNav from '@/components/DesktopNav'
 import Footer from '@/components/Footer'
 import AppLoadingScreen from '@/components/AppLoadingScreen'
 
@@ -59,6 +60,7 @@ export default function RootLayout({
                 <span className="font-bold text-foreground flex-shrink-0">ElimuX</span>
                 <PoweredByHeaderBadge />
               </div>
+              <DesktopNav />
               <div className="flex items-center gap-2">
                 <PushNotificationToggle />
                 <PointsDisplay />

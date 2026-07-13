@@ -8,8 +8,16 @@ import ProgramCard from '@/components/ProgramCard'
 import InstitutionCard from '@/components/InstitutionCard'
 import FeaturedInstitutionCard from '@/components/FeaturedInstitutionCard'
 import SponsorAdBanner from '@/components/SponsorAdBanner'
+import TrustBar from '@/components/home/TrustBar'
+import HowItWorks from '@/components/home/HowItWorks'
+import FeatureShowcase from '@/components/home/FeatureShowcase'
+import PricingTeaser from '@/components/home/PricingTeaser'
+import FAQSection from '@/components/home/FAQSection'
+import FinalCTA from '@/components/home/FinalCTA'
 import { trackEvent } from '@/lib/analytics'
 import { GraduationCap, Building2, Globe, Sparkles, TrendingUp, Award, ArrowRight } from 'lucide-react'
+
+const EXAMPLE_SEARCHES = ['Computer Science in Kenya', 'Business Administration', 'Engineering']
 
 interface StatCounts {
   programs: number
@@ -134,6 +142,19 @@ export default function HomePage() {
           </p>
           <SearchBar onSearch={handleSearch} countries={countries} categories={categories} />
 
+          <div className='flex flex-wrap items-center justify-center gap-2 mt-4 text-sm'>
+            <span className='text-muted'>Try:</span>
+            {EXAMPLE_SEARCHES.map((example) => (
+              <button
+                key={example}
+                onClick={() => handleSearch(example, '', '')}
+                className='px-3 py-1 rounded-full bg-elimux-card border border-border text-muted hover:text-primary-400 hover:border-primary-500/50 transition-colors'
+              >
+                {example}
+              </button>
+            ))}
+          </div>
+
           <div className='flex flex-col sm:flex-row items-center justify-center gap-4 mt-6'>
             <Link
               href='/programs'
@@ -153,6 +174,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <TrustBar />
 
       <section className='py-12 px-4 bg-elimux-dark border-y border-border'>
         <div className='max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6'>
@@ -227,24 +250,33 @@ export default function HomePage() {
       )}
 
       {!hasSearched && (
-        <section className='py-12 px-4 max-w-6xl mx-auto'>
-          <h2 className='text-2xl font-bold text-foreground mb-6 flex items-center gap-2'>
-            <TrendingUp className='w-6 h-6 text-primary-400' />
-            Browse by Category
-          </h2>
-          <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4'>
-            {categories.slice(0, 10).map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => handleSearch('', '', cat.id)}
-                className='p-4 rounded-xl bg-elimux-card border border-border hover:border-primary-500/50 transition-all text-left'
-              >
-                <p className='text-sm font-medium text-foreground'>{cat.name}</p>
-                <p className='text-xs text-muted mt-1'>Click to explore</p>
-              </button>
-            ))}
-          </div>
-        </section>
+        <>
+          <HowItWorks />
+          <FeatureShowcase />
+
+          <section className='py-12 px-4 max-w-6xl mx-auto'>
+            <h2 className='text-2xl font-bold text-foreground mb-6 flex items-center gap-2'>
+              <TrendingUp className='w-6 h-6 text-primary-400' />
+              Browse by Category
+            </h2>
+            <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4'>
+              {categories.slice(0, 10).map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => handleSearch('', '', cat.id)}
+                  className='p-4 rounded-xl bg-elimux-card border border-border hover:border-primary-500/50 transition-all text-left'
+                >
+                  <p className='text-sm font-medium text-foreground'>{cat.name}</p>
+                  <p className='text-xs text-muted mt-1'>Click to explore</p>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <PricingTeaser />
+          <FAQSection />
+          <FinalCTA />
+        </>
       )}
 
     </main>
