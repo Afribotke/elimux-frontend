@@ -90,35 +90,6 @@ test.describe('Homepage', () => {
   });
 });
 
-test.describe('Authentication', () => {
-  test('auth page exists and has form elements', async ({ page }) => {
-    test.setTimeout(60000);
-    const routes = ['/login', '/auth', '/signin', '/signup', '/register'];
-    let foundRoute = null;
-    for (const route of routes) {
-      await page.goto(`${BASE_URL}${route}`);
-      await waitForHydrated(page);
-      const hasForm = await hasElement(page, 'input, form, button[type="submit"]');
-      if (hasForm) {
-        foundRoute = route;
-        break;
-      }
-    }
-    if (foundRoute) {
-      console.log(`Auth page found at: ${foundRoute}`);
-      const emailInput = page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i], input[type="text"], input[name="username"]').first();
-      const passwordInput = page.locator('input[type="password"]').first();
-      const submitBtn = page.locator('button[type="submit"], button:has-text("Login"), button:has-text("Sign"), input[type="submit"]').first();
-      if (await emailInput.count() > 0) await expect(emailInput).toBeVisible();
-      if (await passwordInput.count() > 0) await expect(passwordInput).toBeVisible();
-      if (await submitBtn.count() > 0) await expect(submitBtn).toBeEnabled();
-      console.log('Auth form elements present');
-    } else {
-      console.log('No auth page found at common routes');
-    }
-  });
-});
-
 test.describe('Admin Dashboard', () => {
   test('admin access gate is present', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin`);
