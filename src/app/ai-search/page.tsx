@@ -15,7 +15,6 @@ export default function AISearchPage() {
   const [countries, setCountries] = useState<{ id: string; name: string }[]>([])
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
 
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([])
   const [careerGoal, setCareerGoal] = useState<string | null>(null)
 
   const [countryId, setCountryId] = useState('')
@@ -47,7 +46,7 @@ export default function AISearchPage() {
     setHasSearched(true)
     setError(null)
     try {
-      const result = await runAISearch(query, selectedInterests, careerGoal, {
+      const result = await runAISearch(query, [], careerGoal, {
         countryId: countryId || null,
         categoryId: categoryId || null,
         level: level || null,
@@ -61,10 +60,6 @@ export default function AISearchPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  function toggleInterest(id: string) {
-    setSelectedInterests((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]))
   }
 
   function handleCareerSelect(label: string, category: string) {
@@ -91,7 +86,7 @@ export default function AISearchPage() {
       </div>
 
       <div className="max-w-4xl mx-auto mb-10">
-        <InterestSelector selected={selectedInterests} onToggle={toggleInterest} />
+        <InterestSelector />
       </div>
 
       <div className="max-w-4xl mx-auto mb-12">
