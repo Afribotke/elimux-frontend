@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import SearchBar from '@/components/SearchBar'
+import AISearchBar from '@/components/AISearchBar'
+import { runAISearch } from '@/lib/aiSearch'
 import ProgramCard from '@/components/ProgramCard'
 import InstitutionCard from '@/components/InstitutionCard'
 import FeaturedInstitutionCard from '@/components/FeaturedInstitutionCard'
@@ -14,7 +15,6 @@ import FeatureShowcase from '@/components/home/FeatureShowcase'
 import PricingTeaser from '@/components/home/PricingTeaser'
 import FAQSection from '@/components/home/FAQSection'
 import FinalCTA from '@/components/home/FinalCTA'
-import { trackEvent } from '@/lib/analytics'
 import { GraduationCap, Building2, Globe, Sparkles, TrendingUp, Award, ArrowRight } from 'lucide-react'
 
 const EXAMPLE_SEARCHES = ['Computer Science in Kenya', 'Business Administration', 'Engineering']
@@ -27,7 +27,6 @@ interface StatCounts {
 }
 
 export default function HomePage() {
-  const [countries, setCountries] = useState<{ id: string; name: string; iso_code: string }[]>([])
   const [categories, setCategories] = useState<{ id: string; name: string; icon: string | null }[]>([])
   const [programs, setPrograms] = useState<any[]>([])
   const [institutions, setInstitutions] = useState<any[]>([])
@@ -37,19 +36,12 @@ export default function HomePage() {
 
   useEffect(() => {
     async function loadReferenceData() {
-      const { data: countriesData } = await supabase
-        .from('countries')
-        .select('id, name, iso_code')
-        .eq('is_active', true)
-        .order('name')
-
       const { data: categoriesData } = await supabase
         .from('program_categories')
         .select('id, name, icon')
         .eq('is_active', true)
         .order('name')
 
-      if (countriesData) setCountries(countriesData)
       if (categoriesData) setCategories(categoriesData)
     }
 
@@ -73,44 +65,18 @@ export default function HomePage() {
     loadStats()
   }, [])
 
-  async function handleSearch(query: string, countryId: string, categoryId: string) {
+  async function handleSearch(query: string, options?: { categoryId?: string }) {
     setLoading(true)
     setHasSearched(true)
 
     try {
-      let programsQuery = supabase
-        .from('programs')
-        .select('*, institution:institutions!inner(name, city, country:countries(name)), category:program_categories(name, color, icon)')
-        .eq('is_active', true)
-
-      if (query) programsQuery = programsQuery.ilike('name', `%${query}%`)
-      if (countryId) programsQuery = programsQuery.eq('institution.country_id', countryId)
-      if (categoryId) programsQuery = programsQuery.eq('category_id', categoryId)
-
-      const { data: programsData } = await programsQuery.limit(12)
-
-      let institutionsQuery = supabase
-        .from('institutions')
-        .select(
-          '*, type:institution_types(name, icon), country:countries(name, flag_emoji), accreditations:institution_accreditations(accreditation_status, body:accreditation_bodies(name, code, logo_url))'
-        )
-        .eq('is_active', true)
-
-      if (query) institutionsQuery = institutionsQuery.ilike('name', `%${query}%`)
-      if (countryId) institutionsQuery = institutionsQuery.eq('country_id', countryId)
-
-      const { data: institutionsData } = await institutionsQuery.limit(6)
-
-      setPrograms(programsData || [])
-      setInstitutions(institutionsData || [])
-
-      trackEvent('search', {
-        query,
-        filters: { country_id: countryId || null, category_id: categoryId || null },
-        result_count: (programsData?.length || 0) + (institutionsData?.length || 0),
-      })
+      const result = await runAISearch(query, [], null, { categoryId: options?.categoryId || null })
+      setPrograms(result.programs)
+      setInstitutions(result.institutions)
     } catch (error) {
       console.error('Search error:', error)
+      setPrograms([])
+      setInstitutions([])
     } finally {
       setLoading(false)
     }
@@ -140,14 +106,14 @@ export default function HomePage() {
           <p className='text-lg md:text-xl text-muted mb-10 max-w-2xl mx-auto'>
             Find universities, colleges, TVET institutes, and programs worldwide.
           </p>
-          <SearchBar onSearch={handleSearch} countries={countries} categories={categories} />
+          <AISearchBar onSearch={handleSearch} loading={loading} />
 
           <div className='flex flex-wrap items-center justify-center gap-2 mt-4 text-sm'>
             <span className='text-muted'>Try:</span>
             {EXAMPLE_SEARCHES.map((example) => (
               <button
                 key={example}
-                onClick={() => handleSearch(example, '', '')}
+                onClick={() => handleSearch(example)}
                 className='px-3 py-1 rounded-full bg-elimux-card border border-border text-muted hover:text-primary-400 hover:border-primary-500/50 transition-colors'
               >
                 {example}
@@ -263,7 +229,7 @@ export default function HomePage() {
               {categories.slice(0, 10).map((cat) => (
                 <button
                   key={cat.id}
-                  onClick={() => handleSearch('', '', cat.id)}
+                  onClick={() => handleSearch('', { categoryId: cat.id })}
                   className='p-4 rounded-xl bg-elimux-card border border-border hover:border-primary-500/50 transition-all text-left'
                 >
                   <p className='text-sm font-medium text-foreground'>{cat.name}</p>
