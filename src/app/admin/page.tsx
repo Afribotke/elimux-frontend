@@ -241,6 +241,7 @@ export default function AdminPage() {
           <Link href='/admin/users' className='text-primary-400 hover:text-primary-300'>Users</Link>
           <Link href='/admin/searches' className='text-primary-400 hover:text-primary-300'>Searches</Link>
           <Link href='/admin/institutions-performance' className='text-primary-400 hover:text-primary-300'>Institutions</Link>
+          <Link href='/admin/analytics' className='text-primary-400 hover:text-primary-300'>University Analytics</Link>
         </div>
       </div>
 

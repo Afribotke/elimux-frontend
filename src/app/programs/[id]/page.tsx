@@ -5,6 +5,7 @@ import DetailActions from '@/components/DetailActions'
 import { ReviewsSection } from '@/components/ReviewsSection'
 import BackButton from '@/components/BackButton'
 import Breadcrumbs from '@/components/Breadcrumbs'
+import TrackPageView from '@/components/TrackPageView'
 import { Clock, DollarSign, MapPin, BookOpen, GraduationCap, ClipboardList } from 'lucide-react'
 
 export async function generateStaticParams() {
@@ -52,6 +53,11 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
 
   return (
     <main className="min-h-screen py-12 px-4">
+      <TrackPageView
+        eventType="page_view"
+        metadata={{ path: `/programs/${id}`, program_id: id }}
+        programView={{ program_id: program.id, institution_id: program.institution?.id ?? null }}
+      />
       <div className="max-w-3xl mx-auto">
         <BackButton fallbackHref="/programs" label="All Programs" className="mb-2" />
         <Breadcrumbs

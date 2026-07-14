@@ -1021,6 +1021,86 @@ export function activateMajorSponsor(id: string, adminKey: string) {
   )
 }
 
+// Shared searches (compare / search-results sharing)
+
+export interface SharedProgramSnapshot {
+  id: string
+  name: string
+  duration_months: number | null
+  tuition_fees: number | null
+  currency: string | null
+  level: string | null
+  mode: string | null
+  institution?: { name: string; city?: string | null; country?: { name: string } | null } | null
+}
+
+export interface SharedSearchRow {
+  id: string
+  share_token: string
+  user_email: string | null
+  query_text: string | null
+  programs: SharedProgramSnapshot[]
+  view_count: number
+  last_viewed_at: string | null
+  created_at: string
+}
+
+export interface CreateSharedSearchInput {
+  program_ids: string[]
+  query?: string
+  email?: string
+}
+
+export function createSharedSearch(data: CreateSharedSearchInput) {
+  return request<{ success: boolean; token: string; shareUrl: string }>('/api/share/search', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function getSharedSearch(token: string) {
+  return request<{ success: boolean; data: SharedSearchRow }>(`/api/share/search/${encodeURIComponent(token)}`)
+}
+
+// University analytics (admin)
+
+export interface UniversityAnalyticsTopProgram {
+  program_id: string
+  name: string
+  views: number
+}
+
+export interface UniversityAnalyticsSearchTerm {
+  term: string
+  count: number
+}
+
+export interface UniversityAnalyticsRegion {
+  country: string
+  count: number
+}
+
+export interface UniversityAnalyticsTrendPoint {
+  date: string
+  count: number
+}
+
+export interface UniversityAnalytics {
+  institution_id: string
+  period_days: number
+  total_views: number
+  total_applications: number
+  conversion_rate: number
+  top_programs: UniversityAnalyticsTopProgram[]
+  top_search_terms: UniversityAnalyticsSearchTerm[]
+  regional_interest: UniversityAnalyticsRegion[]
+  views_trend: UniversityAnalyticsTrendPoint[]
+}
+
+export function getUniversityAnalytics(institutionId: string, adminKey: string) {
+  return request<{ data: UniversityAnalytics }>(`/api/analytics/university/${institutionId}`, {}, adminKey)
+}
+
 // PWA push subscriptions
 
 export function subscribePush(deviceId: string, subscription: PushSubscriptionJSON, preferences?: Record<string, unknown>) {

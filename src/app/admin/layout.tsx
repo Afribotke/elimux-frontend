@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { href: '/admin/users', label: 'Users', icon: Users, exact: false },
   { href: '/admin/searches', label: 'Searches', icon: Search, exact: false },
   { href: '/admin/institutions-performance', label: 'Institution Performance', icon: BarChart3, exact: false },
+  { href: '/admin/analytics', label: 'University Analytics', icon: BarChart3, exact: false },
 ]
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''

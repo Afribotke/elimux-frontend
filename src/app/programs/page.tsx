@@ -6,6 +6,9 @@ import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import ProgramCard from '@/components/ProgramCard';
 import ProgramCardSkeleton from '@/components/ProgramCardSkeleton';
+import { CompareProvider, useCompareSelection } from '@/components/CompareProvider';
+import CompareDrawer from '@/components/CompareDrawer';
+import { trackSearchAnalytics } from '@/lib/analytics';
 import { Loader2, Filter, Search } from 'lucide-react';
 
 interface Program {
@@ -43,6 +46,7 @@ interface FilterState {
 
 function ProgramsPageInner() {
   const searchParams = useSearchParams();
+  const { selectedIds, isSelected, canAddMore, toggle } = useCompareSelection();
 
   const [programs, setPrograms] = useState<Program[]>([]);
   const [categories, setCategories] = useState<{id: string; name: string}[]>([]);
@@ -133,6 +137,13 @@ function ProgramsPageInner() {
       // actually returns a single object for each here.
       setPrograms((data as unknown as Program[]) || []);
       setTotalCount(count || 0);
+      trackSearchAnalytics({
+        query: filters.search || undefined,
+        category_id: filters.category || undefined,
+        country_id: filters.country || undefined,
+        level: filters.level || undefined,
+        results_count: count || 0,
+      });
     }
     setLoading(false);
   }, [filters, page]);
@@ -151,7 +162,7 @@ function ProgramsPageInner() {
   const hasActiveFilters = Object.values(filters).some(v => v !== '');
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen bg-gray-50 ${selectedIds.length > 0 ? 'pb-20' : ''}`}>
       {/* Header */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -265,8 +276,14 @@ function ProgramsPageInner() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {programs.map((program) => (
-              <Link key={program.id} href={`/programs/${program.id}/`}>
-                <ProgramCard program={program} />
+              <Link key={program.id} href={`/programs/${program.id}/?from=list`}>
+                <ProgramCard
+                  program={program}
+                  compareMode
+                  compareSelected={isSelected(program.id)}
+                  compareDisabled={!canAddMore}
+                  onToggleCompare={toggle}
+                />
               </Link>
             ))}
           </div>
@@ -295,20 +312,24 @@ function ProgramsPageInner() {
           </div>
         )}
       </div>
+
+      <CompareDrawer programs={programs} />
     </div>
   );
 }
 
 export default function ProgramsPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-gray-50 flex justify-center py-24">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        </div>
-      }
-    >
-      <ProgramsPageInner />
-    </Suspense>
+    <CompareProvider>
+      <Suspense
+        fallback={
+          <div className="min-h-screen bg-gray-50 flex justify-center py-24">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          </div>
+        }
+      >
+        <ProgramsPageInner />
+      </Suspense>
+    </CompareProvider>
   );
 }

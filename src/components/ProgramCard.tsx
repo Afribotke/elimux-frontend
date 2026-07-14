@@ -1,4 +1,8 @@
-import { Clock, DollarSign, MapPin, BookOpen } from 'lucide-react'
+'use client'
+
+import { useState } from 'react'
+import { Clock, DollarSign, MapPin, BookOpen, Check, Share2 } from 'lucide-react'
+import ShareModal from './ShareModal'
 
 interface ProgramCardProps {
   program: {
@@ -21,13 +25,80 @@ interface ProgramCardProps {
       icon: string | null
     } | null
   }
+  // Compare-selection checkbox, opt-in per caller (only wired up on the
+  // Explore Programs page) - every other ProgramCard usage is unaffected
+  // when these are omitted.
+  compareMode?: boolean
+  compareSelected?: boolean
+  compareDisabled?: boolean
+  onToggleCompare?: (id: string) => void
 }
 
-export default function ProgramCard({ program }: ProgramCardProps) {
+export default function ProgramCard({
+  program,
+  compareMode = false,
+  compareSelected = false,
+  compareDisabled = false,
+  onToggleCompare,
+}: ProgramCardProps) {
   const categoryColor = program.category?.color || '#FFC107'
+  const [shareOpen, setShareOpen] = useState(false)
 
   return (
-    <div className="bg-elimux-card rounded-xl p-5 border border-border hover:border-primary-500/50 transition-all hover:shadow-lg hover:shadow-primary-500/10">
+    <div className="relative bg-elimux-card rounded-xl p-5 border border-border hover:border-primary-500/50 transition-all hover:shadow-lg hover:shadow-primary-500/10">
+      <div
+        className="absolute top-3 left-3 z-10"
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setShareOpen(true)}
+          aria-label="Share this program"
+          title="Share"
+          className="w-6 h-6 rounded-md border border-border bg-elimux-dark text-muted hover:text-foreground hover:border-primary-500/50 flex items-center justify-center transition-colors"
+        >
+          <Share2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      <ShareModal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        item={{
+          name: program.name,
+          description: program.description,
+          url: typeof window !== 'undefined' ? `${window.location.origin}/programs/${program.id}/` : '',
+          type: 'program',
+        }}
+      />
+
+      {compareMode && (
+        <div
+          className="absolute top-3 right-3 z-10"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+          }}
+        >
+          <button
+            type="button"
+            disabled={compareDisabled && !compareSelected}
+            onClick={() => onToggleCompare?.(program.id)}
+            aria-pressed={compareSelected}
+            aria-label={compareSelected ? 'Remove from comparison' : 'Add to comparison'}
+            className={`w-6 h-6 rounded-md border flex items-center justify-center transition-colors ${
+              compareSelected
+                ? 'bg-primary-600 border-primary-600 text-white'
+                : 'bg-elimux-dark border-border text-transparent hover:border-primary-500/50'
+            } ${compareDisabled && !compareSelected ? 'opacity-40 cursor-not-allowed' : ''}`}
+          >
+            {compareSelected && <Check className="w-4 h-4" />}
+          </button>
+        </div>
+      )}
       {/* Category Badge */}
       {program.category && (
         <div
