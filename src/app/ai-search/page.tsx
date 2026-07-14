@@ -62,10 +62,8 @@ export default function AISearchPage() {
     }
   }
 
-  function handleCareerSelect(label: string, category: string) {
+  function handleCareerSelect(label: string) {
     setCareerGoal(label)
-    const match = categories.find((c) => c.name.toLowerCase() === category.toLowerCase())
-    if (match) setCategoryId(match.id)
   }
 
   return (

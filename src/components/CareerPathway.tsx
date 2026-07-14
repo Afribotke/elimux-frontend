@@ -4,18 +4,18 @@ import { useState } from 'react'
 import { Target, ChevronRight } from 'lucide-react'
 
 const CAREER_PATHS = [
-  { id: 'doctor', label: 'Doctor', category: 'Medicine', description: 'Medical degree programs, typically 5-6 years' },
-  { id: 'software-engineer', label: 'Software Engineer', category: 'Computer Science', description: 'Computer science or software engineering degrees' },
-  { id: 'lawyer', label: 'Lawyer', category: 'Law', description: 'Law degree (LLB) plus bar admission' },
-  { id: 'entrepreneur', label: 'Entrepreneur', category: 'Business', description: 'Business, finance, or management programs' },
-  { id: 'civil-engineer', label: 'Civil Engineer', category: 'Engineering', description: 'Civil or structural engineering degrees' },
-  { id: 'teacher', label: 'Teacher', category: 'Education', description: 'Education degrees with a teaching specialization' },
-  { id: 'nurse', label: 'Nurse', category: 'Medicine', description: 'Nursing diploma or degree programs' },
-  { id: 'graphic-designer', label: 'Graphic Designer', category: 'Arts & Design', description: 'Design, fine arts, or visual communication programs' },
+  { id: 'doctor', label: 'Doctor', description: 'Medical degree programs, typically 5-6 years' },
+  { id: 'software-engineer', label: 'Software Engineer', description: 'Computer science or software engineering degrees' },
+  { id: 'lawyer', label: 'Lawyer', description: 'Law degree (LLB) plus bar admission' },
+  { id: 'entrepreneur', label: 'Entrepreneur', description: 'Business, finance, or management programs' },
+  { id: 'civil-engineer', label: 'Civil Engineer', description: 'Civil or structural engineering degrees' },
+  { id: 'teacher', label: 'Teacher', description: 'Education degrees with a teaching specialization' },
+  { id: 'nurse', label: 'Nurse', description: 'Nursing diploma or degree programs' },
+  { id: 'graphic-designer', label: 'Graphic Designer', description: 'Design, fine arts, or visual communication programs' },
 ]
 
 interface CareerPathwayProps {
-  onSelect: (careerLabel: string, category: string) => void
+  onSelect: (careerLabel: string) => void
 }
 
 export default function CareerPathway({ onSelect }: CareerPathwayProps) {
@@ -23,7 +23,7 @@ export default function CareerPathway({ onSelect }: CareerPathwayProps) {
 
   function handleSelect(path: (typeof CAREER_PATHS)[number]) {
     setSelectedId(path.id)
-    onSelect(path.label, path.category)
+    onSelect(path.label)
   }
 
   return (
