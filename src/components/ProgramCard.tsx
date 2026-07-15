@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Clock, DollarSign, MapPin, BookOpen, Check, Share2 } from 'lucide-react'
 import ShareModal from './ShareModal'
+import ProgramVerificationBadge from './ProgramVerificationBadge'
 
 interface ProgramCardProps {
   program: {
@@ -14,6 +15,8 @@ interface ProgramCardProps {
     currency: string | null
     level: string | null
     mode: string | null
+    is_ai_generated?: boolean | null
+    is_verified?: boolean | null
     institution?: {
       name: string
       city: string | null
@@ -99,14 +102,22 @@ export default function ProgramCard({
           </button>
         </div>
       )}
-      {/* Category Badge */}
-      {program.category && (
-        <div
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium mb-3"
-          style={{ backgroundColor: categoryColor + '20', color: categoryColor }}
-        >
-          <BookOpen className="w-3 h-3" />
-          {program.category.name}
+      {/* Category + Verification Badges */}
+      {(program.category || program.is_verified || program.is_ai_generated) && (
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          {program.category && (
+            <div
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+              style={{ backgroundColor: categoryColor + '20', color: categoryColor }}
+            >
+              <BookOpen className="w-3 h-3" />
+              {program.category.name}
+            </div>
+          )}
+          <ProgramVerificationBadge
+            isVerified={!!program.is_verified}
+            isAiGenerated={!!program.is_ai_generated}
+          />
         </div>
       )}
 

@@ -21,6 +21,8 @@ interface Program {
   currency: string;
   level: string;
   mode: string;
+  is_ai_generated: boolean;
+  is_verified: boolean;
   institution: {
     id: string;
     name: string;
@@ -111,7 +113,7 @@ function ProgramsPageInner() {
     let query = supabase
       .from('programs')
       .select(
-        'id,name,slug,description,duration_months,tuition_fees,currency,level,mode,institution:institutions!inner(id,name,city,country:countries(name,flag_emoji)),category:program_categories(id,name,color,icon)',
+        'id,name,slug,description,duration_months,tuition_fees,currency,level,mode,is_ai_generated,is_verified,institution:institutions!inner(id,name,city,country:countries(name,flag_emoji)),category:program_categories(id,name,color,icon)',
         { count: 'exact' }
       )
       .eq('is_active', true)

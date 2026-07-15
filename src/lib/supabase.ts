@@ -76,6 +76,8 @@ export type Tables = {
     requirements: string | null
     career_outcomes: string | null
     is_active: boolean
+    is_ai_generated: boolean
+    is_verified: boolean
     created_at: string
     updated_at: string
   }
