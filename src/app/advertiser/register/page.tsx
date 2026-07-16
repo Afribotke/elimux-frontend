@@ -5,7 +5,7 @@
 // /advertiser/register
 // ============================================
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, CheckCircle, Building2 } from 'lucide-react'
@@ -25,6 +25,10 @@ export default function AdvertiserRegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [status, setStatus] = useState<'form' | 'submitted' | 'confirm_email'>('form')
+  // undefined while checking - avoids flashing the password fields before we
+  // know whether this visitor already has a session (e.g. redirected here by
+  // the dashboard because they're logged in but have no advertiser profile).
+  const [hasSession, setHasSession] = useState<boolean | undefined>(undefined)
 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -43,6 +47,15 @@ export default function AdvertiserRegisterPage() {
     },
   })
 
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setHasSession(!!session)
+      if (session?.user.email) {
+        setFormData((prev) => ({ ...prev, company_email: session.user.email! }))
+      }
+    })
+  }, [])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     if (name.startsWith('billing_')) {
@@ -59,6 +72,31 @@ export default function AdvertiserRegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    // Already logged in (e.g. redirected here by the dashboard for an
+    // account with no advertiser profile yet) - just create the profile
+    // against the existing session. Calling signUp() again here would hit
+    // Supabase's anti-enumeration behavior: it returns a dummy user with no
+    // session instead of erroring, which looked like "needs confirmation"
+    // for an account that was already confirmed and logged in.
+    if (hasSession) {
+      setLoading(true)
+      try {
+        const response = await advertiserFetch('/api/advertiser/register', {
+          method: 'POST',
+          body: JSON.stringify(formData),
+        })
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.error || 'Failed to register')
+        setStatus('submitted')
+        setTimeout(() => router.push('/advertiser/dashboard'), 2000)
+      } catch (err: any) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
 
     if (password !== confirmPassword) {
       setError('Passwords do not match.')
@@ -179,41 +217,47 @@ export default function AdvertiserRegisterPage() {
                   type="email"
                   name="company_email"
                   required
+                  readOnly={hasSession}
                   value={formData.company_email}
                   onChange={handleChange}
                   placeholder="ads@university.edu"
-                  className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                  className={`w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500 ${hasSession ? 'opacity-60 cursor-not-allowed' : ''}`}
                 />
+                {hasSession && <p className="text-xs text-muted mt-1">Tied to your logged-in account.</p>}
               </div>
 
-              <div>
-                <label className="text-sm text-muted mb-1 block flex items-center gap-2">
-                  <Lock className="w-4 h-4" /> Password *
-                </label>
-                <input
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
-                />
-                <p className="text-xs text-muted mt-1">At least 8 characters, with upper/lowercase letters and a number.</p>
-              </div>
+              {!hasSession && (
+                <>
+                  <div>
+                    <label className="text-sm text-muted mb-1 block flex items-center gap-2">
+                      <Lock className="w-4 h-4" /> Password *
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      autoComplete="new-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                    />
+                    <p className="text-xs text-muted mt-1">At least 8 characters, with upper/lowercase letters and a number.</p>
+                  </div>
 
-              <div>
-                <label className="text-sm text-muted mb-1 block flex items-center gap-2">
-                  <Lock className="w-4 h-4" /> Confirm Password *
-                </label>
-                <input
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
-                />
-              </div>
+                  <div>
+                    <label className="text-sm text-muted mb-1 block flex items-center gap-2">
+                      <Lock className="w-4 h-4" /> Confirm Password *
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                    />
+                  </div>
+                </>
+              )}
 
               <div>
                 <label className="text-sm text-muted mb-1 block">Phone Number</label>
