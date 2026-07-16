@@ -8,6 +8,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { advertiserFetch, ADVERTISER_LOGIN_PATH } from '@/lib/advertiserAuth';
+import AdvertiserNav from '@/components/AdvertiserNav';
 
 interface Payment {
     id: string;
@@ -39,19 +41,15 @@ export default function BillingPage() {
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
-                router.push('/login');
+                router.push(ADVERTISER_LOGIN_PATH);
                 return;
             }
 
-            const statsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advertiser/stats`, {
-                headers: { 'Authorization': `Bearer ${session.access_token}` }
-            });
+            const statsRes = await advertiserFetch('/api/advertiser/stats');
             const statsData = await statsRes.json();
             if (statsData.success) setBalance(statsData.data.balance);
 
-            const paymentsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advertiser/payments/history`, {
-                headers: { 'Authorization': `Bearer ${session.access_token}` }
-            });
+            const paymentsRes = await advertiserFetch('/api/advertiser/payments/history');
             const paymentsData = await paymentsRes.json();
             if (paymentsData.success) setPayments(paymentsData.data || []);
         } catch (err: any) {
@@ -71,18 +69,8 @@ export default function BillingPage() {
         setError('');
 
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                setError('Not authenticated');
-                return;
-            }
-
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advertiser/payments/paystack/create`, {
+            const response = await advertiserFetch('/api/advertiser/payments/paystack/create', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`
-                },
                 body: JSON.stringify({
                     amount: paystackAmount,
                     currency: 'usd'
@@ -115,18 +103,8 @@ export default function BillingPage() {
         setError('');
 
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                setError('Not authenticated');
-                return;
-            }
-
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advertiser/payments/mpesa/create`, {
+            const response = await advertiserFetch('/api/advertiser/payments/mpesa/create', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`
-                },
                 body: JSON.stringify({
                     amount: mpesaAmount,
                     phone_number: mpesaPhone
@@ -157,26 +135,21 @@ export default function BillingPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="min-h-screen bg-elimux-dark flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4">
-            <div className="max-w-6xl mx-auto">
+        <div className="min-h-screen bg-elimux-dark">
+            <AdvertiserNav />
+            <div className="max-w-6xl mx-auto px-4 pb-8">
                 <div className="flex justify-between items-center mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Billing & Payments</h1>
-                        <p className="text-gray-600 mt-1">Manage your advertising budget</p>
+                        <h1 className="text-3xl font-bold text-foreground">Billing & Payments</h1>
+                        <p className="text-muted mt-1">Manage your advertising budget</p>
                     </div>
-                    <button
-                        onClick={() => router.push('/advertiser/dashboard')}
-                        className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50"
-                    >
-                        Back to Dashboard
-                    </button>
                 </div>
 
                 {error && (
