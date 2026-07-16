@@ -60,7 +60,9 @@ export default function AdvertiserDashboardPage() {
 
       const profileRes = await advertiserFetch('/api/advertiser/profile')
 
-      if (profileRes.status === 404) {
+      // advertiserAuth middleware 403s (not 404s) when no advertisers row
+      // exists for this user - that's the real "not registered yet" signal.
+      if (profileRes.status === 403 || profileRes.status === 404) {
         router.push('/advertiser/register')
         return
       }
