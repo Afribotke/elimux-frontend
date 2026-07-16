@@ -59,18 +59,24 @@ export default function AdvertiserDashboardPage() {
       }
 
       const profileRes = await advertiserFetch('/api/advertiser/profile')
+      const profileData = await profileRes.json()
 
-      // advertiserAuth middleware 403s (not 404s) when no advertisers row
-      // exists for this user - that's the real "not registered yet" signal.
-      if (profileRes.status === 403 || profileRes.status === 404) {
+      // advertiserAuth middleware 403s (not 404s) for two different reasons -
+      // "Not an advertiser" (no advertisers row - go register) vs "not
+      // approved" (row exists, legitimately pending/rejected - NOT a reason
+      // to send them back to the registration form). Only the first should
+      // redirect; the message text is the only way to tell them apart.
+      if (profileRes.status === 404 || (profileRes.status === 403 && profileData.error === 'Forbidden - Not an advertiser')) {
         router.push('/advertiser/register')
         return
       }
 
-      const profileData = await profileRes.json()
-      setProfileStatus(profileData.data?.status || 'pending')
+      // 200 responses carry the status under data.status; the 403
+      // "not approved" case carries it directly on the error body instead.
+      const currentStatus = profileData.data?.status || profileData.status || 'pending'
+      setProfileStatus(currentStatus)
 
-      if (profileData.data?.status !== 'approved') {
+      if (currentStatus !== 'approved') {
         setLoading(false)
         return
       }
