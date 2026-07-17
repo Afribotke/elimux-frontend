@@ -71,7 +71,7 @@ export default function BillingPage() {
 
   const handlePayment = async () => {
     if (amount < 10) {
-      setError('Minimum top-up is $10')
+      setError('Minimum top-up is KES 10')
       return
     }
 
@@ -125,7 +125,7 @@ export default function BillingPage() {
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-elimux-card border border-border rounded-xl p-6">
               <div className="text-sm text-muted mb-1">Current Balance</div>
-              <div className="text-4xl font-bold text-foreground">${balance.toFixed(2)}</div>
+              <div className="text-4xl font-bold text-foreground">KES {balance.toFixed(2)}</div>
               <div className="text-sm text-muted mt-1">Available for campaigns</div>
             </div>
 
@@ -136,7 +136,7 @@ export default function BillingPage() {
               </h3>
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm text-muted mb-2 block">Amount (USD)</label>
+                  <label className="text-sm text-muted mb-2 block">Amount (KES)</label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {[25, 50, 100, 250, 500].map((amt) => (
                       <button
@@ -149,7 +149,7 @@ export default function BillingPage() {
                             : 'border-border text-muted'
                         }`}
                       >
-                        ${amt}
+                        KES {amt}
                       </button>
                     ))}
                   </div>
@@ -166,7 +166,7 @@ export default function BillingPage() {
                   disabled={payLoading}
                   className="w-full bg-primary-600 hover:bg-primary-700 text-elimux-dark font-semibold py-2 rounded-lg disabled:opacity-50"
                 >
-                  {payLoading ? 'Processing...' : `Pay $${amount}`}
+                  {payLoading ? 'Processing...' : `Pay KES ${amount}`}
                 </button>
               </div>
             </div>
@@ -203,7 +203,7 @@ export default function BillingPage() {
                           <td className="px-6 py-4 text-sm text-foreground">
                             {new Date(payment.created_at).toLocaleDateString()}
                           </td>
-                          <td className="px-6 py-4 text-sm font-medium text-foreground">${payment.amount.toFixed(2)}</td>
+                          <td className="px-6 py-4 text-sm font-medium text-foreground">KES {payment.amount.toFixed(2)}</td>
                           <td className="px-6 py-4">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}>
                               {payment.status}
