@@ -38,7 +38,7 @@ export default function BillingPage() {
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [amount, setAmount] = useState(50)
+  const [amount, setAmount] = useState(500)
   const [payLoading, setPayLoading] = useState(false)
 
   useEffect(() => {
@@ -70,8 +70,8 @@ export default function BillingPage() {
   }
 
   const handlePayment = async () => {
-    if (amount < 10) {
-      setError('Minimum top-up is KES 10')
+    if (amount < 100) {
+      setError('Minimum top-up is KES 100')
       return
     }
 
@@ -138,7 +138,7 @@ export default function BillingPage() {
                 <div>
                   <label className="text-sm text-muted mb-2 block">Amount (KES)</label>
                   <div className="flex flex-wrap gap-2 mb-2">
-                    {[25, 50, 100, 250, 500].map((amt) => (
+                    {[500, 1000, 5000, 10000].map((amt) => (
                       <button
                         key={amt}
                         type="button"
@@ -149,13 +149,13 @@ export default function BillingPage() {
                             : 'border-border text-muted'
                         }`}
                       >
-                        KES {amt}
+                        KES {amt.toLocaleString()}
                       </button>
                     ))}
                   </div>
                   <input
                     type="number"
-                    min={10}
+                    min={100}
                     value={amount}
                     onChange={(e) => setAmount(parseInt(e.target.value) || 0)}
                     className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
@@ -166,7 +166,7 @@ export default function BillingPage() {
                   disabled={payLoading}
                   className="w-full bg-primary-600 hover:bg-primary-700 text-elimux-dark font-semibold py-2 rounded-lg disabled:opacity-50"
                 >
-                  {payLoading ? 'Processing...' : `Pay KES ${amount}`}
+                  {payLoading ? 'Processing...' : `Pay KES ${amount.toLocaleString()}`}
                 </button>
               </div>
             </div>
