@@ -24,13 +24,12 @@ interface DashboardStats {
 
 interface Campaign {
   id: string
-  name: string
+  title: string
   status: string
-  campaign_type: string
+  placement: string
   budget: number
-  total_spent: number
-  total_impressions: number
-  total_clicks: number
+  impressions: number
+  clicks: number
   start_date: string
   end_date: string
   created_at: string
@@ -234,7 +233,6 @@ export default function AdvertiserDashboardPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase">Campaign</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase">Budget</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase">Spent</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase">Impressions</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase">Clicks</th>
                   </tr>
@@ -243,8 +241,8 @@ export default function AdvertiserDashboardPage() {
                   {campaigns.map((campaign) => (
                     <tr key={campaign.id} className="hover:bg-elimux-dark/50">
                       <td className="px-6 py-4">
-                        <div className="font-medium text-foreground">{campaign.name}</div>
-                        <div className="text-sm text-muted">{campaign.campaign_type.replace('_', ' ')}</div>
+                        <div className="font-medium text-foreground">{campaign.title}</div>
+                        <div className="text-sm text-muted">{campaign.placement.replace('_', ' ')}</div>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}>
@@ -252,9 +250,8 @@ export default function AdvertiserDashboardPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-foreground">${campaign.budget.toFixed(2)}</td>
-                      <td className="px-6 py-4 text-sm text-foreground">${campaign.total_spent.toFixed(2)}</td>
-                      <td className="px-6 py-4 text-sm text-foreground">{campaign.total_impressions.toLocaleString()}</td>
-                      <td className="px-6 py-4 text-sm text-foreground">{campaign.total_clicks.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-sm text-foreground">{campaign.impressions.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-sm text-foreground">{campaign.clicks.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
