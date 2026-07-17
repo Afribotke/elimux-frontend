@@ -140,7 +140,7 @@ export default function CampaignsListPage() {
                           {campaign.status.replace('_', ' ')}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-foreground">${campaign.budget.toFixed(2)}</td>
+                      <td className="px-6 py-4 text-sm text-foreground">KES {campaign.budget.toFixed(2)}</td>
                       <td className="px-6 py-4 text-sm text-foreground">{campaign.impressions.toLocaleString()}</td>
                       <td className="px-6 py-4 text-sm text-foreground">{campaign.clicks.toLocaleString()}</td>
                     </tr>

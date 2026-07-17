@@ -183,7 +183,7 @@ function CampaignDetailContent() {
             <div className="text-sm text-muted mb-1 flex items-center gap-2">
               <Wallet className="w-4 h-4" /> Budget
             </div>
-            <div className="text-2xl font-bold text-foreground">${campaign.budget.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-foreground">KES {campaign.budget.toFixed(2)}</div>
           </div>
           <div className="bg-elimux-card border border-border rounded-xl p-6">
             <div className="text-sm text-muted mb-1 flex items-center gap-2">

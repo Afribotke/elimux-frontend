@@ -99,7 +99,7 @@ export default function CreateCampaignPage() {
     if (!formData.budget || Number.isNaN(budgetNum) || budgetNum <= 0) {
       errors.budget = 'Enter a budget greater than 0.'
     } else if (budgetNum > balance) {
-      errors.budget = `Budget exceeds your available balance ($${balance.toFixed(2)}).`
+      errors.budget = `Budget exceeds your available balance (KES ${balance.toFixed(2)}).`
     }
 
     const durationNum = Number(formData.duration_days)
@@ -165,7 +165,7 @@ export default function CreateCampaignPage() {
             <Megaphone className="w-7 h-7 text-primary-400" />
             Create Campaign
           </h1>
-          <p className="text-muted mt-1">Available balance: ${balance.toFixed(2)}</p>
+          <p className="text-muted mt-1">Available balance: KES {balance.toFixed(2)}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -257,7 +257,7 @@ export default function CreateCampaignPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="text-sm text-muted mb-1 block flex items-center gap-2">
-                  <Wallet className="w-4 h-4" /> Budget (USD) *
+                  <Wallet className="w-4 h-4" /> Budget (KES) *
                 </label>
                 <input
                   type="number"
@@ -374,7 +374,7 @@ export default function CreateCampaignPage() {
                 <div className="flex justify-between">
                   <span className="text-muted">Budget</span>
                   <span className="text-foreground font-medium">
-                    {formData.budget ? `$${Number(formData.budget).toFixed(2)}` : '—'}
+                    {formData.budget ? `KES ${Number(formData.budget).toFixed(2)}` : '—'}
                   </span>
                 </div>
                 <div className="flex justify-between">

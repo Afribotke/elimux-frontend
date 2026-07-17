@@ -182,12 +182,12 @@ export default function AdvertiserDashboardPage() {
           <div id="analytics" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="bg-elimux-card rounded-xl border border-border p-6">
               <div className="text-sm text-muted mb-1">Account Balance</div>
-              <div className="text-2xl font-bold text-foreground">${stats.balance.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-foreground">KES {stats.balance.toFixed(2)}</div>
               <div className="text-xs text-elimux-success mt-1">Available for campaigns</div>
             </div>
             <div className="bg-elimux-card rounded-xl border border-border p-6">
               <div className="text-sm text-muted mb-1">Total Spent</div>
-              <div className="text-2xl font-bold text-foreground">${stats.total_spent.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-foreground">KES {stats.total_spent.toFixed(2)}</div>
               <div className="text-xs text-muted mt-1">Lifetime spending</div>
             </div>
             <div className="bg-elimux-card rounded-xl border border-border p-6">
@@ -249,7 +249,7 @@ export default function AdvertiserDashboardPage() {
                           {campaign.status.replace('_', ' ')}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-foreground">${campaign.budget.toFixed(2)}</td>
+                      <td className="px-6 py-4 text-sm text-foreground">KES {campaign.budget.toFixed(2)}</td>
                       <td className="px-6 py-4 text-sm text-foreground">{campaign.impressions.toLocaleString()}</td>
                       <td className="px-6 py-4 text-sm text-foreground">{campaign.clicks.toLocaleString()}</td>
                     </tr>
