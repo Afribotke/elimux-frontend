@@ -2,11 +2,19 @@
 
 // ============================================
 // ELIMUX AD PORTAL - CAMPAIGN DETAIL & ANALYTICS
-// /advertiser/campaigns/[id]
+// /advertiser/campaigns/detail?id=...
+//
+// A query param, not a [id] dynamic segment - this site is a full static
+// export (output: 'export'), which requires generateStaticParams() to
+// enumerate every value of a dynamic segment at build time. Campaigns are
+// created continuously by advertisers at runtime, so a newly created one
+// wouldn't have a page until the next full site rebuild. The rest of the
+// advertiser portal already avoids this by using static single-segment
+// routes with client-side data fetching - this follows the same pattern.
 // ============================================
 
-import { useState, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Eye, MousePointerClick, Percent, Wallet, ArrowLeft } from 'lucide-react'
 import { advertiserFetch, ADVERTISER_LOGIN_PATH } from '@/lib/advertiserAuth'
 import { supabase } from '@/lib/supabase'
@@ -50,10 +58,10 @@ const getStatusColor = (status: string) => {
   return colors[status] || 'bg-muted/20 text-muted'
 }
 
-export default function CampaignDetailPage() {
+function CampaignDetailContent() {
   const router = useRouter()
-  const params = useParams()
-  const campaignId = params.id as string
+  const searchParams = useSearchParams()
+  const campaignId = searchParams.get('id') || ''
 
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [analytics, setAnalytics] = useState<Analytics | null>(null)
@@ -80,6 +88,11 @@ export default function CampaignDetailPage() {
 
   useEffect(() => {
     const load = async () => {
+      if (!campaignId) {
+        setError('No campaign specified')
+        setLoading(false)
+        return
+      }
       try {
         const {
           data: { session },
@@ -238,5 +251,13 @@ export default function CampaignDetailPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CampaignDetailPage() {
+  return (
+    <Suspense fallback={null}>
+      <CampaignDetailContent />
+    </Suspense>
   )
 }
