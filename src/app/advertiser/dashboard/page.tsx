@@ -76,7 +76,7 @@ export default function AdvertiserDashboardPage() {
       const currentStatus = profileData.data?.status || profileData.status || 'pending'
       setProfileStatus(currentStatus)
 
-      if (currentStatus !== 'approved') {
+      if (currentStatus !== 'active') {
         setLoading(false)
         return
       }
@@ -132,7 +132,9 @@ export default function AdvertiserDashboardPage() {
     )
   }
 
-  if (profileStatus === 'rejected') {
+  // advertisers.status has no dedicated 'rejected' value - a suspended
+  // account covers both "rejected at review" and "suspended after approval".
+  if (profileStatus === 'suspended') {
     return (
       <div className="min-h-screen bg-elimux-dark py-12 px-4">
         <div className="max-w-2xl mx-auto text-center">
@@ -140,8 +142,8 @@ export default function AdvertiserDashboardPage() {
             <div className="w-16 h-16 bg-elimux-danger/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <XCircle className="w-8 h-8 text-elimux-danger" />
             </div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">Application Rejected</h2>
-            <p className="text-muted mb-4">Your advertiser application was not approved. Please contact support.</p>
+            <h2 className="text-2xl font-bold text-foreground mb-2">Account Suspended</h2>
+            <p className="text-muted mb-4">Your advertiser account is suspended. Please contact support.</p>
             <button
               onClick={() => router.push('/contact')}
               className="bg-primary-600 hover:bg-primary-700 text-elimux-dark font-semibold px-6 py-2 rounded-lg"
