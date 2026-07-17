@@ -103,8 +103,8 @@ export default function CreateCampaignPage() {
     }
 
     const durationNum = Number(formData.duration_days)
-    if (!formData.duration_days || !Number.isInteger(durationNum) || durationNum <= 0) {
-      errors.duration_days = 'Enter a whole number of days greater than 0.'
+    if (!formData.duration_days || !Number.isInteger(durationNum) || durationNum < 7 || durationNum > 30) {
+      errors.duration_days = 'Enter a whole number of days between 7 and 30.'
     }
 
     if (formData.start_date && formData.end_date && formData.end_date < formData.start_date) {
@@ -277,13 +277,15 @@ export default function CreateCampaignPage() {
                 <input
                   type="number"
                   name="duration_days"
-                  min={1}
+                  min={7}
+                  max={30}
                   step="1"
                   value={formData.duration_days}
                   onChange={handleChange}
                   placeholder="7"
                   className={inputClass('duration_days')}
                 />
+                <p className="text-xs text-muted mt-1">Between 7 and 30 days.</p>
                 {fieldErrors.duration_days && <p className="text-xs text-elimux-danger mt-1">{fieldErrors.duration_days}</p>}
               </div>
             </div>
