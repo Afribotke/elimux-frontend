@@ -126,7 +126,11 @@ export default function CampaignsListPage() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {campaigns.map((campaign) => (
-                    <tr key={campaign.id} className="hover:bg-elimux-dark/50">
+                    <tr
+                      key={campaign.id}
+                      className="hover:bg-elimux-dark/50 cursor-pointer"
+                      onClick={() => router.push(`/advertiser/campaigns/${campaign.id}`)}
+                    >
                       <td className="px-6 py-4">
                         <div className="font-medium text-foreground">{campaign.title}</div>
                         <div className="text-sm text-muted">{campaign.placement.replace('_', ' ')}</div>
