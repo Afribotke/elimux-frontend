@@ -15,7 +15,9 @@ import AdvertiserNav from '@/components/AdvertiserNav'
 interface Payment {
   id: string
   amount: number
-  status: 'pending' | 'completed' | 'failed' | 'refunded'
+  // Verified against the live ad_payments_status_check constraint -
+  // 'completed' is rejected, 'paid' is the accepted value.
+  status: 'pending' | 'paid' | 'failed'
   paystack_reference?: string
   paid_at?: string
   created_at: string
@@ -24,9 +26,8 @@ interface Payment {
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
     pending: 'bg-elimux-warning/10 text-elimux-warning',
-    completed: 'bg-elimux-success/10 text-elimux-success',
+    paid: 'bg-elimux-success/10 text-elimux-success',
     failed: 'bg-elimux-danger/10 text-elimux-danger',
-    refunded: 'bg-muted/20 text-muted',
   }
   return colors[status] || 'bg-muted/20 text-muted'
 }
