@@ -1,500 +1,391 @@
-'use client';
+'use client'
 
 // ============================================
-// ELIMUX AD PORTAL - CREATE CAMPAIGN WIZARD
+// ELIMUX AD PORTAL - CREATE CAMPAIGN
 // /advertiser/campaigns/new
 // ============================================
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Image as ImageIcon, Link2, Megaphone, Calendar, Wallet } from 'lucide-react'
+import { advertiserFetch } from '@/lib/advertiserAuth'
+import AdvertiserNav from '@/components/AdvertiserNav'
 
-const CAMPAIGN_TYPES = [
-    { value: 'banner', label: 'Banner Ad', description: 'Display banner on homepage or search', basePrice: 0.50 },
-    { value: 'featured_listing', label: 'Featured Listing', description: 'Highlight your institution', basePrice: 0.80 },
-    { value: 'sponsored_program', label: 'Sponsored Program', description: 'Promote specific courses', basePrice: 0.90 },
-    { value: 'search_sponsored', label: 'Search Sponsored', description: 'Top of search results', basePrice: 1.00 },
-    { value: 'homepage_hero', label: 'Homepage Hero', description: 'Main banner (premium)', basePrice: 2.00 }
-];
+const PLACEMENTS = [
+  { value: 'ribbon', label: 'Ribbon', description: 'Slim banner strip' },
+  { value: 'homepage_hero', label: 'Homepage Hero', description: 'Main banner on the homepage (premium)' },
+  { value: 'search_inline', label: 'Search Inline', description: 'Inline placement within search results' },
+  { value: 'institution_sidebar', label: 'Institution Sidebar', description: 'Sidebar on institution detail pages' },
+  { value: 'scholarship_banner', label: 'Scholarship Banner', description: 'Banner on scholarship pages' },
+] as const
 
-const BILLING_MODELS = [
-    { value: 'cpc', label: 'Pay Per Click', description: 'Pay only when clicked' },
-    { value: 'cpm', label: 'Pay Per 1000 Views', description: 'Pay per 1000 impressions' },
-    { value: 'flat_fee', label: 'Flat Fee', description: 'Fixed price for duration' }
-];
+type Placement = (typeof PLACEMENTS)[number]['value']
 
-const TARGET_AUDIENCES = [
-    { value: 'all', label: 'All Visitors' },
-    { value: 'students', label: 'Students Only' },
-    { value: 'parents', label: 'Parents / Guardians' },
-    { value: 'agents', label: 'Education Agents' }
-];
+interface FormData {
+  title: string
+  description: string
+  image_url: string
+  target_url: string
+  placement: Placement | ''
+  budget: string
+  duration_days: string
+  start_date: string
+  end_date: string
+  auto_renew: boolean
+}
+
+function isValidUrl(value: string): boolean {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
 
 export default function CreateCampaignPage() {
-    const router = useRouter();
-    const [step, setStep] = useState(1);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [balance, setBalance] = useState(0);
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [balance, setBalance] = useState(0)
 
-    const [formData, setFormData] = useState({
-        name: '',
-        description: '',
-        campaign_type: 'banner',
-        title: '',
-        subtitle: '',
-        image_url: '',
-        destination_url: '',
-        cta_text: 'Learn More',
-        budget: 100,
-        daily_budget: undefined as number | undefined,
-        start_date: '',
-        end_date: '',
-        billing_model: 'cpc',
-        cpc_rate: 0.50,
-        cpm_rate: 5.00,
-        target_audience: 'all',
-        target_countries: [] as string[],
-        target_institution_types: [] as string[],
-        target_categories: [] as string[]
-    });
+  const [formData, setFormData] = useState<FormData>({
+    title: '',
+    description: '',
+    image_url: '',
+    target_url: '',
+    placement: '',
+    budget: '',
+    duration_days: '',
+    start_date: '',
+    end_date: '',
+    auto_renew: false,
+  })
 
-    useEffect(() => {
-        fetchBalance();
-    }, []);
+  useEffect(() => {
+    advertiserFetch('/api/advertiser/stats')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setBalance(data.data.balance)
+      })
+      .catch(() => {})
+  }, [])
 
-    const fetchBalance = async () => {
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advertiser/stats`, {
-                headers: { 'Authorization': `Bearer ${session.access_token}` }
-            });
-            const data = await res.json();
-            if (data.success) setBalance(data.data.balance);
-        } catch (e) {
-            console.error('Failed to fetch balance:', e);
-        }
-    };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target
+    if (type === 'checkbox') {
+      setFormData((prev) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }))
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }))
+    }
+  }
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value, type } = e.target;
-        if (type === 'number') {
-            setFormData(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
-        } else {
-            setFormData(prev => ({ ...prev, [name]: value }));
-        }
-    };
+  const validate = (): Record<string, string> => {
+    const errors: Record<string, string> = {}
 
-    const handleTypeChange = (type: string) => {
-        const selected = CAMPAIGN_TYPES.find(t => t.value === type);
-        setFormData(prev => ({
-            ...prev,
-            campaign_type: type,
-            cpc_rate: selected?.basePrice || 0.50
-        }));
-    };
+    if (!formData.title.trim()) errors.title = 'Title is required.'
+    if (!formData.description.trim()) errors.description = 'Description is required.'
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError('');
+    if (!formData.image_url.trim()) errors.image_url = 'Image URL is required.'
+    else if (!isValidUrl(formData.image_url)) errors.image_url = 'Enter a valid http(s) URL.'
 
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                setError('You must be logged in');
-                setLoading(false);
-                return;
-            }
+    if (!formData.target_url.trim()) errors.target_url = 'Target URL is required.'
+    else if (!isValidUrl(formData.target_url)) errors.target_url = 'Enter a valid http(s) URL.'
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/campaigns`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`
-                },
-                body: JSON.stringify(formData)
-            });
+    if (!formData.placement) errors.placement = 'Choose a placement.'
 
-            const data = await response.json();
+    const budgetNum = Number(formData.budget)
+    if (!formData.budget || Number.isNaN(budgetNum) || budgetNum <= 0) {
+      errors.budget = 'Enter a budget greater than 0.'
+    } else if (budgetNum > balance) {
+      errors.budget = `Budget exceeds your available balance ($${balance.toFixed(2)}).`
+    }
 
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to create campaign');
-            }
+    const durationNum = Number(formData.duration_days)
+    if (!formData.duration_days || !Number.isInteger(durationNum) || durationNum <= 0) {
+      errors.duration_days = 'Enter a whole number of days greater than 0.'
+    }
 
-            router.push('/advertiser/dashboard');
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
+    if (formData.start_date && formData.end_date && formData.end_date < formData.start_date) {
+      errors.end_date = 'End date must be after the start date.'
+    }
 
-    const selectedType = CAMPAIGN_TYPES.find(t => t.value === formData.campaign_type);
-    const estimatedClicks = formData.billing_model === 'cpc' ? Math.floor(formData.budget / formData.cpc_rate) : 0;
-    const estimatedImpressions = formData.billing_model === 'cpm' ? Math.floor((formData.budget / formData.cpm_rate) * 1000) : 0;
+    return errors
+  }
 
-    const renderStep1 = () => (
-        <div className="space-y-6">
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Campaign Type</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {CAMPAIGN_TYPES.map(type => (
-                        <button
-                            key={type.value}
-                            type="button"
-                            onClick={() => handleTypeChange(type.value)}
-                            className={`p-4 rounded-lg border-2 text-left transition-all ${
-                                formData.campaign_type === type.value
-                                    ? 'border-blue-500 bg-blue-50'
-                                    : 'border-gray-200 hover:border-gray-300'
-                            }`}
-                        >
-                            <div className="font-semibold text-gray-900">{type.label}</div>
-                            <div className="text-sm text-gray-500 mt-1">{type.description}</div>
-                            <div className="text-sm font-medium text-blue-600 mt-2">From ${type.basePrice}/click</div>
-                        </button>
-                    ))}
-                </div>
-            </div>
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Campaign Name *</label>
-                <input
-                    type="text"
-                    name="name"
-                    required
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., Summer Intake 2026"
-                />
-            </div>
+    const errors = validate()
+    setFieldErrors(errors)
+    if (Object.keys(errors).length > 0) return
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                    name="description"
-                    rows={3}
-                    value={formData.description}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="Brief description"
-                />
-            </div>
+    setLoading(true)
+    try {
+      const response = await advertiserFetch('/api/campaigns', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: formData.title.trim(),
+          description: formData.description.trim(),
+          image_url: formData.image_url.trim(),
+          target_url: formData.target_url.trim(),
+          placement: formData.placement,
+          budget: Number(formData.budget),
+          duration_days: Number(formData.duration_days),
+          start_date: formData.start_date || undefined,
+          end_date: formData.end_date || undefined,
+          auto_renew: formData.auto_renew,
+        }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to create campaign')
+
+      router.push('/advertiser/campaigns')
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const selectedPlacement = PLACEMENTS.find((p) => p.value === formData.placement)
+  const inputClass = (field: string) =>
+    `w-full px-4 py-2 rounded-lg bg-elimux-dark border text-foreground focus:outline-none focus:border-primary-500 ${
+      fieldErrors[field] ? 'border-elimux-danger' : 'border-border'
+    }`
+
+  return (
+    <div className="min-h-screen bg-elimux-dark">
+      <AdvertiserNav />
+      <div className="max-w-6xl mx-auto px-4 pb-12">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+            <Megaphone className="w-7 h-7 text-primary-400" />
+            Create Campaign
+          </h1>
+          <p className="text-muted mt-1">Available balance: ${balance.toFixed(2)}</p>
         </div>
-    );
 
-    const renderStep2 = () => (
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <form onSubmit={handleSubmit} className="lg:col-span-2 bg-elimux-card border border-border rounded-xl p-8 space-y-6">
+            {error && (
+              <div className="bg-elimux-danger/10 border border-elimux-danger/30 rounded-lg p-4 text-elimux-danger text-sm">
+                {error}
+              </div>
+            )}
+
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ad Title *</label>
-                <input
-                    type="text"
-                    name="title"
-                    required
-                    value={formData.title}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., Study at UoN"
-                />
+              <label className="text-sm text-muted mb-1 block">Title *</label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                placeholder="e.g., Study at UoN"
+                className={inputClass('title')}
+              />
+              {fieldErrors.title && <p className="text-xs text-elimux-danger mt-1">{fieldErrors.title}</p>}
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subtitle</label>
-                <input
-                    type="text"
-                    name="subtitle"
-                    value={formData.subtitle}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="Applications now open"
-                />
+              <label className="text-sm text-muted mb-1 block">Description *</label>
+              <textarea
+                name="description"
+                rows={3}
+                value={formData.description}
+                onChange={handleChange}
+                placeholder="Brief description of this campaign"
+                className={inputClass('description')}
+              />
+              {fieldErrors.description && <p className="text-xs text-elimux-danger mt-1">{fieldErrors.description}</p>}
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-                <input
-                    type="url"
-                    name="image_url"
-                    value={formData.image_url}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="https://your-site.com/image.jpg"
-                />
-                <p className="text-xs text-gray-500 mt-1">Recommended: 1200x400 for hero, 728x90 for banners</p>
+              <label className="text-sm text-muted mb-1 block flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" /> Image URL *
+              </label>
+              <input
+                type="url"
+                name="image_url"
+                value={formData.image_url}
+                onChange={handleChange}
+                placeholder="https://your-site.com/image.jpg"
+                className={inputClass('image_url')}
+              />
+              {fieldErrors.image_url && <p className="text-xs text-elimux-danger mt-1">{fieldErrors.image_url}</p>}
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Destination URL *</label>
-                <input
-                    type="url"
-                    name="destination_url"
-                    required
-                    value={formData.destination_url}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="https://your-site.com/apply"
-                />
+              <label className="text-sm text-muted mb-1 block flex items-center gap-2">
+                <Link2 className="w-4 h-4" /> Target URL *
+              </label>
+              <input
+                type="url"
+                name="target_url"
+                value={formData.target_url}
+                onChange={handleChange}
+                placeholder="https://your-site.com/apply"
+                className={inputClass('target_url')}
+              />
+              {fieldErrors.target_url && <p className="text-xs text-elimux-danger mt-1">{fieldErrors.target_url}</p>}
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Call to Action</label>
-                <input
-                    type="text"
-                    name="cta_text"
-                    value={formData.cta_text}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="Learn More"
-                />
-            </div>
-        </div>
-    );
-
-    const renderStep3 = () => (
-        <div className="space-y-6">
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Billing Model</label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {BILLING_MODELS.map(model => (
-                        <button
-                            key={model.value}
-                            type="button"
-                            onClick={() => setFormData(prev => ({ ...prev, billing_model: model.value }))}
-                            className={`p-4 rounded-lg border-2 text-left transition-all ${
-                                formData.billing_model === model.value
-                                    ? 'border-blue-500 bg-blue-50'
-                                    : 'border-gray-200 hover:border-gray-300'
-                            }`}
-                        >
-                            <div className="font-semibold text-gray-900">{model.label}</div>
-                            <div className="text-sm text-gray-500 mt-1">{model.description}</div>
-                        </button>
-                    ))}
-                </div>
+              <label className="text-sm text-muted mb-2 block">Placement *</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {PLACEMENTS.map((p) => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => setFormData((prev) => ({ ...prev, placement: p.value }))}
+                    className={`p-4 rounded-lg border-2 text-left transition-all ${
+                      formData.placement === p.value
+                        ? 'border-primary-500 bg-primary-500/10'
+                        : 'border-border hover:border-primary-500/50'
+                    }`}
+                  >
+                    <div className="font-semibold text-foreground">{p.label}</div>
+                    <div className="text-sm text-muted mt-1">{p.description}</div>
+                  </button>
+                ))}
+              </div>
+              {fieldErrors.placement && <p className="text-xs text-elimux-danger mt-1">{fieldErrors.placement}</p>}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Total Budget (USD) *</label>
-                    <input
-                        type="number"
-                        name="budget"
-                        required
-                        min={10}
-                        value={formData.budget}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Min $10. Your balance: ${balance.toFixed(2)}</p>
-                </div>
+              <div>
+                <label className="text-sm text-muted mb-1 block flex items-center gap-2">
+                  <Wallet className="w-4 h-4" /> Budget (USD) *
+                </label>
+                <input
+                  type="number"
+                  name="budget"
+                  min={1}
+                  step="0.01"
+                  value={formData.budget}
+                  onChange={handleChange}
+                  placeholder="50"
+                  className={inputClass('budget')}
+                />
+                {fieldErrors.budget && <p className="text-xs text-elimux-danger mt-1">{fieldErrors.budget}</p>}
+              </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Daily Budget (Optional)</label>
-                    <input
-                        type="number"
-                        name="daily_budget"
-                        value={formData.daily_budget || ''}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        placeholder="No daily limit"
-                    />
-                </div>
+              <div>
+                <label className="text-sm text-muted mb-1 block">Duration (days) *</label>
+                <input
+                  type="number"
+                  name="duration_days"
+                  min={1}
+                  step="1"
+                  value={formData.duration_days}
+                  onChange={handleChange}
+                  placeholder="7"
+                  className={inputClass('duration_days')}
+                />
+                {fieldErrors.duration_days && <p className="text-xs text-elimux-danger mt-1">{fieldErrors.duration_days}</p>}
+              </div>
             </div>
-
-            {formData.billing_model === 'cpc' && (
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">CPC Rate (USD)</label>
-                    <input
-                        type="number"
-                        name="cpc_rate"
-                        step="0.01"
-                        min="0.10"
-                        value={formData.cpc_rate}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Est. clicks: ~{estimatedClicks.toLocaleString()}</p>
-                </div>
-            )}
-
-            {formData.billing_model === 'cpm' && (
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">CPM Rate (USD)</label>
-                    <input
-                        type="number"
-                        name="cpm_rate"
-                        step="0.01"
-                        min="1"
-                        value={formData.cpm_rate}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Est. impressions: ~{estimatedImpressions.toLocaleString()}</p>
-                </div>
-            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
-                    <input
-                        type="date"
-                        name="start_date"
-                        required
-                        value={formData.start_date}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
-                    <input
-                        type="date"
-                        name="end_date"
-                        required
-                        value={formData.end_date}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
+              <div>
+                <label className="text-sm text-muted mb-1 block flex items-center gap-2">
+                  <Calendar className="w-4 h-4" /> Start Date
+                </label>
+                <input
+                  type="date"
+                  name="start_date"
+                  value={formData.start_date}
+                  onChange={handleChange}
+                  className={inputClass('start_date')}
+                />
+              </div>
+              <div>
+                <label className="text-sm text-muted mb-1 block flex items-center gap-2">
+                  <Calendar className="w-4 h-4" /> End Date
+                </label>
+                <input
+                  type="date"
+                  name="end_date"
+                  value={formData.end_date}
+                  onChange={handleChange}
+                  className={inputClass('end_date')}
+                />
+                {fieldErrors.end_date && <p className="text-xs text-elimux-danger mt-1">{fieldErrors.end_date}</p>}
+              </div>
             </div>
+
+            <label className="flex items-center gap-2 text-sm text-muted">
+              <input
+                type="checkbox"
+                name="auto_renew"
+                checked={formData.auto_renew}
+                onChange={handleChange}
+                className="rounded border-border"
+              />
+              Auto-renew when this campaign ends
+            </label>
+
+            <div className="flex justify-between pt-4 border-t border-border">
+              <button
+                type="button"
+                onClick={() => router.push('/advertiser/campaigns')}
+                className="px-6 py-2 border border-border rounded-lg text-foreground hover:bg-elimux-dark"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-elimux-dark font-semibold rounded-lg disabled:opacity-50"
+              >
+                {loading ? 'Creating...' : 'Create Campaign'}
+              </button>
+            </div>
+          </form>
+
+          {/* Live preview */}
+          <div className="lg:col-span-1">
+            <div className="bg-elimux-card border border-border rounded-xl p-6 sticky top-20">
+              <h3 className="font-semibold text-foreground mb-4">Ad Preview</h3>
+              <div className="bg-elimux-dark rounded-lg border border-border overflow-hidden">
+                {formData.image_url && isValidUrl(formData.image_url) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={formData.image_url} alt="" className="w-full h-40 object-cover" />
+                ) : (
+                  <div className="w-full h-40 flex items-center justify-center text-muted text-sm">
+                    <ImageIcon className="w-8 h-8" />
+                  </div>
+                )}
+                <div className="p-4">
+                  <h4 className="font-bold text-foreground">{formData.title || 'Your Ad Title'}</h4>
+                  <p className="text-muted text-sm mt-1 line-clamp-2">{formData.description || 'Your description'}</p>
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted">Placement</span>
+                  <span className="text-foreground font-medium">{selectedPlacement?.label || '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted">Budget</span>
+                  <span className="text-foreground font-medium">
+                    {formData.budget ? `$${Number(formData.budget).toFixed(2)}` : '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted">Duration</span>
+                  <span className="text-foreground font-medium">
+                    {formData.duration_days ? `${formData.duration_days} days` : '—'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-    );
-
-    const renderStep4 = () => (
-        <div className="space-y-6">
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Target Audience</label>
-                <div className="grid grid-cols-2 gap-4">
-                    {TARGET_AUDIENCES.map(audience => (
-                        <button
-                            key={audience.value}
-                            type="button"
-                            onClick={() => setFormData(prev => ({ ...prev, target_audience: audience.value }))}
-                            className={`p-3 rounded-lg border-2 text-center transition-all ${
-                                formData.target_audience === audience.value
-                                    ? 'border-blue-500 bg-blue-50'
-                                    : 'border-gray-200 hover:border-gray-300'
-                            }`}
-                        >
-                            {audience.label}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Ad Preview</h3>
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden max-w-md">
-                    {formData.image_url && (
-                        <img src={formData.image_url} alt="Ad" className="w-full h-48 object-cover" />
-                    )}
-                    <div className="p-4">
-                        <h4 className="font-bold text-lg text-gray-900">{formData.title || 'Your Ad Title'}</h4>
-                        <p className="text-gray-600 text-sm mt-1">{formData.subtitle || 'Your subtitle'}</p>
-                        <button className="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
-                            {formData.cta_text}
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div className="bg-blue-50 rounded-lg p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Campaign Summary</h3>
-                <div className="space-y-2 text-sm">
-                    <div className="flex justify-between"><span className="text-gray-600">Type:</span><span className="font-medium">{selectedType?.label}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">Budget:</span><span className="font-medium">${formData.budget.toFixed(2)}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">Model:</span><span className="font-medium">{formData.billing_model.toUpperCase()}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">Duration:</span><span className="font-medium">{formData.start_date} to {formData.end_date}</span></div>
-                    {formData.billing_model === 'cpc' && (
-                        <div className="flex justify-between"><span className="text-gray-600">Est. Clicks:</span><span className="font-medium">~{estimatedClicks.toLocaleString()}</span></div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-
-    const steps = [
-        { number: 1, title: 'Campaign Type', content: renderStep1 },
-        { number: 2, title: 'Creative', content: renderStep2 },
-        { number: 3, title: 'Budget & Schedule', content: renderStep3 },
-        { number: 4, title: 'Review & Submit', content: renderStep4 }
-    ];
-
-    return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4">
-            <div className="max-w-3xl mx-auto">
-                <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6">
-                        <h1 className="text-2xl font-bold text-white">Create New Campaign</h1>
-                        <p className="text-blue-100 mt-1">Step {step} of 4: {steps[step - 1].title}</p>
-                    </div>
-
-                    <div className="px-8 py-4 bg-gray-50 border-b">
-                        <div className="flex items-center justify-between">
-                            {steps.map((s, i) => (
-                                <div key={s.number} className="flex items-center">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                                        step >= s.number ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
-                                    }`}>
-                                        {s.number}
-                                    </div>
-                                    <span className={`ml-2 text-sm hidden md:block ${
-                                        step >= s.number ? 'text-blue-600 font-medium' : 'text-gray-400'
-                                    }`}>
-                                        {s.title}
-                                    </span>
-                                    {i < steps.length - 1 && (
-                                        <div className={`w-8 h-0.5 mx-2 hidden md:block ${
-                                            step > s.number ? 'bg-blue-600' : 'bg-gray-200'
-                                        }`} />
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <form onSubmit={handleSubmit} className="p-8">
-                        {error && (
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm mb-6">
-                                {error}
-                            </div>
-                        )}
-
-                        {steps[step - 1].content()}
-
-                        <div className="flex justify-between mt-8 pt-6 border-t">
-                            <button
-                                type="button"
-                                onClick={() => step > 1 ? setStep(step - 1) : router.push('/advertiser/dashboard')}
-                                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                            >
-                                {step === 1 ? 'Cancel' : 'Previous'}
-                            </button>
-
-                            {step < 4 ? (
-                                <button
-                                    type="button"
-                                    onClick={() => setStep(step + 1)}
-                                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                                >
-                                    Next Step
-                                </button>
-                            ) : (
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                                >
-                                    {loading ? 'Creating...' : 'Create Campaign'}
-                                </button>
-                            )}
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    );
+      </div>
+    </div>
+  )
 }

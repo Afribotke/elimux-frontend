@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 
 const LINKS = [
   { href: '/advertiser/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/advertiser/dashboard#campaigns', label: 'Campaigns', icon: Megaphone },
+  { href: '/advertiser/campaigns', label: 'Campaigns', icon: Megaphone },
   { href: '/advertiser/dashboard#analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/advertiser/billing', label: 'Billing', icon: CreditCard },
 ]
