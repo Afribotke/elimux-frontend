@@ -186,8 +186,8 @@ export interface CreateReviewInput {
   rating: number
   title?: string
   content?: string
-  pros?: string[]
-  cons?: string[]
+  pros?: string
+  cons?: string
   would_recommend?: boolean | null
 }
 

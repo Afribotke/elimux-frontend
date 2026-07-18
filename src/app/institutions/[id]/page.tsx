@@ -7,6 +7,7 @@ import TrackPageView from '@/components/TrackPageView'
 import AccreditationStatusBadge from '@/components/AccreditationStatusBadge'
 import BackButton from '@/components/BackButton'
 import Breadcrumbs from '@/components/Breadcrumbs'
+import { ReviewsSection } from '@/components/ReviewsSection'
 import { MapPin, Users, Globe, Star, CheckCircle, GraduationCap, ShieldCheck, FileText } from 'lucide-react'
 
 interface InstitutionAccreditationJoinRow {
@@ -233,6 +234,10 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
         ) : (
           <p className="text-muted">No programs listed for this institution yet.</p>
         )}
+
+        <div className="bg-elimux-card rounded-2xl p-6 md:p-8 border border-border mt-8">
+          <ReviewsSection institutionId={institution.id} />
+        </div>
       </div>
     </main>
   )
