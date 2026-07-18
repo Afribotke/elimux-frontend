@@ -599,10 +599,22 @@ export interface PaymentHistoryRow {
   subscription?: { plan?: { name: string } | null } | null
 }
 
+export interface AdPaymentHistoryRow {
+  id: string
+  amount: number
+  status: string
+  paystack_reference: string | null
+  created_at: string
+  advertiser?: { organization_name: string; email: string } | null
+}
+
 export interface AnalyticsRevenue {
   mrr_kes: number
   revenue_by_plan: RevenueByPlan[]
   payment_history: PaymentHistoryRow[]
+  ad_revenue_total_kes?: number
+  ad_revenue_30d_kes?: number
+  ad_payment_history?: AdPaymentHistoryRow[]
 }
 
 export function getAnalyticsRevenue(adminKey: string) {
