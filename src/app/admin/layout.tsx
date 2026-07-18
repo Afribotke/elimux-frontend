@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: '/admin/reviews', label: 'Reviews', icon: MessageSquare, exact: false },
   { href: '/admin/ads', label: 'Sponsor Ads', icon: Megaphone, exact: false },
   { href: '/admin/campaigns', label: 'Campaigns', icon: Rocket, exact: false },
+  { href: '/admin/advertisers', label: 'Advertisers', icon: Building2, exact: false },
   { href: '/admin/major-sponsors', label: 'Major Sponsors', icon: Award, exact: false },
   { href: '/admin/scraper', label: 'Data Scraper', icon: Bot, exact: false },
   { href: '/admin/revenue', label: 'Revenue', icon: DollarSign, exact: false },
