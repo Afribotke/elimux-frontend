@@ -97,6 +97,8 @@ export default function SubscriptionStatusPage() {
                     ? 'bg-green-500/10 text-green-400'
                     : subscription.status === 'pending'
                     ? 'bg-yellow-500/10 text-yellow-400'
+                    : subscription.status === 'expired'
+                    ? 'bg-red-500/10 text-red-400'
                     : 'bg-muted/10 text-muted'
                 }`}
               >
@@ -105,16 +107,38 @@ export default function SubscriptionStatusPage() {
             </div>
             {subscription.current_period_end && (
               <p className="text-sm text-muted mb-6">
-                Renews / expires on {new Date(subscription.current_period_end).toLocaleDateString()}
+                {subscription.status === 'active'
+                  ? `Renews / expires on ${new Date(subscription.current_period_end).toLocaleDateString()}`
+                  : subscription.status === 'expired'
+                  ? `Expired on ${new Date(subscription.current_period_end).toLocaleDateString()}`
+                  : `Period ends ${new Date(subscription.current_period_end).toLocaleDateString()}`}
               </p>
             )}
+
+            {subscription.status === 'active' &&
+              subscription.current_period_end &&
+              (new Date(subscription.current_period_end).getTime() - Date.now()) / 86400000 <= 7 && (
+                <div className="mb-6 px-4 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm">
+                  Your plan expires within 7 days. Renew now to keep your benefits.
+                </div>
+              )}
+
             <div className="flex gap-3">
-              <Link
-                href="/pricing"
-                className="flex-1 text-center py-2.5 rounded-xl bg-muted/10 hover:bg-muted/20 text-foreground font-semibold"
-              >
-                Change plan
-              </Link>
+              {subscription.status === 'expired' || subscription.status === 'cancelled' ? (
+                <Link
+                  href="/pricing"
+                  className="flex-1 text-center py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-semibold transition-colors"
+                >
+                  Renew subscription
+                </Link>
+              ) : (
+                <Link
+                  href="/pricing"
+                  className="flex-1 text-center py-2.5 rounded-xl bg-muted/10 hover:bg-muted/20 text-foreground font-semibold"
+                >
+                  Change plan
+                </Link>
+              )}
               {subscription.status === 'active' && (
                 <button
                   onClick={handleCancel}
