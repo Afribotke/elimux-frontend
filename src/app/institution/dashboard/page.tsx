@@ -52,7 +52,7 @@ export default function InstitutionDashboardPage() {
   const [pageError, setPageError] = useState('')
   const [pending, setPending] = useState(false)
   const [institution, setInstitution] = useState<Institution | null>(null)
-  const [tab, setTab] = useState<'profile' | 'programs'>('profile')
+  const [tab, setTab] = useState<'profile' | 'programs' | 'analytics'>('profile')
 
   const [profileForm, setProfileForm] = useState<Record<string, string>>({})
   const [savingProfile, setSavingProfile] = useState(false)
@@ -63,6 +63,8 @@ export default function InstitutionDashboardPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [savingProgram, setSavingProgram] = useState(false)
   const [programMsg, setProgramMsg] = useState('')
+
+  const [analytics, setAnalytics] = useState<any>(null)
 
   const loadPrograms = useCallback(async () => {
     const res = await institutionFetch('/api/institution-portal/programs')
@@ -84,6 +86,8 @@ export default function InstitutionDashboardPage() {
         for (const f of PROFILE_FIELDS) form[f.key] = (inst?.[f.key] as string) || ''
         setProfileForm(form)
         await loadPrograms()
+        const a = await institutionFetch('/api/institution-portal/analytics')
+        setAnalytics(a.data)
       } catch (err: any) {
         if (err.status === 403) {
           setPending(true)
@@ -215,7 +219,7 @@ export default function InstitutionDashboardPage() {
         </div>
 
         <div className="flex gap-2 mb-6">
-          {(['profile', 'programs'] as const).map((t) => (
+          {(['profile', 'programs', 'analytics'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -349,6 +353,84 @@ export default function InstitutionDashboardPage() {
                 {programMsg && <span className="text-sm text-muted">{programMsg}</span>}
               </div>
             </form>
+          </div>
+        )}
+
+        {tab === 'analytics' && (
+          <div className="space-y-6">
+            {!analytics ? (
+              <p className="text-muted">Loading analytics...</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-elimux-card rounded-xl border border-border p-5">
+                    <p className="text-sm text-muted mb-1">Profile views (30d)</p>
+                    <p className="text-2xl font-bold text-foreground">{analytics.total_views}</p>
+                  </div>
+                  <div className="bg-elimux-card rounded-xl border border-border p-5">
+                    <p className="text-sm text-muted mb-1">Applications (30d)</p>
+                    <p className="text-2xl font-bold text-foreground">{analytics.total_applications}</p>
+                  </div>
+                  <div className="bg-elimux-card rounded-xl border border-border p-5">
+                    <p className="text-sm text-muted mb-1">Conversion</p>
+                    <p className="text-2xl font-bold text-foreground">{analytics.conversion_rate}%</p>
+                  </div>
+                  <div className="bg-elimux-card rounded-xl border border-border p-5">
+                    <p className="text-sm text-muted mb-1">Reviews</p>
+                    <p className="text-2xl font-bold text-foreground">{analytics.avg_rating > 0 ? `${analytics.avg_rating} ★ (${analytics.review_count})` : analytics.review_count}</p>
+                  </div>
+                </div>
+
+                <div className="bg-elimux-card rounded-xl border border-border p-6">
+                  <h2 className="text-sm font-medium text-foreground mb-4">Views trend (30 days)</h2>
+                  {analytics.views_trend.length === 0 ? (
+                    <p className="text-muted text-sm">No views recorded yet.</p>
+                  ) : (
+                    <div className="flex items-end gap-1 h-32">
+                      {analytics.views_trend.map((d: any) => {
+                        const max = Math.max(...analytics.views_trend.map((x: any) => x.count), 1)
+                        return (
+                          <div key={d.date} className="flex-1 bg-primary-600/70 rounded-t" style={{ height: `${(d.count / max) * 100}%` }} title={`${d.date}: ${d.count} views`} />
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-elimux-card rounded-xl border border-border p-6">
+                    <h2 className="text-sm font-medium text-foreground mb-4">Top programs by views</h2>
+                    {analytics.top_programs.length === 0 ? (
+                      <p className="text-muted text-sm">No program views yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {analytics.top_programs.map((p: any) => (
+                          <div key={p.program_id} className="flex justify-between text-sm">
+                            <span className="text-foreground truncate mr-4">{p.name}</span>
+                            <span className="text-muted shrink-0">{p.views}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="bg-elimux-card rounded-xl border border-border p-6">
+                    <h2 className="text-sm font-medium text-foreground mb-4">Where interest comes from</h2>
+                    {analytics.regional_interest.length === 0 ? (
+                      <p className="text-muted text-sm">No data yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {analytics.regional_interest.map((r: any) => (
+                          <div key={r.country} className="flex justify-between text-sm">
+                            <span className="text-foreground">{r.country}</span>
+                            <span className="text-muted">{r.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
