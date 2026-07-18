@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { runAISearch, type SearchIntent } from '@/lib/aiSearch'
+import { awardPoints } from '@/lib/api'
 import AISearchBar from '@/components/AISearchBar'
 import InterestSelector from '@/components/InterestSelector'
 import CareerPathway from '@/components/CareerPathway'
@@ -55,6 +56,7 @@ export default function AISearchPage() {
       setIntent(result.intent)
       setPrograms(result.programs)
       setInstitutions(result.institutions)
+      awardPoints('search').catch(() => {})
     } catch (err) {
       setError(err instanceof Error ? err.message : 'AI search failed')
     } finally {

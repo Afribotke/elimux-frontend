@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Copy, Check, Mail, MessageCircle, Send, Gift, Loader2, RefreshCw } from 'lucide-react'
-import { createReferral, getReferralStatus, type ReferralRow } from '@/lib/api'
+import { Copy, Check, Mail, MessageCircle, Send, Gift, Loader2, RefreshCw, Ticket } from 'lucide-react'
+import { createReferral, getReferralStatus, redeemReferral, awardPoints, type ReferralRow } from '@/lib/api'
 
 const STORAGE_KEY = 'elimux_referral_code'
 
@@ -22,16 +22,29 @@ export default function ReferralGenerator({ className = '' }: ReferralGeneratorP
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
+  // Redemption state (the "friend" side of the loop)
+  const [redeemCode, setRedeemCode] = useState('')
+  const [redeemEmail, setRedeemEmail] = useState('')
+  const [redeeming, setRedeeming] = useState(false)
+  const [redeemMsg, setRedeemMsg] = useState<string | null>(null)
+  const [redeemError, setRedeemError] = useState<string | null>(null)
+
   // No auth in this app - the only way to remember "your" code across visits
   // is to stash it in this browser and re-fetch its live status.
   useEffect(() => {
     const storedCode = localStorage.getItem(STORAGE_KEY)
-    if (!storedCode) return
-    setChecking(true)
-    getReferralStatus(storedCode)
-      .then(({ data }) => setReferral(data))
-      .catch(() => localStorage.removeItem(STORAGE_KEY))
-      .finally(() => setChecking(false))
+    if (storedCode) {
+      setChecking(true)
+      getReferralStatus(storedCode)
+        .then(({ data }) => setReferral(data))
+        .catch(() => localStorage.removeItem(STORAGE_KEY))
+        .finally(() => setChecking(false))
+    }
+
+    // Prefill the redemption code when arriving via a ?ref= share link
+    const params = new URLSearchParams(window.location.search)
+    const ref = params.get('ref')
+    if (ref) setRedeemCode(ref.trim().toUpperCase())
   }, [])
 
   const handleGenerate = async () => {
@@ -72,17 +85,48 @@ export default function ReferralGenerator({ className = '' }: ReferralGeneratorP
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const trackShare = () => {
+    awardPoints('share').catch(() => {
+      // Points are a bonus - never block a share on a gamification hiccup.
+    })
+  }
+
+  const shareUrl = referral ? `https://www.elimux.ke/leaderboard?ref=${referral.referrer_code}` : ''
   const shareText = referral
-    ? `Join me on ElimuX and find your next school or program! Use my referral code ${referral.referrer_code} at https://www.elimux.ke`
+    ? `Join me on ElimuX and find your next school or program! Use my referral code ${referral.referrer_code}: ${shareUrl}`
     : ''
 
   const shareLinks = referral
     ? {
         whatsapp: `https://wa.me/?text=${encodeURIComponent(shareText)}`,
-        telegram: `https://t.me/share/url?url=${encodeURIComponent('https://www.elimux.ke')}&text=${encodeURIComponent(shareText)}`,
+        telegram: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
         email: `mailto:?subject=${encodeURIComponent('Check out ElimuX')}&body=${encodeURIComponent(shareText)}`,
       }
     : null
+
+  const handleRedeem = async () => {
+    setRedeemMsg(null)
+    setRedeemError(null)
+    if (!redeemCode.trim()) {
+      setRedeemError('Enter the referral code')
+      return
+    }
+    if (!isValidEmail(redeemEmail)) {
+      setRedeemError('Enter a valid email address')
+      return
+    }
+    setRedeeming(true)
+    try {
+      await redeemReferral(redeemCode.trim().toUpperCase(), redeemEmail.trim())
+      setRedeemMsg('Referral confirmed — welcome to ElimuX! Your friend just earned their reward.')
+      setRedeemCode('')
+      setRedeemEmail('')
+    } catch (err) {
+      setRedeemError(err instanceof Error ? err.message : 'Failed to redeem referral code')
+    } finally {
+      setRedeeming(false)
+    }
+  }
 
   return (
     <div className={`rounded-2xl border border-border bg-elimux-card p-6 ${className}`}>
@@ -132,6 +176,7 @@ export default function ReferralGenerator({ className = '' }: ReferralGeneratorP
               href={shareLinks!.whatsapp}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={trackShare}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted/10 transition-colors"
             >
               <MessageCircle className="w-4 h-4" />
@@ -141,6 +186,7 @@ export default function ReferralGenerator({ className = '' }: ReferralGeneratorP
               href={shareLinks!.telegram}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={trackShare}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted/10 transition-colors"
             >
               <Send className="w-4 h-4" />
@@ -148,6 +194,7 @@ export default function ReferralGenerator({ className = '' }: ReferralGeneratorP
             </a>
             <a
               href={shareLinks!.email}
+              onClick={trackShare}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted/10 transition-colors"
             >
               <Mail className="w-4 h-4" />
@@ -186,6 +233,40 @@ export default function ReferralGenerator({ className = '' }: ReferralGeneratorP
       )}
 
       {error && <p className="text-sm text-red-400 mt-3">{error}</p>}
+
+      <div className="border-t border-border mt-6 pt-6">
+        <div className="flex items-center gap-2 mb-2">
+          <Ticket className="w-4 h-4 text-primary-400" />
+          <h3 className="text-sm font-semibold text-foreground">Have a referral code?</h3>
+        </div>
+        <p className="text-xs text-muted mb-3">Enter it with your email to confirm the referral.</p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            value={redeemCode}
+            onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
+            placeholder="CODE"
+            className="sm:w-32 h-11 px-4 rounded-lg border border-border bg-background text-foreground font-mono placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+          <input
+            type="email"
+            value={redeemEmail}
+            onChange={(e) => setRedeemEmail(e.target.value)}
+            placeholder="your@email.com"
+            className="flex-1 h-11 px-4 rounded-lg border border-border bg-background text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+          <button
+            onClick={handleRedeem}
+            disabled={redeeming}
+            className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-semibold transition-colors disabled:opacity-50"
+          >
+            {redeeming ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            Confirm
+          </button>
+        </div>
+        {redeemMsg && <p className="text-sm text-green-400 mt-3">{redeemMsg}</p>}
+        {redeemError && <p className="text-sm text-red-400 mt-3">{redeemError}</p>}
+      </div>
     </div>
   )
 }

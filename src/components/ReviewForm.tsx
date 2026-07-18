@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Star } from 'lucide-react';
-import { createReview } from '@/lib/api';
+import { createReview, awardPoints } from '@/lib/api';
 import { trackEvent } from '@/lib/analytics';
 import { queueAction } from '@/lib/pwaQueue';
 
@@ -64,6 +64,9 @@ export function ReviewForm({
     try {
       if (!navigator.onLine) throw new TypeError('offline');
       await createReview(reviewPayload);
+      awardPoints('review').catch(() => {
+        // Points are a bonus - never let a gamification hiccup surface to the reviewer.
+      })
 
       trackEvent('review', { institution_id: institutionId, program_id: programId, rating });
 
