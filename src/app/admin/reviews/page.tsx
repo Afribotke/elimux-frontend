@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { listAdminReviews, updateReviewStatus, type AdminReview } from '@/lib/api'
+import { listAdminReviews, updateReviewStatus, deleteReview, type AdminReview } from '@/lib/api'
 import { useAdminKey } from '@/components/admin/AdminKeyContext'
-import { ArrowLeft, MessageSquare, Star, CheckCircle2, XCircle } from 'lucide-react'
+import { ArrowLeft, MessageSquare, Star, CheckCircle2, XCircle, Trash2 } from 'lucide-react'
 
 export default function AdminReviewsPage() {
   const { adminKey } = useAdminKey()
@@ -39,6 +39,20 @@ export default function AdminReviewsPage() {
       setReviews((prev) => prev.filter((r) => r.id !== id))
     } catch (err) {
       setError(err instanceof Error ? err.message : `Failed to ${status === 'approved' ? 'approve' : 'reject'} review`)
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!adminKey) return
+    if (!window.confirm('Permanently delete this review?')) return
+    setBusyId(id)
+    try {
+      await deleteReview(id, adminKey)
+      setReviews((prev) => prev.filter((r) => r.id !== id))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete review')
     } finally {
       setBusyId(null)
     }
@@ -113,6 +127,13 @@ export default function AdminReviewsPage() {
                     className="px-3 py-1.5 min-h-[36px] rounded-lg bg-elimux-danger/10 text-elimux-danger text-xs font-medium disabled:opacity-50 flex items-center gap-1"
                   >
                     <XCircle className="w-3.5 h-3.5" /> Reject
+                  </button>
+                  <button
+                    onClick={() => handleDelete(review.id)}
+                    disabled={busyId === review.id}
+                    className="px-3 py-1.5 min-h-[36px] rounded-lg bg-elimux-danger/10 text-elimux-danger text-xs font-medium disabled:opacity-50 flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Delete
                   </button>
                 </div>
               </div>

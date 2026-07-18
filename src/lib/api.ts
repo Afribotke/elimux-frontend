@@ -349,6 +349,10 @@ export function updateReviewStatus(id: string, status: 'approved' | 'rejected', 
   )
 }
 
+export function deleteReview(id: string, adminKey: string) {
+  return request<{ data: AdminReview; message: string }>(`/api/admin/reviews/${id}`, { method: 'DELETE' }, adminKey)
+}
+
 // Subscription plans (admin)
 
 export interface SubscriptionPlanRow {
