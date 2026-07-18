@@ -152,8 +152,8 @@ export interface ReviewRow {
   rating: number
   title: string | null
   content: string | null
-  pros: string[] | null
-  cons: string[] | null
+  pros: string | null
+  cons: string | null
   would_recommend: boolean | null
   is_verified: boolean
   helpful_count: number

@@ -10,8 +10,8 @@ interface Review {
   rating: number;
   title: string | null;
   content: string | null;
-  pros: string[] | null;
-  cons: string[] | null;
+  pros: string | null;
+  cons: string | null;
   would_recommend: boolean | null;
   helpful_count: number;
   created_at: string;
@@ -58,22 +58,22 @@ export function ReviewCard({ review }: { review: Review }) {
       {review.title && <h3 className="font-semibold text-lg text-foreground mb-2">{review.title}</h3>}
       {review.content && <p className="text-muted mb-4">{review.content}</p>}
 
-      {review.pros && review.pros.length > 0 && (
+      {review.pros && review.pros.trim().length > 0 && (
         <div className="mb-3">
           <p className="text-sm font-semibold text-green-600 mb-1">Pros</p>
           <ul className="list-disc list-inside text-sm text-muted">
-            {review.pros.map((pro, i) => (
+            {review.pros.split(',').map((pro) => pro.trim()).filter(Boolean).map((pro, i) => (
               <li key={i}>{pro}</li>
             ))}
           </ul>
         </div>
       )}
 
-      {review.cons && review.cons.length > 0 && (
+      {review.cons && review.cons.trim().length > 0 && (
         <div className="mb-3">
           <p className="text-sm font-semibold text-red-600 mb-1">Cons</p>
           <ul className="list-disc list-inside text-sm text-muted">
-            {review.cons.map((con, i) => (
+            {review.cons.split(',').map((con) => con.trim()).filter(Boolean).map((con, i) => (
               <li key={i}>{con}</li>
             ))}
           </ul>
