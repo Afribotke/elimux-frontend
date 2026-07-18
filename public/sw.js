@@ -1,9 +1,10 @@
-const STATIC_CACHE = 'elimux-static-v2';
-const API_CACHE = 'elimux-api-v2';
+const STATIC_CACHE = 'elimux-static-v3';
+const API_CACHE = 'elimux-api-v3';
 const CURRENT_CACHES = [STATIC_CACHE, API_CACHE];
 
 const STATIC_ASSETS = [
   '/',
+  '/offline/',
   '/programs/',
   '/institutions/',
   '/ai-search/',
@@ -78,6 +79,26 @@ async function networkFirst(request) {
   }
 }
 
+// Navigations (HTML pages): network-first so online users always get the
+// freshest page; fall back to the cached copy when offline, and finally to
+// the purpose-built /offline page when nothing is cached.
+async function navigationHandler(request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(STATIC_CACHE);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (err) {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    const offline = await caches.match('/offline/');
+    if (offline) return offline;
+    throw err;
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
@@ -86,7 +107,11 @@ self.addEventListener('fetch', (event) => {
   if (url.origin === API_ORIGIN) {
     event.respondWith(networkFirst(event.request));
   } else if (url.origin === self.location.origin) {
-    event.respondWith(cacheFirst(event.request));
+    if (event.request.destination === 'document') {
+      event.respondWith(navigationHandler(event.request));
+    } else {
+      event.respondWith(cacheFirst(event.request));
+    }
   }
   // Other cross-origin requests (Supabase, etc.) are left to the browser's
   // default handling - neither strategy applies cleanly to third-party APIs
