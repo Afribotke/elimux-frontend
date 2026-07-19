@@ -8,6 +8,7 @@ import AccreditationStatusBadge from '@/components/AccreditationStatusBadge'
 import BackButton from '@/components/BackButton'
 import Breadcrumbs from '@/components/Breadcrumbs'
 import { ReviewsSection } from '@/components/ReviewsSection'
+import InstitutionLogo from '@/components/InstitutionLogo'
 import { MapPin, Users, Globe, Star, CheckCircle, GraduationCap, ShieldCheck, FileText } from 'lucide-react'
 
 interface InstitutionAccreditationJoinRow {
@@ -94,12 +95,8 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
 
         <div className="bg-elimux-card rounded-2xl p-6 md:p-8 border border-border mb-8">
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 rounded-lg bg-muted/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
-              {institution.logo_url ? (
-                <img src={institution.logo_url} alt={institution.name} className="w-full h-full object-cover" decoding="async" />
-              ) : (
-                <Globe className="w-8 h-8 text-muted" />
-              )}
+            <div className="w-20 h-20 rounded-xl bg-white border border-border flex items-center justify-center flex-shrink-0 overflow-hidden p-2">
+              <InstitutionLogo name={institution.name} logoUrl={institution.logo_url} websiteUrl={institution.website_url} />
             </div>
 
             <div className="flex-1 min-w-0">

@@ -1,5 +1,6 @@
 import { MapPin, Users, Globe, Star, CheckCircle } from 'lucide-react'
 import AccreditationBadgeList from './AccreditationBadgeList'
+import InstitutionLogo from './InstitutionLogo'
 
 interface InstitutionCardProps {
   institution: {
@@ -30,18 +31,8 @@ export default function InstitutionCard({ institution }: InstitutionCardProps) {
     <div className="bg-elimux-card rounded-xl p-5 border border-border hover:border-primary-500/50 transition-all hover:shadow-lg hover:shadow-primary-500/10">
       <div className="flex items-start gap-4">
         {/* Logo */}
-        <div className="w-16 h-16 rounded-lg bg-muted/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
-          {institution.logo_url ? (
-            <img
-              src={institution.logo_url}
-              alt={institution.name}
-              className="w-full h-full object-cover"
-              loading="lazy"
-              decoding="async"
-            />
-          ) : (
-            <Globe className="w-8 h-8 text-muted" />
-          )}
+        <div className="w-16 h-16 rounded-lg bg-white border border-border flex items-center justify-center flex-shrink-0 overflow-hidden p-1.5">
+          <InstitutionLogo name={institution.name} logoUrl={institution.logo_url} websiteUrl={institution.website_url} />
         </div>
 
         <div className="flex-1 min-w-0">
