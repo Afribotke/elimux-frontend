@@ -6,7 +6,10 @@ import { Search, Sparkles, X } from 'lucide-react'
 interface AISearchBarProps {
   onSearch: (query: string) => void
   loading?: boolean
+  placeholder?: string
 }
+
+const DEFAULT_PLACEHOLDER = 'Ask anything... e.g., "I want to study medicine in Kenya"'
 
 const SUGGESTIONS = [
   'I want to study medicine in Kenya',
@@ -19,7 +22,7 @@ const SUGGESTIONS = [
   'Affordable MBA programs',
 ]
 
-export default function AISearchBar({ onSearch, loading }: AISearchBarProps) {
+export default function AISearchBar({ onSearch, loading, placeholder }: AISearchBarProps) {
   const [query, setQuery] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -56,7 +59,7 @@ export default function AISearchBar({ onSearch, loading }: AISearchBarProps) {
                 setShowSuggestions(e.target.value.length > 0)
               }}
               onFocus={() => setShowSuggestions(query.length > 0)}
-              placeholder='Ask anything... e.g., "I want to study medicine in Kenya"'
+              placeholder={placeholder ?? DEFAULT_PLACEHOLDER}
               className="flex-1 bg-transparent text-foreground placeholder-muted py-3 focus:outline-none text-lg min-w-0"
             />
             {query && (
