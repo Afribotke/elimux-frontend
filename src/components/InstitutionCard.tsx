@@ -90,15 +90,26 @@ export default function InstitutionCard({ institution }: InstitutionCardProps) {
               </span>
             )}
             {institution.website_url && (
-              <a
-                href={institution.website_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-primary-400 hover:text-primary-300 transition-colors"
+              <span
+                role="link"
+                tabIndex={0}
+                className="flex items-center gap-1 text-primary-400 hover:text-primary-300 transition-colors cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  window.open(institution.website_url!, '_blank', 'noopener,noreferrer')
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    window.open(institution.website_url!, '_blank', 'noopener,noreferrer')
+                  }
+                }}
               >
                 <Globe className="w-4 h-4" />
                 Website
-              </a>
+              </span>
             )}
           </div>
         </div>
