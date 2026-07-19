@@ -1,6 +1,7 @@
-import { MapPin, Users, Globe, Star, CheckCircle, Sparkles } from 'lucide-react'
+import { MapPin, Users, Star, CheckCircle, Sparkles } from 'lucide-react'
 import AccreditationBadgeList from './AccreditationBadgeList'
 import InstitutionLogo from './InstitutionLogo'
+import WebsiteLinkButton from './WebsiteLinkButton'
 
 interface FeaturedInstitutionCardProps {
   institution: {
@@ -76,26 +77,10 @@ export default function FeaturedInstitutionCard({ institution }: FeaturedInstitu
               </span>
             )}
             {institution.website_url && (
-              <span
-                role="link"
-                tabIndex={0}
+              <WebsiteLinkButton
+                url={institution.website_url}
                 className="flex items-center gap-1 text-primary-400 hover:text-primary-300 transition-colors cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  window.open(institution.website_url!, '_blank', 'noopener,noreferrer')
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    window.open(institution.website_url!, '_blank', 'noopener,noreferrer')
-                  }
-                }}
-              >
-                <Globe className="w-4 h-4" />
-                Website
-              </span>
+              />
             )}
           </div>
         </div>
