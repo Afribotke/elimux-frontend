@@ -3,10 +3,13 @@
 import { useState } from 'react'
 import { Globe } from 'lucide-react'
 
-// 3-tier logo strategy:
-// 1. The institution's own logo_url (claimed institutions upload via the portal)
-// 2. Clearbit's free logo API, derived from the institution's website domain
-// 3. Google's favicon service as a second source, then the Globe icon as final fallback
+// 2-tier logo strategy:
+// 1. The institution's own logo_url (claimed institutions upload via the portal,
+//    or scraped by fetch_logos.js)
+// 2. Google's favicon service, derived from the institution's website domain,
+//    then the Globe icon as final fallback
+// Clearbit's free logo API was dropped 2026-07-19 — it was returning broken
+// (0x0) images for every domain we sampled, effectively dead.
 function domainFromUrl(url: string | null): string | null {
   if (!url) return null
   try {
@@ -28,7 +31,6 @@ export default function InstitutionLogo({ name, logoUrl, websiteUrl }: Instituti
 
   const sources = [
     logoUrl || null,
-    domain ? `https://logo.clearbit.com/${domain}` : null,
     domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : null,
   ].filter((s): s is string => !!s)
 
