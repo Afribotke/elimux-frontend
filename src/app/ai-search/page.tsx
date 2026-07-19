@@ -3,14 +3,19 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { runAISearch, type SearchIntent } from '@/lib/aiSearch'
+import { runAISearch, type SearchIntent, type InstitutionMode } from '@/lib/aiSearch'
 import { awardPoints } from '@/lib/api'
 import AISearchBar from '@/components/AISearchBar'
+import SearchModeToggle from '@/components/SearchModeToggle'
 import InterestSelector from '@/components/InterestSelector'
 import CareerPathway from '@/components/CareerPathway'
 import ProgramCard from '@/components/ProgramCard'
 import InstitutionCard from '@/components/InstitutionCard'
 import { Sparkles, GraduationCap, Building2, MapPin, DollarSign, BarChart3 } from 'lucide-react'
+
+// Feature flag: the University/Skills toggle only renders when this is 'true'
+// in the environment (Vercel env var). Absent/false = page identical to before.
+const SKILLS_TOGGLE_ENABLED = process.env.NEXT_PUBLIC_FEATURE_SKILLS_TOGGLE === 'true'
 
 export default function AISearchPage() {
   const [countries, setCountries] = useState<{ id: string; name: string }[]>([])
@@ -22,6 +27,7 @@ export default function AISearchPage() {
   const [categoryId, setCategoryId] = useState('')
   const [level, setLevel] = useState('')
   const [maxBudget, setMaxBudget] = useState<number | null>(null)
+  const [institutionMode, setInstitutionMode] = useState<InstitutionMode | null>(null)
 
   const [loading, setLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
@@ -52,6 +58,7 @@ export default function AISearchPage() {
         categoryId: categoryId || null,
         level: level || null,
         maxBudget,
+        institutionMode: SKILLS_TOGGLE_ENABLED ? institutionMode : null,
       })
       setIntent(result.intent)
       setPrograms(result.programs)
@@ -68,6 +75,13 @@ export default function AISearchPage() {
     setCareerGoal(label)
   }
 
+  const searchPlaceholder =
+    institutionMode === 'skills'
+      ? 'Try: "plumbing course in Nairobi" or "welding certificate"'
+      : institutionMode === 'academic'
+        ? 'Try: "I want to study medicine in Kenya" or "MBA under $10,000"'
+        : undefined
+
   return (
     <main className="min-h-screen py-16 px-4">
       <div className="max-w-6xl mx-auto text-center mb-10">
@@ -82,7 +96,13 @@ export default function AISearchPage() {
           Describe it in your own words, pick your interests, or tell us your dream career - we&apos;ll match you to real programs.
         </p>
 
-        <AISearchBar onSearch={handleSearch} loading={loading} />
+        {SKILLS_TOGGLE_ENABLED && (
+          <div className="mb-6">
+            <SearchModeToggle value={institutionMode} onChange={setInstitutionMode} />
+          </div>
+        )}
+
+        <AISearchBar onSearch={handleSearch} loading={loading} placeholder={searchPlaceholder} />
       </div>
 
       <div className="max-w-4xl mx-auto mb-10">

@@ -8,11 +8,14 @@ export interface SearchIntent {
   maxBudget: number | null
 }
 
+export type InstitutionMode = 'academic' | 'skills'
+
 export interface AISearchFilters {
   countryId?: string | null
   categoryId?: string | null
   level?: string | null
   maxBudget?: number | null
+  institutionMode?: InstitutionMode | null
 }
 
 export interface AISearchResult {
@@ -38,6 +41,7 @@ export async function runAISearch(
       categoryId: filters.categoryId ?? null,
       level: filters.level ?? null,
       maxBudget: filters.maxBudget ?? null,
+      institutionMode: filters.institutionMode ?? null,
     }),
   })
 
