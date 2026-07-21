@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { runAISearch, type SearchIntent, type InstitutionMode } from '@/lib/aiSearch'
 import { awardPoints } from '@/lib/api'
@@ -17,7 +18,11 @@ import { Sparkles, GraduationCap, Building2, MapPin, DollarSign, BarChart3 } fro
 // in the environment (Vercel env var). Absent/false = page identical to before.
 const SKILLS_TOGGLE_ENABLED = process.env.NEXT_PUBLIC_FEATURE_SKILLS_TOGGLE === 'true'
 
-export default function AISearchPage() {
+function AISearchContent() {
+  const searchParams = useSearchParams()
+  const initialQuery = searchParams.get('q') ?? ''
+  const initialMode = searchParams.get('mode')
+
   const [countries, setCountries] = useState<{ id: string; name: string }[]>([])
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
 
@@ -27,7 +32,9 @@ export default function AISearchPage() {
   const [categoryId, setCategoryId] = useState('')
   const [level, setLevel] = useState('')
   const [maxBudget, setMaxBudget] = useState<number | null>(null)
-  const [institutionMode, setInstitutionMode] = useState<InstitutionMode | null>(null)
+  const [institutionMode, setInstitutionMode] = useState<InstitutionMode | null>(
+    SKILLS_TOGGLE_ENABLED && (initialMode === 'academic' || initialMode === 'skills') ? initialMode : null
+  )
 
   const [loading, setLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
@@ -46,6 +53,15 @@ export default function AISearchPage() {
       if (categoryData) setCategories(categoryData)
     }
     loadReferenceData()
+  }, [])
+
+  // Auto-run search when arriving with a ?q= param (e.g. from the homepage
+  // hero). No-op when absent, so direct visits to /ai-search are unaffected.
+  useEffect(() => {
+    if (initialQuery) {
+      handleSearch(initialQuery)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function handleSearch(query: string) {
@@ -102,7 +118,7 @@ export default function AISearchPage() {
           </div>
         )}
 
-        <AISearchBar onSearch={handleSearch} loading={loading} placeholder={searchPlaceholder} />
+        <AISearchBar onSearch={handleSearch} loading={loading} placeholder={searchPlaceholder} initialQuery={initialQuery} />
       </div>
 
       <div className="max-w-4xl mx-auto mb-10">
@@ -245,5 +261,13 @@ export default function AISearchPage() {
         </div>
       )}
     </main>
+  )
+}
+
+export default function AISearchPage() {
+  return (
+    <Suspense fallback={null}>
+      <AISearchContent />
+    </Suspense>
   )
 }

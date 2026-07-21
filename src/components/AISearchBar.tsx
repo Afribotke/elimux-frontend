@@ -7,6 +7,7 @@ interface AISearchBarProps {
   onSearch: (query: string) => void
   loading?: boolean
   placeholder?: string
+  initialQuery?: string
 }
 
 const DEFAULT_PLACEHOLDER = 'Ask anything... e.g., "I want to study medicine in Kenya"'
@@ -22,8 +23,8 @@ const SUGGESTIONS = [
   'Affordable MBA programs',
 ]
 
-export default function AISearchBar({ onSearch, loading, placeholder }: AISearchBarProps) {
-  const [query, setQuery] = useState('')
+export default function AISearchBar({ onSearch, loading, placeholder, initialQuery }: AISearchBarProps) {
+  const [query, setQuery] = useState(initialQuery ?? '')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
