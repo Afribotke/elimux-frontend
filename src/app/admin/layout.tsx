@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AdminKeyProvider, useAdminKey } from '@/components/admin/AdminKeyContext'
-import { LayoutDashboard, Building2, GraduationCap, MessageSquare, Users, BarChart3, Lock, KeyRound, Tag, Megaphone, Rocket, Award, DollarSign, Search, Bot, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Building2, GraduationCap, MessageSquare, Users, BarChart3, Lock, KeyRound, Tag, Megaphone, Rocket, Award, DollarSign, Search, Bot, Menu, X, Settings } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { href: '/admin/searches', label: 'Searches', icon: Search, exact: false },
   { href: '/admin/institutions-performance', label: 'Institution Performance', icon: BarChart3, exact: false },
   { href: '/admin/analytics', label: 'University Analytics', icon: BarChart3, exact: false },
+  { href: '/admin/settings', label: 'Platform Pricing', icon: Settings, exact: false },
 ]
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
