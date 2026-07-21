@@ -4,11 +4,13 @@ import type { HomepageAd } from './useHomepageAds'
 
 export default function FeaturedCarousel({ ads }: { ads: HomepageAd[] }) {
   const [idx, setIdx] = useState(0)
+  const [paused, setPaused] = useState(false)
+
   useEffect(() => {
-    if (ads.length < 2) return
+    if (ads.length < 2 || paused) return
     const t = setInterval(() => setIdx(i => (i + 1) % ads.length), 6000)
     return () => clearInterval(t)
-  }, [ads.length])
+  }, [ads.length, paused])
 
   if (ads.length === 0) return null
   const ad = ads[idx % ads.length]
@@ -26,6 +28,9 @@ export default function FeaturedCarousel({ ads }: { ads: HomepageAd[] }) {
             <button aria-label="Previous" onClick={() => setIdx((idx - 1 + ads.length) % ads.length)} className="px-2 py-1 rounded-full" style={{ border: '1px solid rgba(255,255,255,0.3)' }}>‹</button>
             <span className="text-xs opacity-70">{idx + 1}/{ads.length}</span>
             <button aria-label="Next" onClick={() => setIdx((idx + 1) % ads.length)} className="px-2 py-1 rounded-full" style={{ border: '1px solid rgba(255,255,255,0.3)' }}>›</button>
+            <button aria-label={paused ? 'Play' : 'Pause'} aria-pressed={paused} onClick={() => setPaused(p => !p)} className="px-2 py-1 rounded-full" style={{ border: '1px solid rgba(255,255,255,0.3)' }}>
+              {paused ? '▶' : '❚❚'}
+            </button>
           </>
         )}
         <a href={ad.cta_url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold rounded-full px-4 py-2" style={{ background: 'var(--skolex-gold, #C8973A)', color: 'var(--skolex-navy, #0D1F3C)' }}>{ad.cta_label}</a>
