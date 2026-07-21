@@ -1,0 +1,31 @@
+.skolex-theme {
+  --skolex-navy: #0d1f3c;
+  --skolex-gold: #c8973a;
+  --skolex-gold-2: #e0a840;
+  --skolex-parchment: #f8f5ee;
+  --skolex-white: #ffffff;
+  --skolex-g1: #f0ede6;
+  --skolex-g2: #e2ddd5;
+  --skolex-g3: #b0a898;
+  --skolex-text: #1a2035;
+  --skolex-t2: #5a6070;
+  --skolex-t3: #9aa0b0;
+
+  --skolex-r: 12px;
+  --skolex-r-lg: 18px;
+  --skolex-r-full: 9999px;
+
+  --skolex-shadow: 0 2px 16px rgba(13, 31, 60, 0.08);
+  --skolex-shadow-lg: 0 8px 40px rgba(13, 31, 60, 0.14);
+
+  background: var(--skolex-parchment);
+  color: var(--skolex-text);
+}
+
+.skolex-serif {
+  font-family: var(--font-skolex-serif), Georgia, serif;
+}
+
+.skolex-sans {
+  font-family: var(--font-skolex-sans), -apple-system, sans-serif;
+}
