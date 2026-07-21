@@ -3,6 +3,7 @@ import './skolex-theme.css'
 import LocalizationBar from './LocalizationBar'
 import HeroSearch from './HeroSearch'
 import TrustStats from './TrustStats'
+import AdsSection from './ads/AdsSection'
 
 const libreBaskerville = Libre_Baskerville({
   subsets: ['latin'],
@@ -28,6 +29,7 @@ export default function SkolexHome() {
         <HeroSearch />
         <TrustStats />
       </div>
+      <AdsSection />
     </main>
   )
 }
