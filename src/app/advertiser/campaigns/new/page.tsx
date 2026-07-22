@@ -59,21 +59,24 @@ export default function CreateCampaign() {
       if (result.success && result.data?.length > 0) {
         setPlacements(result.data);
       } else {
-        // Fallback: hardcoded placements from live schema
+        // Fallback: match live ad_slots.slot_type values exactly
         setPlacements([
-          { id: "homepage_banner", name: "Homepage Banner", type: "banner" },
-          { id: "homepage_sidebar", name: "Homepage Sidebar", type: "sidebar" },
-          { id: "search_results", name: "Search Results", type: "inline" },
-          { id: "program_page", name: "Program Page", type: "inline" }
+          { id: "featured", name: "Featured Listing", type: "featured" },
+          { id: "hero", name: "Homepage Hero", type: "hero" },
+          { id: "banner", name: "Banner Ad", type: "banner" },
+          { id: "sponsored", name: "Sponsored Content", type: "sponsored" },
+          { id: "search", name: "Search Results", type: "search" }
         ]);
       }
     } catch (err) {
       console.error("Fetch placements error:", err);
+      // Fallback on error too
       setPlacements([
-        { id: "homepage_banner", name: "Homepage Banner", type: "banner" },
-        { id: "homepage_sidebar", name: "Homepage Sidebar", type: "sidebar" },
-        { id: "search_results", name: "Search Results", type: "inline" },
-        { id: "program_page", name: "Program Page", type: "inline" }
+        { id: "featured", name: "Featured Listing", type: "featured" },
+        { id: "hero", name: "Homepage Hero", type: "hero" },
+        { id: "banner", name: "Banner Ad", type: "banner" },
+        { id: "sponsored", name: "Sponsored Content", type: "sponsored" },
+        { id: "search", name: "Search Results", type: "search" }
       ]);
     } finally { setLoading(false); }
   };
