@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies (Frontend)
+        run: |
+          cd elimux-frontend
+          npm ci
+
+      - name: Install dependencies (Backend)
+        run: |
+          cd elimux-backend
+          npm ci
+
+      - name: Run linter (Frontend)
+        run: |
+          cd elimux-frontend
+          npm run lint
+
+      - name: Run type check (Frontend)
+        run: |
+          cd elimux-frontend
+          npm run type-check
+
+      - name: Run unit tests (Frontend)
+        run: |
+          cd elimux-frontend
+          npm run test
+
+      - name: Build frontend
+        run: |
+          cd elimux-frontend
+          npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Run backend tests
+        run: |
+          cd elimux-backend
+          npm run test
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          cd elimux-frontend
+          npm ci
+
+      - name: Install Playwright
+        run: |
+          cd elimux-frontend
+          npx playwright install --with-deps
+
+      - name: Run E2E tests
+        run: |
+          cd elimux-frontend
+          npx playwright test
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
