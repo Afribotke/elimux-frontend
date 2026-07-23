@@ -10,6 +10,8 @@ module.exports = {
     extend: {
       colors: {
         primary: {
+          DEFAULT: 'rgb(var(--primary-600) / <alpha-value>)',
+          foreground: 'rgb(var(--elimux-dark) / <alpha-value>)',
           50: 'rgb(var(--primary-50) / <alpha-value>)',
           100: 'rgb(var(--primary-100) / <alpha-value>)',
           200: 'rgb(var(--primary-200) / <alpha-value>)',
@@ -22,8 +24,34 @@ module.exports = {
           900: 'rgb(var(--primary-900) / <alpha-value>)',
         },
         foreground: 'rgb(var(--foreground) / <alpha-value>)',
-        muted: 'rgb(var(--muted) / <alpha-value>)',
+        muted: {
+          DEFAULT: 'rgb(var(--muted) / <alpha-value>)',
+          foreground: 'rgb(var(--muted) / <alpha-value>)',
+        },
         border: 'rgb(var(--border) / <alpha-value>)',
+        input: 'rgb(var(--border) / <alpha-value>)',
+        ring: 'rgb(var(--primary-500) / <alpha-value>)',
+        background: 'rgb(var(--elimux-dark) / <alpha-value>)',
+        card: {
+          DEFAULT: 'rgb(var(--elimux-card) / <alpha-value>)',
+          foreground: 'rgb(var(--foreground) / <alpha-value>)',
+        },
+        popover: {
+          DEFAULT: 'rgb(var(--elimux-card) / <alpha-value>)',
+          foreground: 'rgb(var(--foreground) / <alpha-value>)',
+        },
+        secondary: {
+          DEFAULT: 'rgb(var(--elimux-card) / <alpha-value>)',
+          foreground: 'rgb(var(--foreground) / <alpha-value>)',
+        },
+        accent: {
+          DEFAULT: 'rgb(var(--elimux-accent) / <alpha-value>)',
+          foreground: 'rgb(var(--elimux-dark) / <alpha-value>)',
+        },
+        destructive: {
+          DEFAULT: '#ef4444',
+          foreground: '#ffffff',
+        },
         elimux: {
           dark: 'rgb(var(--elimux-dark) / <alpha-value>)',
           card: 'rgb(var(--elimux-card) / <alpha-value>)',
