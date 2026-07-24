@@ -48,32 +48,40 @@ export default function ContactPage() {
           ) : (
             <form onSubmit={handleSubmit} className='space-y-4'>
               <div>
-                <label className='text-sm text-muted mb-1 block flex items-center gap-2'>
+                <label htmlFor='name' className='text-sm text-muted mb-1 block flex items-center gap-2'>
                   <User className='w-4 h-4' /> Name
                 </label>
                 <input
+                  id='name'
+                  name='name'
                   type='text'
                   required
+                  autoComplete='name'
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className='w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500'
                 />
               </div>
               <div>
-                <label className='text-sm text-muted mb-1 block flex items-center gap-2'>
+                <label htmlFor='email' className='text-sm text-muted mb-1 block flex items-center gap-2'>
                   <Mail className='w-4 h-4' /> Email
                 </label>
                 <input
+                  id='email'
+                  name='email'
                   type='email'
                   required
+                  autoComplete='email'
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className='w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500'
                 />
               </div>
               <div>
-                <label className='text-sm text-muted mb-1 block'>Subject</label>
+                <label htmlFor='subject' className='text-sm text-muted mb-1 block'>Subject</label>
                 <input
+                  id='subject'
+                  name='subject'
                   type='text'
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
@@ -81,8 +89,10 @@ export default function ContactPage() {
                 />
               </div>
               <div>
-                <label className='text-sm text-muted mb-1 block'>Message</label>
+                <label htmlFor='message' className='text-sm text-muted mb-1 block'>Message</label>
                 <textarea
+                  id='message'
+                  name='message'
                   required
                   rows={4}
                   value={formData.message}

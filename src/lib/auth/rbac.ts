@@ -170,3 +170,20 @@ export function getAvailableRoles(): { value: UserRole; label: string }[] {
     label: r.displayName,
   }));
 }
+
+export function getRoleHomePath(role: UserRole): string {
+  switch (role) {
+    case "partner":
+      return "/partner/dashboard";
+    case "advertiser":
+      return "/advertiser/dashboard";
+    case "institution":
+      return "/institution/dashboard";
+    case "admin":
+    case "super_admin":
+      return "/admin";
+    case "student":
+    default:
+      return "/";
+  }
+}

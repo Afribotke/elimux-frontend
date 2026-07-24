@@ -33,6 +33,10 @@ export default function Footer() {
           <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
           <Link href="/accreditation-bodies" className="hover:text-foreground transition-colors">Accreditation Bodies</Link>
           <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
+          <Link href="/partner" className="hover:text-foreground transition-colors">Partner Program</Link>
+          <Link href="/ads/self-serve" className="hover:text-foreground transition-colors">Advertise</Link>
+          <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+          <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
         </div>
 
         <div>
