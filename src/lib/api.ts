@@ -386,7 +386,7 @@ export function deleteMessage(id: string, adminKey: string) {
 export interface AIStatus {
   mode: 'launch' | 'scale'
   order: string[]
-  embeddingsProvider: string
+  embeddingsOrder: string[]
   providers: { name: string; available: boolean }[]
 }
 
