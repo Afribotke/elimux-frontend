@@ -3,14 +3,39 @@
 import { useState } from 'react'
 import { Mail, MessageSquare, Send, User, CheckCircle } from 'lucide-react'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL
+
 export default function ContactPage() {
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' })
   const [submitted, setSubmitted] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitted(true)
-    setTimeout(() => setSubmitted(false), 3000)
+    setSending(true)
+    setError('')
+
+    try {
+      const res = await fetch(`${API_URL}/api/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+      const json = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        throw new Error(json?.error || 'Failed to send message')
+      }
+
+      setSubmitted(true)
+      setFormData({ name: '', email: '', subject: '', message: '' })
+      setTimeout(() => setSubmitted(false), 3000)
+    } catch (err: any) {
+      setError(err.message || 'Failed to send message. Please try again.')
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -47,6 +72,11 @@ export default function ContactPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className='space-y-4'>
+              {error && (
+                <div className='bg-elimux-danger/10 border border-elimux-danger/30 rounded-lg p-4 text-elimux-danger text-sm'>
+                  {error}
+                </div>
+              )}
               <div>
                 <label htmlFor='name' className='text-sm text-muted mb-1 block flex items-center gap-2'>
                   <User className='w-4 h-4' /> Name
@@ -102,10 +132,11 @@ export default function ContactPage() {
               </div>
               <button
                 type='submit'
-                className='w-full py-3 rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-semibold transition-colors flex items-center justify-center gap-2'
+                disabled={sending}
+                className='w-full py-3 rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50'
               >
                 <Send className='w-4 h-4' />
-                Send Message
+                {sending ? 'Sending...' : 'Send Message'}
               </button>
             </form>
           )}

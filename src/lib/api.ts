@@ -353,6 +353,34 @@ export function deleteReview(id: string, adminKey: string) {
   return request<{ data: AdminReview; message: string }>(`/api/admin/reviews/${id}`, { method: 'DELETE' }, adminKey)
 }
 
+// Contact messages (admin)
+
+export interface AdminMessage {
+  id: string
+  name: string
+  email: string
+  subject: string | null
+  message: string
+  status: 'new' | 'read' | 'archived'
+  created_at: string
+}
+
+export function listAdminMessages(adminKey: string, status = 'new') {
+  return request<{ data: AdminMessage[] }>(`/api/admin/messages?status=${encodeURIComponent(status)}`, {}, adminKey)
+}
+
+export function updateMessageStatus(id: string, status: 'new' | 'read' | 'archived', adminKey: string) {
+  return request<{ data: AdminMessage; message: string }>(
+    `/api/admin/messages/${id}`,
+    { method: 'PATCH', body: JSON.stringify({ status }) },
+    adminKey
+  )
+}
+
+export function deleteMessage(id: string, adminKey: string) {
+  return request<{ data: AdminMessage; message: string }>(`/api/admin/messages/${id}`, { method: 'DELETE' }, adminKey)
+}
+
 // Subscription plans (admin)
 
 export interface SubscriptionPlanRow {
