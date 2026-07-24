@@ -91,8 +91,11 @@ export default function ProviderStatus() {
             ))}
           </div>
 
+          <p className="text-xs text-muted mb-1">
+            Chat fallback order: {status.order.join(' → ')}
+          </p>
           <p className="text-xs text-muted mb-2">
-            Fallback order: {status.order.join(' → ')}
+            Embeddings: {status.embeddingsProvider} only (no fallback)
           </p>
 
           <div className="divide-y divide-border border border-border rounded-lg overflow-hidden">
