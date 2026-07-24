@@ -381,6 +381,26 @@ export function deleteMessage(id: string, adminKey: string) {
   return request<{ data: AdminMessage; message: string }>(`/api/admin/messages/${id}`, { method: 'DELETE' }, adminKey)
 }
 
+// AI gateway (admin)
+
+export interface AIStatus {
+  mode: 'launch' | 'scale'
+  order: string[]
+  providers: { name: string; available: boolean }[]
+}
+
+export function getAIStatus(adminKey: string) {
+  return request<AIStatus>('/api/ai/status', {}, adminKey)
+}
+
+export function setAIMode(mode: 'launch' | 'scale', adminKey: string) {
+  return request<{ mode: AIStatus['mode']; message: string }>(
+    '/api/ai/mode',
+    { method: 'POST', body: JSON.stringify({ mode }) },
+    adminKey
+  )
+}
+
 // Subscription plans (admin)
 
 export interface SubscriptionPlanRow {
