@@ -40,7 +40,7 @@ export default function InternshipDetailClient({ internship }: { internship: any
   const employer = internship.employer;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-muted py-8">
       <div className="max-w-4xl mx-auto px-4">
         <Button variant="ghost" className="mb-4" onClick={() => router.push("/internships")}>
           <ArrowLeft className="w-4 h-4 mr-2" />Back to Internships
@@ -59,7 +59,7 @@ export default function InternshipDetailClient({ internship }: { internship: any
                 )}
                 <div>
                   <CardTitle className="text-2xl">{internship.title}</CardTitle>
-                  <p className="text-gray-600">{employer?.company_name}</p>
+                  <p className="text-muted-foreground">{employer?.company_name}</p>
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2">
@@ -100,18 +100,18 @@ export default function InternshipDetailClient({ internship }: { internship: any
             )}
 
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">About this Role</h3>
-              <p className="text-gray-600 whitespace-pre-line">{internship.description}</p>
+              <h3 className="font-semibold text-foreground mb-2">About this Role</h3>
+              <p className="text-muted-foreground whitespace-pre-line">{internship.description}</p>
             </div>
 
             {internship.requirements && (
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Requirements</h3>
-                <p className="text-gray-600 whitespace-pre-line">{internship.requirements}</p>
+                <h3 className="font-semibold text-foreground mb-2">Requirements</h3>
+                <p className="text-muted-foreground whitespace-pre-line">{internship.requirements}</p>
               </div>
             )}
 
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock className="w-4 h-4" />
               <span>Application Deadline: {new Date(internship.application_deadline).toLocaleDateString()}</span>
             </div>
@@ -120,7 +120,7 @@ export default function InternshipDetailClient({ internship }: { internship: any
               <div className="flex items-center gap-2">
                 <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
                 <span className="font-medium">{employer.average_rating.toFixed(1)}</span>
-                <span className="text-gray-500">({employer.review_count} reviews)</span>
+                <span className="text-muted-foreground">({employer.review_count} reviews)</span>
               </div>
             )}
 
@@ -146,3 +146,4 @@ export default function InternshipDetailClient({ internship }: { internship: any
     </div>
   );
 }
+

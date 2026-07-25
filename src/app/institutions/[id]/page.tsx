@@ -95,7 +95,7 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
 
         <div className="bg-elimux-card rounded-2xl p-6 md:p-8 border border-border mb-8">
           <div className="flex items-start gap-4">
-            <div className="w-20 h-20 rounded-xl bg-white border border-border flex items-center justify-center flex-shrink-0 overflow-hidden p-2">
+            <div className="w-20 h-20 rounded-xl bg-background border border-border flex items-center justify-center flex-shrink-0 overflow-hidden p-2">
               <InstitutionLogo name={institution.name} logoUrl={institution.logo_url} websiteUrl={institution.website_url} />
             </div>
 
@@ -239,3 +239,4 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
     </main>
   )
 }
+

@@ -90,7 +90,7 @@ export default function ApplyClient({ internship, internshipId }: { internship: 
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-muted py-8">
       <div className="max-w-3xl mx-auto px-4">
         <Button variant="ghost" className="mb-4" onClick={() => router.push("/internships")}>
           <ArrowLeft className="w-4 h-4 mr-2" />Back to Internships
@@ -107,9 +107,9 @@ export default function ApplyClient({ internship, internshipId }: { internship: 
                     Only students whose details have been verified and uploaded by their university can apply for internships.
                     Your profile is pending verification.
                   </p>
-                  <div className="bg-white rounded-lg p-4 border border-red-200">
-                    <p className="text-sm text-gray-600 mb-2">To get verified:</p>
-                    <ol className="text-sm text-gray-700 list-decimal list-inside space-y-1">
+                  <div className="bg-background rounded-lg p-4 border border-red-200">
+                    <p className="text-sm text-muted-foreground mb-2">To get verified:</p>
+                    <ol className="text-sm text-foreground list-decimal list-inside space-y-1">
                       <li>Contact your university career services office</li>
                       <li>Ask them to upload your details to ElimuX</li>
                       <li>Your registration number: <strong>{studentProfile?.registration_number || "N/A"}</strong></li>
@@ -134,12 +134,12 @@ export default function ApplyClient({ internship, internshipId }: { internship: 
             </div>
           </CardHeader>
           <CardContent>
-            <div className="prose prose-sm max-w-none text-gray-600">
-              <h4 className="font-semibold text-gray-900">About this Role</h4>
+            <div className="prose prose-sm max-w-none text-muted-foreground">
+              <h4 className="font-semibold text-foreground">About this Role</h4>
               <p>{internship.description}</p>
               {internship.requirements && (
                 <>
-                  <h4 className="font-semibold text-gray-900 mt-4">Requirements</h4>
+                  <h4 className="font-semibold text-foreground mt-4">Requirements</h4>
                   <p>{internship.requirements}</p>
                 </>
               )}
@@ -241,7 +241,7 @@ export default function ApplyClient({ internship, internshipId }: { internship: 
               </div>
             ))}
             <div className="flex items-center justify-between pt-4 border-t">
-              <div className="flex items-center gap-2 text-sm text-gray-500">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Shield className="w-4 h-4" />
                 <span>Your data is shared with the employer and NITA</span>
               </div>
@@ -259,3 +259,4 @@ export default function ApplyClient({ internship, internshipId }: { internship: 
     </div>
   );
 }
+
