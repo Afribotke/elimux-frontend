@@ -106,7 +106,7 @@ function CreateCampaignForm() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
+    <div className="min-h-screen bg-muted py-8">
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Create Ad Campaign</h1>
@@ -115,7 +115,7 @@ function CreateCampaignForm() {
               <div
                 key={s}
                 className={`h-2 flex-1 rounded-full ${
-                  s <= step ? "bg-emerald-600" : "bg-slate-200"
+                  s <= step ? "bg-emerald-600" : "bg-secondary"
                 }`}
               />
             ))}
@@ -153,7 +153,7 @@ function CreateCampaignForm() {
                   placeholder="Enroll Now for September Intake"
                   maxLength={60}
                 />
-                <p className="text-xs text-slate-500">{form.headline.length}/60 characters</p>
+                <p className="text-xs text-muted-foreground">{form.headline.length}/60 characters</p>
               </div>
               <div className="space-y-2">
                 <Label>Description</Label>
@@ -163,7 +163,7 @@ function CreateCampaignForm() {
                   placeholder="Brief description of your offer"
                   maxLength={150}
                 />
-                <p className="text-xs text-slate-500">{form.description.length}/150 characters</p>
+                <p className="text-xs text-muted-foreground">{form.description.length}/150 characters</p>
               </div>
               <Button onClick={() => setStep(2)} className="w-full">Continue</Button>
             </CardContent>
@@ -187,11 +187,11 @@ function CreateCampaignForm() {
                       className={`p-4 rounded-lg border text-left transition-colors ${
                         form.placement.includes(option.id)
                           ? "border-emerald-500 bg-emerald-50"
-                          : "border-slate-200 hover:border-slate-300"
+                          : "border-border hover:border-border"
                       }`}
                     >
                       <p className="font-medium">{option.name}</p>
-                      <p className="text-sm text-slate-600">KES {option.basePrice.toLocaleString()}/week</p>
+                      <p className="text-sm text-muted-foreground">KES {option.basePrice.toLocaleString()}/week</p>
                     </button>
                   ))}
                 </div>
@@ -205,7 +205,7 @@ function CreateCampaignForm() {
                   value={form.duration_days}
                   onChange={(e) => setForm({ ...form, duration_days: parseInt(e.target.value) })}
                 />
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   14+ days: 10% discount | 30+ days: 15% discount
                 </p>
               </div>
@@ -230,7 +230,7 @@ function CreateCampaignForm() {
             </CardHeader>
             <CardContent className="space-y-4">
               <AdPreview campaign={form} />
-              <div className="p-4 bg-slate-50 rounded-lg">
+              <div className="p-4 bg-muted rounded-lg">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-medium">Total Cost</span>
                   <span className="text-2xl font-bold text-emerald-600">KES {calculateTotal().toLocaleString()}</span>
@@ -249,3 +249,4 @@ function CreateCampaignForm() {
     </div>
   );
 }
+

@@ -143,7 +143,7 @@ export default function InstitutionRegisterPage() {
                       key={h.id}
                       type="button"
                       onClick={() => { setSelected(h); setHits([]) }}
-                      className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-white/5 border-b border-border last:border-0"
+                      className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-background/5 border-b border-border last:border-0"
                     >
                       {h.name}{h.city ? ` — ${h.city}` : ''}
                     </button>
@@ -219,3 +219,4 @@ export default function InstitutionRegisterPage() {
     </div>
   )
 }
+

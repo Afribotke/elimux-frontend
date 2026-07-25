@@ -2,7 +2,7 @@ import type { HomepageAd } from './useHomepageAds'
 
 export default function SponsoredCard({ ad }: { ad: HomepageAd }) {
   return (
-    <div className="skolex-sans bg-white rounded-2xl p-4 flex flex-col" style={{ border: '1px solid var(--skolex-border, #e5e0d5)', boxShadow: 'var(--shadow, 0 1px 3px rgba(13,31,60,0.08))' }}>
+    <div className="skolex-sans bg-background rounded-2xl p-4 flex flex-col" style={{ border: '1px solid var(--skolex-border, #e5e0d5)', boxShadow: 'var(--shadow, 0 1px 3px rgba(13,31,60,0.08))' }}>
       <span className="text-[10px] font-semibold tracking-widest uppercase mb-2" style={{ color: 'var(--skolex-gold, #C8973A)' }}>Sponsored</span>
       <p className="font-semibold text-sm" style={{ color: 'var(--skolex-navy, #0D1F3C)' }}>{ad.name}</p>
       <p className="text-sm mt-1" style={{ color: 'var(--skolex-navy, #0D1F3C)' }}>{ad.title}</p>
@@ -20,3 +20,4 @@ export default function SponsoredCard({ ad }: { ad: HomepageAd }) {
     </div>
   )
 }
+

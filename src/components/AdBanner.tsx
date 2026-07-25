@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { Ad } from '@/types';
@@ -36,7 +36,7 @@ export default function AdBanner({ placement, className = '' }: AdBannerProps) {
       href={ad.link_url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`block relative overflow-hidden rounded-xl border border-gray-200 hover:shadow-md transition-shadow ${className}`}
+      className={`block relative overflow-hidden rounded-xl border border-border hover:shadow-md transition-shadow ${className}`}
       onClick={() => {
         // Track click
         fetch(`/api/ads/${ad.id}/click`, { method: 'POST' }).catch(() => {});
@@ -57,3 +57,4 @@ export default function AdBanner({ placement, className = '' }: AdBannerProps) {
     </a>
   );
 }
+

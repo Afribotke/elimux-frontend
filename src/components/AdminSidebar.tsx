@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -22,7 +22,7 @@ export default function AdminSidebar() {
     <aside className="w-64 bg-gray-900 text-white min-h-screen flex flex-col">
       <div className="p-6 border-b border-gray-800">
         <h1 className="text-xl font-bold">ElimuX Admin</h1>
-        <p className="text-xs text-gray-400 mt-1">Management Console</p>
+        <p className="text-xs text-muted-foreground mt-1">Management Console</p>
       </div>
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => {
@@ -46,7 +46,7 @@ export default function AdminSidebar() {
         })}
       </nav>
       <div className="p-4 border-t border-gray-800">
-        <Link href="/" className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
+        <Link href="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
@@ -56,3 +56,4 @@ export default function AdminSidebar() {
     </aside>
   );
 }
+

@@ -61,12 +61,12 @@ export default function EmployerRegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-muted py-8">
       <div className="max-w-2xl mx-auto px-4">
         <div className="text-center mb-8">
           <Building2 className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-gray-900">Register as Employer</h1>
-          <p className="text-gray-500">Post internships and find verified student talent.</p>
+          <h1 className="text-3xl font-bold text-foreground">Register as Employer</h1>
+          <p className="text-muted-foreground">Post internships and find verified student talent.</p>
         </div>
 
         <Card>
@@ -119,3 +119,4 @@ export default function EmployerRegisterPage() {
     </div>
   );
 }
+

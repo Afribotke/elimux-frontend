@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   GraduationCap,
   Search,
@@ -48,12 +49,12 @@ export default function DesktopNav() {
   const userName = (user as any)?.full_name || (user as any)?.email?.split("@")[0] || "Account";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <GraduationCap className="h-8 w-8 text-blue-600" />
-          <span className="text-xl font-bold text-slate-900">ElimuX</span>
+          <span className="text-xl font-bold text-foreground">ElimuX</span>
         </Link>
 
         {/* Desktop Links */}
@@ -68,7 +69,7 @@ export default function DesktopNav() {
                 className={`flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                   active
                     ? "bg-blue-50 text-blue-700"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -84,7 +85,7 @@ export default function DesktopNav() {
               className={`flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 pathname.startsWith("/admin")
                   ? "bg-blue-50 text-blue-700"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
               <Shield className="h-4 w-4" />
@@ -95,9 +96,10 @@ export default function DesktopNav() {
 
         {/* Right Side */}
         <div className="hidden lg:flex items-center gap-3">
+          <ThemeToggle />
           <Link
             href="/ai-search"
-            className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-600 hover:bg-slate-200 transition-colors"
+            className="flex items-center gap-2 rounded-full bg-muted px-4 py-2 text-sm text-muted-foreground hover:bg-secondary transition-colors"
           >
             <Search className="h-4 w-4" />
             <span>Search...</span>
@@ -115,10 +117,10 @@ export default function DesktopNav() {
               </button>
 
               {profileOpen && (
-                <div className="absolute right-0 mt-2 w-48 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                <div className="absolute right-0 mt-2 w-48 rounded-lg border border-border bg-background py-1 shadow-lg">
                   <Link
                     href="/student/profile"
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted"
                     onClick={() => setProfileOpen(false)}
                   >
                     <User className="h-4 w-4" />
@@ -127,7 +129,7 @@ export default function DesktopNav() {
                   {userRole === "admin" && (
                     <Link
                       href="/admin"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted"
                       onClick={() => setProfileOpen(false)}
                     >
                       <Shield className="h-4 w-4" />
@@ -151,7 +153,7 @@ export default function DesktopNav() {
             <div className="flex items-center gap-2">
               <Link
                 href="/login"
-                className="rounded-md px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900"
+                className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
               >
                 Log In
               </Link>
@@ -168,7 +170,7 @@ export default function DesktopNav() {
         {/* Mobile Menu Button */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="lg:hidden rounded-md p-2 text-slate-600 hover:bg-slate-100"
+          className="lg:hidden rounded-md p-2 text-muted-foreground hover:bg-muted"
         >
           {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
@@ -176,7 +178,7 @@ export default function DesktopNav() {
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="lg:hidden border-t border-slate-200 bg-white">
+        <div className="lg:hidden border-t border-border bg-background">
           <div className="space-y-1 px-4 py-3">
             {navLinks.map((link) => {
               const Icon = link.icon;
@@ -189,7 +191,7 @@ export default function DesktopNav() {
                   className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium ${
                     active
                       ? "bg-blue-50 text-blue-700"
-                      : "text-slate-600 hover:bg-slate-50"
+                      : "text-muted-foreground hover:bg-muted"
                   }`}
                 >
                   <Icon className="h-5 w-5" />
@@ -205,7 +207,7 @@ export default function DesktopNav() {
                 className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium ${
                   pathname.startsWith("/admin")
                     ? "bg-blue-50 text-blue-700"
-                    : "text-slate-600 hover:bg-slate-50"
+                    : "text-muted-foreground hover:bg-muted"
                 }`}
               >
                 <Shield className="h-5 w-5" />
@@ -213,14 +215,14 @@ export default function DesktopNav() {
               </Link>
             )}
 
-            <div className="my-2 border-t border-slate-200" />
+            <div className="my-2 border-t border-border" />
 
             {user ? (
               <>
                 <Link
                   href="/student/profile"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted"
                 >
                   <User className="h-5 w-5" />
                   Profile
@@ -241,7 +243,7 @@ export default function DesktopNav() {
                 <Link
                   href="/login"
                   onClick={() => setMobileOpen(false)}
-                  className="rounded-md border border-slate-200 px-4 py-2.5 text-center text-sm font-medium text-slate-600"
+                  className="rounded-md border border-border px-4 py-2.5 text-center text-sm font-medium text-muted-foreground"
                 >
                   Log In
                 </Link>

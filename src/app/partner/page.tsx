@@ -58,10 +58,10 @@ export default function PartnerLandingPage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <div className="container mx-auto px-4 py-16 max-w-4xl">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">
+          <h1 className="text-4xl font-bold text-foreground mb-4">
             Become an ElimuX Partner
           </h1>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Earn commissions by helping students discover their perfect education path. 
             Get up to 15% commission on every successful referral.
           </p>
@@ -74,7 +74,7 @@ export default function PartnerLandingPage() {
               <CardDescription>Commission Rate</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-slate-600">Earn on every successful student application through your referral link.</p>
+              <p className="text-sm text-muted-foreground">Earn on every successful student application through your referral link.</p>
             </CardContent>
           </Card>
           <Card>
@@ -83,7 +83,7 @@ export default function PartnerLandingPage() {
               <CardDescription>Cookie Duration</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-slate-600">Students have 30 days to apply after clicking your link.</p>
+              <p className="text-sm text-muted-foreground">Students have 30 days to apply after clicking your link.</p>
             </CardContent>
           </Card>
           <Card>
@@ -92,7 +92,7 @@ export default function PartnerLandingPage() {
               <CardDescription>Payout Schedule</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-slate-600">Get paid every week directly to your M-Pesa or bank account.</p>
+              <p className="text-sm text-muted-foreground">Get paid every week directly to your M-Pesa or bank account.</p>
             </CardContent>
           </Card>
         </div>
@@ -162,3 +162,4 @@ export default function PartnerLandingPage() {
     </div>
   );
 }
+

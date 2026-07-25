@@ -47,10 +47,10 @@ export default function GamificationPage() {
   const progressToNext = nextLevel ? Math.min(100, ((points - (level?.min_points || 0)) / ((nextLevel?.min_points || 1) - (level?.min_points || 0))) * 100) : 100;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-muted py-8">
       <div className="max-w-5xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Achievements and Leaderboard</h1>
-        <p className="text-gray-500 mb-8">Earn points, unlock levels, and climb the ranks.</p>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Achievements and Leaderboard</h1>
+        <p className="text-muted-foreground mb-8">Earn points, unlock levels, and climb the ranks.</p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
@@ -61,7 +61,7 @@ export default function GamificationPage() {
                 </div>
                 <div>
                   <p className="text-3xl font-bold">{points}</p>
-                  <p className="text-gray-500">Total Points</p>
+                  <p className="text-muted-foreground">Total Points</p>
                 </div>
               </div>
             </CardContent>
@@ -74,7 +74,7 @@ export default function GamificationPage() {
                 </div>
                 <div>
                   <p className="text-3xl font-bold">{level?.level_name || "Rookie"}</p>
-                  <p className="text-gray-500">Current Level</p>
+                  <p className="text-muted-foreground">Current Level</p>
                 </div>
               </div>
             </CardContent>
@@ -87,7 +87,7 @@ export default function GamificationPage() {
                 </div>
                 <div>
                   <p className="text-3xl font-bold">{nextLevel ? nextLevel.min_points - points : 0}</p>
-                  <p className="text-gray-500">Points to Next Level</p>
+                  <p className="text-muted-foreground">Points to Next Level</p>
                 </div>
               </div>
             </CardContent>
@@ -100,13 +100,13 @@ export default function GamificationPage() {
             <CardContent>
               <div className="space-y-3">
                 {leaderboard.map((entry, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${idx < 3 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'}`}>
+                  <div key={idx} className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${idx < 3 ? 'bg-amber-100 text-amber-700' : 'bg-muted text-muted-foreground'}`}>
                       {idx + 1}
                     </div>
                     <div className="flex-1">
                       <p className="font-medium">{entry.student?.full_name || "Anonymous"}</p>
-                      <p className="text-xs text-gray-500">{entry.student?.university_name}</p>
+                      <p className="text-xs text-muted-foreground">{entry.student?.university_name}</p>
                     </div>
                     <Badge variant="outline">{entry.points} pts</Badge>
                   </div>
@@ -123,7 +123,7 @@ export default function GamificationPage() {
                   <div key={action.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
                       <p className="font-medium">{action.action_name}</p>
-                      {action.daily_limit && <p className="text-xs text-gray-500">Limit: {action.daily_limit}/day</p>}
+                      {action.daily_limit && <p className="text-xs text-muted-foreground">Limit: {action.daily_limit}/day</p>}
                     </div>
                     <Badge className="bg-emerald-100 text-emerald-700">+{action.points} pts</Badge>
                   </div>
@@ -136,3 +136,4 @@ export default function GamificationPage() {
     </div>
   );
 }
+

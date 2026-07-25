@@ -47,7 +47,7 @@ export function DataRequestForm() {
         <CardContent className="pt-6 text-center">
           <div className="text-4xl mb-4">✅</div>
           <h3 className="text-lg font-semibold mb-2">Request Received</h3>
-          <p className="text-slate-600">
+          <p className="text-muted-foreground">
             We have received your data request. We will process it within 30 days 
             and contact you at {form.email}.
           </p>
@@ -107,3 +107,4 @@ export function DataRequestForm() {
     </Card>
   );
 }
+

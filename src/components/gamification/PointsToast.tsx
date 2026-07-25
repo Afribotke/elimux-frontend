@@ -31,7 +31,7 @@ export default function PointsToast({ show, points, reason, badgeEarned, onClose
         >
           <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow-2xl p-4 min-w-[300px]">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center">
                 <Zap className="w-6 h-6 fill-yellow-300 text-yellow-300" />
               </div>
               <div>
@@ -55,3 +55,4 @@ export default function PointsToast({ show, points, reason, badgeEarned, onClose
     </AnimatePresence>
   );
 }
+

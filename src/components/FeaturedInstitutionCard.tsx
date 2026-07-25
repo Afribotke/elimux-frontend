@@ -36,7 +36,7 @@ export default function FeaturedInstitutionCard({ institution }: FeaturedInstitu
       </div>
 
       <div className="flex items-start gap-4 mt-1">
-        <div className="w-16 h-16 rounded-lg bg-white border border-border flex items-center justify-center flex-shrink-0 overflow-hidden p-1.5">
+        <div className="w-16 h-16 rounded-lg bg-background border border-border flex items-center justify-center flex-shrink-0 overflow-hidden p-1.5">
           <InstitutionLogo name={institution.name} logoUrl={institution.logo_url} websiteUrl={institution.website_url} />
         </div>
 
@@ -88,3 +88,4 @@ export default function FeaturedInstitutionCard({ institution }: FeaturedInstitu
     </div>
   )
 }
+

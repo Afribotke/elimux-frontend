@@ -92,10 +92,10 @@ export default function SelfServeAdPortalPage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">
+          <h1 className="text-4xl font-bold text-foreground mb-4">
             Promote Your Institution
           </h1>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Reach thousands of students actively searching for education programs. 
             Self-serve ad campaigns with transparent pricing.
           </p>
@@ -112,8 +112,8 @@ export default function SelfServeAdPortalPage() {
               <CardHeader>
                 <CardTitle className="text-2xl">{tier.name}</CardTitle>
                 <CardDescription>
-                  <span className="text-3xl font-bold text-slate-900">KES {tier.price.toLocaleString()}</span>
-                  <span className="text-slate-500"> / {tier.duration}</span>
+                  <span className="text-3xl font-bold text-foreground">KES {tier.price.toLocaleString()}</span>
+                  <span className="text-muted-foreground"> / {tier.duration}</span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -140,7 +140,7 @@ export default function SelfServeAdPortalPage() {
         </div>
 
         <div className="mt-16 text-center">
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">Why Advertise on ElimuX?</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">Why Advertise on ElimuX?</h2>
           <div className="grid md:grid-cols-4 gap-6 max-w-4xl mx-auto">
             {[
               { number: "50K+", label: "Monthly Visitors" },
@@ -150,7 +150,7 @@ export default function SelfServeAdPortalPage() {
             ].map((stat) => (
               <div key={stat.label} className="p-4">
                 <p className="text-3xl font-bold text-emerald-600">{stat.number}</p>
-                <p className="text-sm text-slate-600">{stat.label}</p>
+                <p className="text-sm text-muted-foreground">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -159,3 +159,4 @@ export default function SelfServeAdPortalPage() {
     </div>
   );
 }
+

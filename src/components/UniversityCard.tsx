@@ -1,4 +1,4 @@
-﻿import Link from 'next/link';
+import Link from 'next/link';
 import { Institution } from '@/types';
 
 interface UniversityCardProps {
@@ -11,7 +11,7 @@ export default function UniversityCard({ university, variant = 'default' }: Univ
 
   return (
     <Link href={`/university/${university.id}`} className="block group">
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+      <div className="bg-background rounded-xl border border-border shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
         <div className={`flex ${isCompact ? 'p-4' : 'p-6'} items-start space-x-4`}>
           {/* Logo */}
           <div className="flex-shrink-0">
@@ -19,7 +19,7 @@ export default function UniversityCard({ university, variant = 'default' }: Univ
               <img
                 src={university.logo_url}
                 alt={university.name}
-                className={`${isCompact ? 'w-12 h-12' : 'w-16 h-16'} object-contain rounded-lg bg-gray-50`}
+                className={`${isCompact ? 'w-12 h-12' : 'w-16 h-16'} object-contain rounded-lg bg-muted`}
               />
             ) : (
               <div className={`${isCompact ? 'w-12 h-12' : 'w-16 h-16'} bg-blue-100 rounded-lg flex items-center justify-center`}>
@@ -32,10 +32,10 @@ export default function UniversityCard({ university, variant = 'default' }: Univ
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <h3 className={`font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate ${isCompact ? 'text-sm' : 'text-lg'}`}>
+            <h3 className={`font-semibold text-foreground group-hover:text-blue-600 transition-colors truncate ${isCompact ? 'text-sm' : 'text-lg'}`}>
               {university.name}
             </h3>
-            <p className={`text-gray-500 ${isCompact ? 'text-xs' : 'text-sm'} mt-0.5`}>
+            <p className={`text-muted-foreground ${isCompact ? 'text-xs' : 'text-sm'} mt-0.5`}>
               {university.city}{university.city && university.country ? ', ' : ''}{university.country}
             </p>
 
@@ -72,3 +72,4 @@ export default function UniversityCard({ university, variant = 'default' }: Univ
     </Link>
   );
 }
+

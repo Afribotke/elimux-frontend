@@ -46,7 +46,7 @@ export default function MobileNav() {
   return (
     <>
       {/* Mobile Bottom Tab Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white lg:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background lg:hidden">
         <div className="flex items-center justify-around px-2 py-1">
           {[
             { href: "/", label: "Home", icon: GraduationCap },
@@ -61,7 +61,7 @@ export default function MobileNav() {
                 key={item.href}
                 href={item.href}
                 className={`flex flex-col items-center gap-0.5 rounded-md px-3 py-1.5 text-xs font-medium ${
-                  active ? "text-blue-600" : "text-slate-500"
+                  active ? "text-blue-600" : "text-muted-foreground"
                 }`}
               >
                 <Icon className="h-5 w-5" />
@@ -72,7 +72,7 @@ export default function MobileNav() {
 
           <button
             onClick={() => setOpen(true)}
-            className="flex flex-col items-center gap-0.5 rounded-md px-3 py-1.5 text-xs font-medium text-slate-500"
+            className="flex flex-col items-center gap-0.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground"
           >
             <Menu className="h-5 w-5" />
             More
@@ -82,15 +82,15 @@ export default function MobileNav() {
 
       {/* Full Mobile Menu Overlay */}
       {open && (
-        <div className="fixed inset-0 z-[60] bg-white lg:hidden">
-          <div className="flex h-14 items-center justify-between border-b border-slate-200 px-4">
+        <div className="fixed inset-0 z-[60] bg-background lg:hidden">
+          <div className="flex h-14 items-center justify-between border-b border-border px-4">
             <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
               <GraduationCap className="h-7 w-7 text-blue-600" />
-              <span className="text-lg font-bold text-slate-900">ElimuX</span>
+              <span className="text-lg font-bold text-foreground">ElimuX</span>
             </Link>
             <button
               onClick={() => setOpen(false)}
-              className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
+              className="rounded-md p-2 text-muted-foreground hover:bg-muted"
             >
               <X className="h-6 w-6" />
             </button>
@@ -108,7 +108,7 @@ export default function MobileNav() {
                   className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium ${
                     active
                       ? "bg-blue-50 text-blue-700"
-                      : "text-slate-600 hover:bg-slate-50"
+                      : "text-muted-foreground hover:bg-muted"
                   }`}
                 >
                   <Icon className="h-5 w-5" />
@@ -124,7 +124,7 @@ export default function MobileNav() {
                 className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium ${
                   pathname.startsWith("/admin")
                     ? "bg-blue-50 text-blue-700"
-                    : "text-slate-600 hover:bg-slate-50"
+                    : "text-muted-foreground hover:bg-muted"
                 }`}
               >
                 <Shield className="h-5 w-5" />
@@ -132,14 +132,14 @@ export default function MobileNav() {
               </Link>
             )}
 
-            <div className="my-3 border-t border-slate-200" />
+            <div className="my-3 border-t border-border" />
 
             {user ? (
               <>
                 <Link
                   href="/student/profile"
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted"
                 >
                   <User className="h-5 w-5" />
                   My Profile
@@ -160,7 +160,7 @@ export default function MobileNav() {
                 <Link
                   href="/login"
                   onClick={() => setOpen(false)}
-                  className="rounded-lg border border-slate-200 px-4 py-3 text-center text-sm font-medium text-slate-600"
+                  className="rounded-lg border border-border px-4 py-3 text-center text-sm font-medium text-muted-foreground"
                 >
                   Log In
                 </Link>
@@ -179,3 +179,4 @@ export default function MobileNav() {
     </>
   );
 }
+

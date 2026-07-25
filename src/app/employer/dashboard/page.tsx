@@ -57,12 +57,12 @@ export default function EmployerDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-muted py-8">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{employer?.company_name}</h1>
-            <p className="text-gray-500">Employer Dashboard</p>
+            <h1 className="text-3xl font-bold text-foreground">{employer?.company_name}</h1>
+            <p className="text-muted-foreground">Employer Dashboard</p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" onClick={() => router.push("/employer/vacancies")}>My Vacancies</Button>
@@ -73,23 +73,23 @@ export default function EmployerDashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card><CardContent className="p-6"><div className="flex items-center gap-4"><Briefcase className="w-8 h-8 text-emerald-600" /><div><p className="text-2xl font-bold">{stats.active}</p><p className="text-gray-500">Active Vacancies</p></div></div></CardContent></Card>
-          <Card><CardContent className="p-6"><div className="flex items-center gap-4"><Users className="w-8 h-8 text-blue-600" /><div><p className="text-2xl font-bold">{stats.totalApps}</p><p className="text-gray-500">Total Applications</p></div></div></CardContent></Card>
-          <Card><CardContent className="p-6"><div className="flex items-center gap-4"><TrendingUp className="w-8 h-8 text-purple-600" /><div><p className="text-2xl font-bold">{stats.shortlisted}</p><p className="text-gray-500">Shortlisted</p></div></div></CardContent></Card>
+          <Card><CardContent className="p-6"><div className="flex items-center gap-4"><Briefcase className="w-8 h-8 text-emerald-600" /><div><p className="text-2xl font-bold">{stats.active}</p><p className="text-muted-foreground">Active Vacancies</p></div></div></CardContent></Card>
+          <Card><CardContent className="p-6"><div className="flex items-center gap-4"><Users className="w-8 h-8 text-blue-600" /><div><p className="text-2xl font-bold">{stats.totalApps}</p><p className="text-muted-foreground">Total Applications</p></div></div></CardContent></Card>
+          <Card><CardContent className="p-6"><div className="flex items-center gap-4"><TrendingUp className="w-8 h-8 text-purple-600" /><div><p className="text-2xl font-bold">{stats.shortlisted}</p><p className="text-muted-foreground">Shortlisted</p></div></div></CardContent></Card>
         </div>
 
         <Card>
           <CardHeader><CardTitle>Recent Applications</CardTitle></CardHeader>
           <CardContent>
             {recentApps.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No applications yet.</p>
+              <p className="text-muted-foreground text-center py-8">No applications yet.</p>
             ) : (
               <div className="space-y-4">
                 {recentApps.map((app) => (
-                  <div key={app.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                  <div key={app.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted">
                     <div>
                       <p className="font-medium">{app.student?.full_name || "Anonymous"}</p>
-                      <p className="text-sm text-gray-500">{app.student?.course_name} at {app.student?.university_name}</p>
+                      <p className="text-sm text-muted-foreground">{app.student?.course_name} at {app.student?.university_name}</p>
                       <Badge className="mt-1">{app.status.replace(/_/g, " ")}</Badge>
                     </div>
                     <Button size="sm" variant="outline" onClick={() => router.push(`/employer/vacancies`)}>
@@ -105,3 +105,4 @@ export default function EmployerDashboardPage() {
     </div>
   );
 }
+

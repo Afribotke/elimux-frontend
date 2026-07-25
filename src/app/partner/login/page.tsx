@@ -45,7 +45,7 @@ export default function PartnerLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+    <div className="min-h-screen flex items-center justify-center bg-muted">
       <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center">
           <CardTitle>Partner Login</CardTitle>
@@ -77,7 +77,7 @@ export default function PartnerLoginPage() {
               {isLoading ? "Logging in..." : "Login"}
             </Button>
           </form>
-          <p className="text-center text-sm text-slate-600 mt-4">
+          <p className="text-center text-sm text-muted-foreground mt-4">
             Not a partner yet?{" "}
             <a href="/partner" className="text-emerald-600 hover:underline">
               Apply now
@@ -88,3 +88,4 @@ export default function PartnerLoginPage() {
     </div>
   );
 }
+

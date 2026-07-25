@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, FormEvent } from 'react';
 import { queryAI, AIQueryResponse } from '@/lib/ai';
@@ -29,7 +29,7 @@ export default function AISearch() {
   return (
     <div className="w-full max-w-4xl mx-auto">
       <form onSubmit={handleSubmit} className="relative">
-        <div className="relative flex items-center shadow-lg rounded-2xl bg-white border border-gray-100">
+        <div className="relative flex items-center shadow-lg rounded-2xl bg-background border border-border">
           <div className="pl-5 text-purple-500">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -40,7 +40,7 @@ export default function AISearch() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Ask anything... e.g. 'Best computer science programs in Kenya under $5000'"
-            className="flex-1 px-4 py-5 text-gray-900 placeholder-gray-400 bg-transparent border-none focus:outline-none focus:ring-0 text-lg"
+            className="flex-1 px-4 py-5 text-foreground placeholder-gray-400 bg-transparent border-none focus:outline-none focus:ring-0 text-lg"
           />
           <button
             type="submit"
@@ -73,21 +73,21 @@ export default function AISearch() {
                 {Math.round(result.confidence * 100)}% confidence
               </span>
             </div>
-            <p className="text-gray-800 leading-relaxed">{result.answer}</p>
+            <p className="text-foreground leading-relaxed">{result.answer}</p>
           </div>
 
           {/* Programs */}
           {result.programs.length > 0 && (
             <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-3">Recommended Programs</h3>
+              <h3 className="text-lg font-bold text-foreground mb-3">Recommended Programs</h3>
               <div className="grid gap-3">
                 {result.programs.map((program) => (
                   <Link key={program.id} href={`/programs/${program.id}`} className="block">
-                    <div className="bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-shadow">
+                    <div className="bg-background border border-border rounded-xl p-4 hover:shadow-md transition-shadow">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-semibold text-gray-900">{program.name}</h4>
-                          <p className="text-sm text-gray-500">{program.institution_name} · {program.country}</p>
+                          <h4 className="font-semibold text-foreground">{program.name}</h4>
+                          <p className="text-sm text-muted-foreground">{program.institution_name} · {program.country}</p>
                           <div className="flex gap-2 mt-2">
                             <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">{program.level}</span>
                             <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">
@@ -109,14 +109,14 @@ export default function AISearch() {
           {/* Institutions */}
           {result.institutions.length > 0 && (
             <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-3">Recommended Institutions</h3>
+              <h3 className="text-lg font-bold text-foreground mb-3">Recommended Institutions</h3>
               <div className="grid gap-3">
                 {result.institutions.map((inst) => (
                   <Link key={inst.id} href={`/institutions/${inst.id}`} className="block">
-                    <div className="bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-shadow flex items-center justify-between">
+                    <div className="bg-background border border-border rounded-xl p-4 hover:shadow-md transition-shadow flex items-center justify-between">
                       <div>
-                        <h4 className="font-semibold text-gray-900">{inst.name}</h4>
-                        <p className="text-sm text-gray-500">{inst.city}, {inst.country}</p>
+                        <h4 className="font-semibold text-foreground">{inst.name}</h4>
+                        <p className="text-sm text-muted-foreground">{inst.city}, {inst.country}</p>
                       </div>
                       <div className="flex items-center gap-1 text-yellow-600">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -135,3 +135,4 @@ export default function AISearch() {
     </div>
   );
 }
+

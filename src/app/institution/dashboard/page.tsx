@@ -223,7 +223,7 @@ export default function InstitutionDashboardPage() {
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium capitalize ${tab === t ? 'bg-primary-600 text-elimux-dark' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium capitalize ${tab === t ? 'bg-primary-600 text-elimux-dark' : 'bg-background/10 text-gray-300 hover:bg-background/20'}`}
             >
               {t}
             </button>
@@ -295,7 +295,7 @@ export default function InstitutionDashboardPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-2">
-                          <button onClick={() => editProgram(p)} className="p-1.5 rounded bg-white/10 hover:bg-white/20" title="Edit">
+                          <button onClick={() => editProgram(p)} className="p-1.5 rounded bg-background/10 hover:bg-background/20" title="Edit">
                             <Pencil className="w-3.5 h-3.5 text-foreground" />
                           </button>
                           <button onClick={() => removeProgram(p)} className="p-1.5 rounded bg-elimux-danger/20 hover:bg-elimux-danger/30" title="Remove">
@@ -437,3 +437,4 @@ export default function InstitutionDashboardPage() {
     </div>
   )
 }
+

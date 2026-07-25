@@ -121,14 +121,14 @@ export default function CreateCampaign() {
     finally { setSubmitting(false); }
   };
 
-  if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+  if (loading) return <div className="min-h-screen bg-muted flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <AdvertiserNav />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Create Campaign</h1>
+          <h1 className="text-3xl font-bold text-foreground">Create Campaign</h1>
           <p className="mt-2 text-muted">
             {pricing?.ad_billing_enabled
               ? "Pay-per-click billing: no upfront charge. You pay only for actual clicks."
@@ -140,66 +140,66 @@ export default function CreateCampaign() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="bg-background rounded-xl shadow-sm border border-border p-6 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Campaign Title *</label>
-                <input type="text" required value={form.title} onChange={(e) => handleChange("title", e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., Summer Enrollment Drive" />
+                <label className="block text-sm font-medium text-foreground mb-1">Campaign Title *</label>
+                <input type="text" required value={form.title} onChange={(e) => handleChange("title", e.target.value)} className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., Summer Enrollment Drive" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea rows={3} value={form.description} onChange={(e) => handleChange("description", e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Describe your campaign goals..." />
+                <label className="block text-sm font-medium text-foreground mb-1">Description</label>
+                <textarea rows={3} value={form.description} onChange={(e) => handleChange("description", e.target.value)} className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Describe your campaign goals..." />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">Billing Model *</label>
+                <label className="block text-sm font-medium text-foreground mb-3">Billing Model *</label>
                 <div className="grid grid-cols-3 gap-3">
                   {[{id:"cpc",label:"Pay Per Click",desc:"Best for traffic",color:"blue"},{id:"cpm",label:"Pay Per View",desc:"Best for awareness",color:"green"},{id:"cpa",label:"Pay Per Action",desc:"Best for conversions",color:"purple"}].map((m) => (
-                    <button key={m.id} type="button" onClick={() => handleChange("billing_model", m.id)} className={`p-4 rounded-lg border-2 text-left transition-all ${form.billing_model === m.id ? `border-${m.color}-500 bg-${m.color}-50` : "border-gray-200 hover:border-gray-300"}`}>
-                      <p className={`font-medium ${form.billing_model === m.id ? `text-${m.color}-700` : "text-gray-900"}`}>{m.label}</p>
+                    <button key={m.id} type="button" onClick={() => handleChange("billing_model", m.id)} className={`p-4 rounded-lg border-2 text-left transition-all ${form.billing_model === m.id ? `border-${m.color}-500 bg-${m.color}-50` : "border-border hover:border-border"}`}>
+                      <p className={`font-medium ${form.billing_model === m.id ? `text-${m.color}-700` : "text-foreground"}`}>{m.label}</p>
                       <p className="text-xs text-muted mt-1">{m.desc}</p>
                     </button>
                   ))}
                 </div>
-                <p className="mt-2 text-sm text-gray-600">Current rate: <span className="font-semibold text-blue-600">KES {getRate().toFixed(2)} {form.billing_model === "cpm" ? "per 1,000 impressions" : form.billing_model === "cpa" ? "per conversion" : "per click"}</span></p>
+                <p className="mt-2 text-sm text-muted-foreground">Current rate: <span className="font-semibold text-blue-600">KES {getRate().toFixed(2)} {form.billing_model === "cpm" ? "per 1,000 impressions" : form.billing_model === "cpa" ? "per conversion" : "per click"}</span></p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Placement *</label>
-                <select required value={form.placement} onChange={(e) => handleChange("placement", e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <label className="block text-sm font-medium text-foreground mb-1">Placement *</label>
+                <select required value={form.placement} onChange={(e) => handleChange("placement", e.target.value)} className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500">
                   <option value="">Select placement...</option>
                   {placements.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.type})</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Total Budget (KES) *</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">Total Budget (KES) *</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">KES</span>
-                    <input type="number" required min={pricing?.ad_min_campaign_budget || 1} step="0.01" value={form.budget} onChange={(e) => handleChange("budget", parseFloat(e.target.value))} className="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">KES</span>
+                    <input type="number" required min={pricing?.ad_min_campaign_budget || 1} step="0.01" value={form.budget} onChange={(e) => handleChange("budget", parseFloat(e.target.value))} className="w-full pl-12 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Duration (Days) *</label>
-                  <input type="number" required min={1} value={form.duration_days} onChange={(e) => handleChange("duration_days", parseInt(e.target.value))} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                  <label className="block text-sm font-medium text-foreground mb-1">Duration (Days) *</label>
+                  <input type="number" required min={1} value={form.duration_days} onChange={(e) => handleChange("duration_days", parseInt(e.target.value))} className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>
               {pricing?.ad_billing_enabled && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Daily Budget (KES)</label>
+                    <label className="block text-sm font-medium text-foreground mb-1">Daily Budget (KES)</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">KES</span>
-                      <input type="number" min={pricing?.ad_min_daily_budget || 1} max={pricing?.ad_max_daily_budget || 10000} step="0.01" value={form.daily_budget} onChange={(e) => handleChange("daily_budget", parseFloat(e.target.value))} className="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">KES</span>
+                      <input type="number" min={pricing?.ad_min_daily_budget || 1} max={pricing?.ad_max_daily_budget || 10000} step="0.01" value={form.daily_budget} onChange={(e) => handleChange("daily_budget", parseFloat(e.target.value))} className="w-full pl-12 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500" />
                     </div>
                   </div>
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-                  <input type="url" value={form.image_url} onChange={(e) => handleChange("image_url", e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="https://..." />
+                  <label className="block text-sm font-medium text-foreground mb-1">Image URL</label>
+                  <input type="url" value={form.image_url} onChange={(e) => handleChange("image_url", e.target.value)} className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="https://..." />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Target URL (Landing Page)</label>
-                  <input type="url" value={form.target_url} onChange={(e) => handleChange("target_url", e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="https://..." />
+                  <label className="block text-sm font-medium text-foreground mb-1">Target URL (Landing Page)</label>
+                  <input type="url" value={form.target_url} onChange={(e) => handleChange("target_url", e.target.value)} className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="https://..." />
                 </div>
               </div>
               <div className="pt-4">
@@ -211,15 +211,15 @@ export default function CreateCampaign() {
             </form>
           </div>
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Cost Calculator</h3>
+            <div className="bg-background rounded-xl shadow-sm border border-border p-6 sticky top-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Cost Calculator</h3>
               <div className="space-y-3">
-                <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-sm text-muted">Model</span><span className="font-medium uppercase">{form.billing_model}</span></div>
-                <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-sm text-muted">Rate</span><span className="font-medium">KES {getRate().toFixed(2)}</span></div>
-                <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-sm text-muted">Daily Budget</span><span className="font-medium">KES {form.daily_budget.toFixed(2)}</span></div>
+                <div className="flex justify-between py-2 border-b border-border"><span className="text-sm text-muted">Model</span><span className="font-medium uppercase">{form.billing_model}</span></div>
+                <div className="flex justify-between py-2 border-b border-border"><span className="text-sm text-muted">Rate</span><span className="font-medium">KES {getRate().toFixed(2)}</span></div>
+                <div className="flex justify-between py-2 border-b border-border"><span className="text-sm text-muted">Daily Budget</span><span className="font-medium">KES {form.daily_budget.toFixed(2)}</span></div>
                 <div className="pt-4">
                   <p className="text-sm text-muted mb-2">Est. Daily Reach</p>
-                  <p className="text-3xl font-bold text-blue-600">{getEstimatedReach().toLocaleString()}<span className="text-sm font-normal text-gray-500 ml-2">{form.billing_model === "cpm" ? "impressions" : "clicks"}</span></p>
+                  <p className="text-3xl font-bold text-blue-600">{getEstimatedReach().toLocaleString()}<span className="text-sm font-normal text-muted-foreground ml-2">{form.billing_model === "cpm" ? "impressions" : "clicks"}</span></p>
                 </div>
                 {pricing?.ad_billing_enabled && <div className="bg-blue-50 rounded-lg p-4 mt-4"><p className="text-sm text-blue-800 font-medium">Pay-Per-Click Mode</p><p className="text-sm text-blue-700 mt-1">No upfront charge. Pay only when users click your ad.</p></div>}
               </div>
@@ -230,3 +230,4 @@ export default function CreateCampaign() {
     </div>
   );
 }
+

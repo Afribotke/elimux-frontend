@@ -26,7 +26,7 @@ export function AdPricingCalculator({ placements, durationDays, total }: AdPrici
   const subtotal = discount > 0 ? Math.round(total / (1 - discount / 100)) : total;
 
   return (
-    <Card className="bg-slate-50">
+    <Card className="bg-muted">
       <CardHeader>
         <CardTitle className="text-lg">Pricing Breakdown</CardTitle>
       </CardHeader>
@@ -34,18 +34,18 @@ export function AdPricingCalculator({ placements, durationDays, total }: AdPrici
         {placements.map((p) => (
           <div key={p} className="flex justify-between text-sm">
             <span>{PLACEMENT_NAMES[p]}</span>
-            <span className="text-slate-600">KES {(subtotal / placements.length).toLocaleString()}</span>
+            <span className="text-muted-foreground">KES {(subtotal / placements.length).toLocaleString()}</span>
           </div>
         ))}
         <div className="flex justify-between text-sm">
           <span>Duration</span>
-          <span className="text-slate-600">{durationDays} days</span>
+          <span className="text-muted-foreground">{durationDays} days</span>
         </div>
         {discount > 0 && (
           <>
             <div className="flex justify-between text-sm">
               <span>Subtotal</span>
-              <span className="text-slate-600">KES {subtotal.toLocaleString()}</span>
+              <span className="text-muted-foreground">KES {subtotal.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-sm text-emerald-600">
               <span>Duration Discount ({discount}%)</span>
@@ -61,3 +61,4 @@ export function AdPricingCalculator({ placements, durationDays, total }: AdPrici
     </Card>
   );
 }
+

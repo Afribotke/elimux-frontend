@@ -108,20 +108,20 @@ export function SemanticSearchBar() {
       </div>
 
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
           {suggestions.map((suggestion, i) => (
             <button
               key={i}
               onClick={() => handleSuggestionClick(suggestion)}
-              className="w-full text-left px-4 py-3 hover:bg-slate-50 flex items-center gap-3 border-b last:border-0"
+              className="w-full text-left px-4 py-3 hover:bg-muted flex items-center gap-3 border-b last:border-0"
             >
               <span className="text-lg">{getSuggestionIcon(suggestion.type)}</span>
               <div className="flex-1">
                 <p className="font-medium">{suggestion.text}</p>
-                <p className="text-xs text-slate-500 capitalize">{suggestion.type}</p>
+                <p className="text-xs text-muted-foreground capitalize">{suggestion.type}</p>
               </div>
               <div className="w-16">
-                <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-emerald-500 rounded-full"
                     style={{ width: `${suggestion.confidence * 100}%` }}
@@ -133,9 +133,10 @@ export function SemanticSearchBar() {
         </div>
       )}
 
-      <p className="text-xs text-slate-500 mt-2 text-center">
+      <p className="text-xs text-muted-foreground mt-2 text-center">
         Try: "software engineering bachelor near me" or "nursing diploma affordable"
       </p>
     </div>
   );
 }
+

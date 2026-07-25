@@ -32,7 +32,7 @@ export default function InstitutionCard({ institution }: InstitutionCardProps) {
     <div className="bg-elimux-card rounded-xl p-5 border border-border hover:border-primary-500/50 transition-all hover:shadow-lg hover:shadow-primary-500/10">
       <div className="flex items-start gap-4">
         {/* Logo */}
-        <div className="w-16 h-16 rounded-lg bg-white border border-border flex items-center justify-center flex-shrink-0 overflow-hidden p-1.5">
+        <div className="w-16 h-16 rounded-lg bg-background border border-border flex items-center justify-center flex-shrink-0 overflow-hidden p-1.5">
           <InstitutionLogo name={institution.name} logoUrl={institution.logo_url} websiteUrl={institution.website_url} />
         </div>
 
@@ -102,3 +102,4 @@ export default function InstitutionCard({ institution }: InstitutionCardProps) {
     </div>
   )
 }
+

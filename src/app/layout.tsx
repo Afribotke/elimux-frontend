@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/context/AuthContext";
 import DesktopNav from "@/components/DesktopNav";
 import MobileNav from "@/components/MobileNav";
@@ -24,14 +25,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} antialiased bg-slate-50 text-slate-900`}>
-        <AuthProvider>
-          <DesktopNav />
-          <main className="min-h-screen pb-16 lg:pb-0">{children}</main>
-          <MobileNav />
-          <Toaster position="top-right" richColors />
-        </AuthProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} antialiased bg-background text-foreground`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          value={{ light: "light", dark: "dark" }}
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            <DesktopNav />
+            <main className="min-h-screen pb-16 lg:pb-0">{children}</main>
+            <MobileNav />
+            <Toaster position="top-right" richColors />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

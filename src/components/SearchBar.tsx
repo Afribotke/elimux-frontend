@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, FormEvent } from 'react';
 import { useSearch } from '@/hooks/useSearch';
@@ -31,8 +31,8 @@ export default function SearchBar({ onSearch, variant = 'hero' }: SearchBarProps
   return (
     <div className={`w-full ${isHero ? 'max-w-3xl' : 'max-w-2xl'} mx-auto`}>
       <form onSubmit={handleSubmit} className="relative">
-        <div className={`relative flex items-center ${isHero ? 'shadow-lg' : 'shadow-md'} rounded-2xl bg-white`}>
-          <div className="pl-5 text-gray-400">
+        <div className={`relative flex items-center ${isHero ? 'shadow-lg' : 'shadow-md'} rounded-2xl bg-background`}>
+          <div className="pl-5 text-muted-foreground">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -42,12 +42,12 @@ export default function SearchBar({ onSearch, variant = 'hero' }: SearchBarProps
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search programs, universities, courses..."
-            className="flex-1 px-4 py-4 text-gray-900 placeholder-gray-400 bg-transparent border-none focus:outline-none focus:ring-0 text-lg"
+            className="flex-1 px-4 py-4 text-foreground placeholder-gray-400 bg-transparent border-none focus:outline-none focus:ring-0 text-lg"
           />
           <button
             type="button"
             onClick={() => setShowFilters(!showFilters)}
-            className="px-3 py-2 text-gray-500 hover:text-blue-600 transition-colors"
+            className="px-3 py-2 text-muted-foreground hover:text-blue-600 transition-colors"
             title="Filters"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,12 +72,12 @@ export default function SearchBar({ onSearch, variant = 'hero' }: SearchBarProps
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 p-4 z-40">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-background rounded-xl shadow-lg border border-border p-4 z-40">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <select
                 value={filters.country || ''}
                 onChange={(e) => setFilters({ ...filters, country: e.target.value || undefined })}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Countries</option>
                 <option value="Kenya">Kenya</option>
@@ -93,7 +93,7 @@ export default function SearchBar({ onSearch, variant = 'hero' }: SearchBarProps
               <select
                 value={filters.level || ''}
                 onChange={(e) => setFilters({ ...filters, level: e.target.value || undefined })}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Levels</option>
                 <option value="Certificate">Certificate</option>
@@ -105,7 +105,7 @@ export default function SearchBar({ onSearch, variant = 'hero' }: SearchBarProps
               <select
                 value={filters.duration || ''}
                 onChange={(e) => setFilters({ ...filters, duration: e.target.value || undefined })}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Any Duration</option>
                 <option value="6 months">6 Months</option>
@@ -117,7 +117,7 @@ export default function SearchBar({ onSearch, variant = 'hero' }: SearchBarProps
               <select
                 value={filters.field || ''}
                 onChange={(e) => setFilters({ ...filters, field: e.target.value || undefined })}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Fields</option>
                 <option value="Technology">Technology</option>
@@ -134,3 +134,4 @@ export default function SearchBar({ onSearch, variant = 'hero' }: SearchBarProps
     </div>
   );
 }
+

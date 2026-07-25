@@ -93,11 +93,11 @@ export default function PartnerDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-muted">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">Partner Dashboard</h1>
-          <p className="text-slate-600">Welcome back, {partner.full_name}</p>
+          <h1 className="text-3xl font-bold text-foreground">Partner Dashboard</h1>
+          <p className="text-muted-foreground">Welcome back, {partner.full_name}</p>
         </div>
 
         <PartnerStats
@@ -118,19 +118,19 @@ export default function PartnerDashboardPage() {
           </CardHeader>
           <CardContent>
             {referrals.length === 0 ? (
-              <p className="text-slate-500 text-center py-8">No referrals yet. Share your link to get started!</p>
+              <p className="text-muted-foreground text-center py-8">No referrals yet. Share your link to get started!</p>
             ) : (
               <div className="space-y-4">
                 {referrals.map((ref: any) => (
-                  <div key={ref.id} className="flex items-center justify-between p-4 bg-white rounded-lg border">
+                  <div key={ref.id} className="flex items-center justify-between p-4 bg-background rounded-lg border">
                     <div>
                       <p className="font-medium">{ref.student_name || "Anonymous"}</p>
-                      <p className="text-sm text-slate-500">{new Date(ref.created_at).toLocaleDateString()}</p>
+                      <p className="text-sm text-muted-foreground">{new Date(ref.created_at).toLocaleDateString()}</p>
                     </div>
                     <div className="text-right">
                       <p className="font-medium text-emerald-600">{ref.status}</p>
                       {ref.commission_amount && (
-                        <p className="text-sm text-slate-600">KES {ref.commission_amount}</p>
+                        <p className="text-sm text-muted-foreground">KES {ref.commission_amount}</p>
                       )}
                     </div>
                   </div>
@@ -143,3 +143,4 @@ export default function PartnerDashboardPage() {
     </div>
   );
 }
+

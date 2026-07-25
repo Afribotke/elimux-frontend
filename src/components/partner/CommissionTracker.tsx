@@ -36,15 +36,15 @@ export function CommissionTracker({ commissions }: CommissionTrackerProps) {
       <CardContent className="space-y-4">
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-4 bg-yellow-50 rounded-lg">
-            <p className="text-sm text-slate-600">Pending</p>
+            <p className="text-sm text-muted-foreground">Pending</p>
             <p className="text-xl font-bold text-yellow-600">KES {totalPending.toLocaleString()}</p>
           </div>
           <div className="text-center p-4 bg-emerald-50 rounded-lg">
-            <p className="text-sm text-slate-600">Approved</p>
+            <p className="text-sm text-muted-foreground">Approved</p>
             <p className="text-xl font-bold text-emerald-600">KES {totalApproved.toLocaleString()}</p>
           </div>
           <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-slate-600">Paid</p>
+            <p className="text-sm text-muted-foreground">Paid</p>
             <p className="text-xl font-bold text-blue-600">KES {totalPaid.toLocaleString()}</p>
           </div>
         </div>
@@ -52,7 +52,7 @@ export function CommissionTracker({ commissions }: CommissionTrackerProps) {
         {commissions.length > 0 && (
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {commissions.slice(0, 5).map((commission) => (
-              <div key={commission.id} className="flex justify-between items-center p-2 bg-slate-50 rounded text-sm">
+              <div key={commission.id} className="flex justify-between items-center p-2 bg-muted rounded text-sm">
                 <span className="truncate flex-1">{commission.description}</span>
                 <span className="font-medium ml-2">KES {commission.amount}</span>
                 <span className={`ml-2 px-2 py-0.5 rounded text-xs ${
@@ -70,3 +70,4 @@ export function CommissionTracker({ commissions }: CommissionTrackerProps) {
     </Card>
   );
 }
+

@@ -112,10 +112,10 @@ export default function StudentProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-muted py-8">
       <div className="max-w-3xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Student Profile</h1>
-        <p className="text-gray-500 mb-8">Complete your profile to get better internship matches.</p>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Student Profile</h1>
+        <p className="text-muted-foreground mb-8">Complete your profile to get better internship matches.</p>
 
         {profile?.is_university_verified && (
           <Badge className="bg-emerald-100 text-emerald-700 mb-6">
@@ -181,3 +181,4 @@ export default function StudentProfilePage() {
     </div>
   );
 }
+

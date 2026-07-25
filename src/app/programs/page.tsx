@@ -164,21 +164,21 @@ function ProgramsPageInner() {
   const hasActiveFilters = Object.values(filters).some(v => v !== '');
 
   return (
-    <div className={`min-h-screen bg-gray-50 ${selectedIds.length > 0 ? 'pb-20' : ''}`}>
+    <div className={`min-h-screen bg-muted ${selectedIds.length > 0 ? 'pb-20' : ''}`}>
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-background border-b">
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold text-gray-900">Explore Programs</h1>
-          <p className="mt-2 text-gray-600">Discover {totalCount.toLocaleString()} programs from top institutions worldwide</p>
+          <h1 className="text-3xl font-bold text-foreground">Explore Programs</h1>
+          <p className="mt-2 text-muted-foreground">Discover {totalCount.toLocaleString()} programs from top institutions worldwide</p>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Filters Bar */}
-        <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
+        <div className="bg-background rounded-lg shadow-sm border p-4 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <Filter className="w-5 h-5 text-blue-600" />
-            <h2 className="font-semibold text-gray-800">Filters</h2>
+            <h2 className="font-semibold text-foreground">Filters</h2>
             {hasActiveFilters && (
               <button onClick={clearFilters} className="ml-auto text-sm text-blue-600 hover:text-blue-800">
                 Clear all
@@ -189,7 +189,7 @@ function ProgramsPageInner() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search programs..."
@@ -256,7 +256,7 @@ function ProgramsPageInner() {
         </div>
 
         {/* Results Count */}
-        <div className="mb-4 text-sm text-gray-600">
+        <div className="mb-4 text-sm text-muted-foreground">
           Showing {programs.length} of {totalCount.toLocaleString()} programs
           {hasActiveFilters && ' (filtered)'}
         </div>
@@ -270,7 +270,7 @@ function ProgramsPageInner() {
           </div>
         ) : programs.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No programs found matching your criteria.</p>
+            <p className="text-muted-foreground text-lg">No programs found matching your criteria.</p>
             <button onClick={clearFilters} className="mt-4 text-blue-600 hover:text-blue-800">
               Clear filters and try again
             </button>
@@ -297,17 +297,17 @@ function ProgramsPageInner() {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-4 py-2.5 min-h-[44px] border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+              className="px-4 py-2.5 min-h-[44px] border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
             >
               Previous
             </button>
-            <span className="px-4 py-2 text-sm text-gray-600">
+            <span className="px-4 py-2 text-sm text-muted-foreground">
               Page {page} of {totalPages}
             </span>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="px-4 py-2.5 min-h-[44px] border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+              className="px-4 py-2.5 min-h-[44px] border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
             >
               Next
             </button>
@@ -325,7 +325,7 @@ export default function ProgramsPage() {
     <CompareProvider>
       <Suspense
         fallback={
-          <div className="min-h-screen bg-gray-50 flex justify-center py-24">
+          <div className="min-h-screen bg-muted flex justify-center py-24">
             <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
           </div>
         }
@@ -335,3 +335,4 @@ export default function ProgramsPage() {
     </CompareProvider>
   );
 }
+

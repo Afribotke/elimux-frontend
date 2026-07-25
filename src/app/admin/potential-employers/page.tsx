@@ -48,10 +48,10 @@ export default function AdminPotentialEmployersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-muted py-8">
       <div className="max-w-6xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Potential Employers</h1>
-        <p className="text-gray-500 mb-8">Review and approve employer registrations.</p>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Potential Employers</h1>
+        <p className="text-muted-foreground mb-8">Review and approve employer registrations.</p>
 
         <div className="space-y-4">
           {employers.map((emp) => (
@@ -63,15 +63,15 @@ export default function AdminPotentialEmployersPage() {
                       <h3 className="text-lg font-semibold">{emp.company_name}</h3>
                       <Badge className={STATUS_COLORS[emp.status] || ""}>{emp.status}</Badge>
                     </div>
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-2">
+                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-2">
                       <span className="flex items-center gap-1"><Mail className="w-4 h-4" />{emp.company_email}</span>
                       <span className="flex items-center gap-1"><Phone className="w-4 h-4" />{emp.company_phone}</span>
                       <span>{emp.industry}</span>
                       <span>{emp.source}</span>
                     </div>
-                    <p className="text-sm text-gray-600">Contact: {emp.contact_person_name} ({emp.contact_person_email})</p>
+                    <p className="text-sm text-muted-foreground">Contact: {emp.contact_person_name} ({emp.contact_person_email})</p>
                     {emp.admin_notes && (
-                      <p className="text-sm text-gray-500 mt-2 bg-gray-50 p-2 rounded">Notes: {emp.admin_notes}</p>
+                      <p className="text-sm text-muted-foreground mt-2 bg-muted p-2 rounded">Notes: {emp.admin_notes}</p>
                     )}
                   </div>
                   <div className="flex flex-col gap-2 ml-4">
@@ -92,3 +92,4 @@ export default function AdminPotentialEmployersPage() {
     </div>
   );
 }
+

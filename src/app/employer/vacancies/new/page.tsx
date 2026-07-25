@@ -79,12 +79,12 @@ export default function NewVacancyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-muted py-8">
       <div className="max-w-3xl mx-auto px-4">
         <Button variant="ghost" className="mb-4" onClick={() => router.push("/employer/vacancies")}>
           <ArrowLeft className="w-4 h-4 mr-2" />Back
         </Button>
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Post New Internship</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-8">Post New Internship</h1>
 
         <Card>
           <CardContent className="p-6 space-y-6">
@@ -157,3 +157,4 @@ export default function NewVacancyPage() {
     </div>
   );
 }
+

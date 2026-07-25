@@ -13,22 +13,23 @@ export function PartnerStats({ totalEarnings, totalReferrals, pendingPayout }: P
     <div className="grid md:grid-cols-3 gap-4">
       <Card>
         <CardContent className="pt-6">
-          <p className="text-sm text-slate-600">Total Earnings</p>
+          <p className="text-sm text-muted-foreground">Total Earnings</p>
           <p className="text-3xl font-bold text-emerald-600">KES {totalEarnings.toLocaleString()}</p>
         </CardContent>
       </Card>
       <Card>
         <CardContent className="pt-6">
-          <p className="text-sm text-slate-600">Total Referrals</p>
+          <p className="text-sm text-muted-foreground">Total Referrals</p>
           <p className="text-3xl font-bold text-blue-600">{totalReferrals}</p>
         </CardContent>
       </Card>
       <Card>
         <CardContent className="pt-6">
-          <p className="text-sm text-slate-600">Pending Payout</p>
+          <p className="text-sm text-muted-foreground">Pending Payout</p>
           <p className="text-3xl font-bold text-yellow-600">KES {pendingPayout.toLocaleString()}</p>
         </CardContent>
       </Card>
     </div>
   );
 }
+

@@ -30,7 +30,7 @@ export function AdPreview({ campaign }: AdPreviewProps) {
               <p className="text-sm opacity-90 mt-1">{campaign.description || "Your description will appear here"}</p>
               <p className="text-xs opacity-75 mt-2">{campaign.institution_name || "Your Institution"}</p>
             </div>
-            <button className="px-4 py-2 bg-white text-emerald-600 rounded-lg font-medium text-sm hover:bg-slate-100">
+            <button className="px-4 py-2 bg-background text-emerald-600 rounded-lg font-medium text-sm hover:bg-muted">
               {campaign.cta_text || "Apply Now"}
             </button>
           </div>
@@ -41,12 +41,12 @@ export function AdPreview({ campaign }: AdPreviewProps) {
       <div className="max-w-xs mx-auto">
         <Card>
           <CardContent className="p-4">
-            <p className="text-[10px] text-slate-400 mb-2">Sponsored</p>
+            <p className="text-[10px] text-muted-foreground mb-2">Sponsored</p>
             {campaign.image_url && (
               <img src={campaign.image_url} alt="" className="w-full h-32 object-cover rounded-lg mb-3" />
             )}
             <p className="font-bold text-sm">{campaign.headline || "Your Headline"}</p>
-            <p className="text-xs text-slate-600 mt-1">{campaign.description || "Description"}</p>
+            <p className="text-xs text-muted-foreground mt-1">{campaign.description || "Description"}</p>
             <button className="w-full mt-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium">
               {campaign.cta_text || "Apply"}
             </button>
@@ -56,3 +56,4 @@ export function AdPreview({ campaign }: AdPreviewProps) {
     </div>
   );
 }
+

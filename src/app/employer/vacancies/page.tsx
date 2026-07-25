@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Plus, Pause, Play, Eye } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-700",
+  draft: "bg-muted text-foreground",
   active: "bg-green-100 text-green-700",
   paused: "bg-yellow-100 text-yellow-700",
   closed: "bg-red-100 text-red-700",
@@ -60,10 +60,10 @@ export default function EmployerVacanciesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-muted py-8">
       <div className="max-w-5xl mx-auto px-4">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">My Vacancies</h1>
+          <h1 className="text-3xl font-bold text-foreground">My Vacancies</h1>
           <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => router.push("/employer/vacancies/new")}>
             <Plus className="w-4 h-4 mr-2" />Post New
           </Button>
@@ -72,7 +72,7 @@ export default function EmployerVacanciesPage() {
         {vacancies.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
-              <p className="text-gray-500 mb-4">No vacancies posted yet.</p>
+              <p className="text-muted-foreground mb-4">No vacancies posted yet.</p>
               <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => router.push("/employer/vacancies/new")}>
                 Create Your First Internship
               </Button>
@@ -89,8 +89,8 @@ export default function EmployerVacanciesPage() {
                         <h3 className="text-lg font-semibold">{v.title}</h3>
                         <Badge className={STATUS_COLORS[v.status] || ""}>{v.status}</Badge>
                       </div>
-                      <p className="text-gray-500 text-sm mb-2">{v.profession_category} | {v.location_county} | {v.duration_weeks} weeks</p>
-                      <p className="text-sm text-gray-600">{v.remaining_slots} of {v.total_slots} slots remaining</p>
+                      <p className="text-muted-foreground text-sm mb-2">{v.profession_category} | {v.location_county} | {v.duration_weeks} weeks</p>
+                      <p className="text-sm text-muted-foreground">{v.remaining_slots} of {v.total_slots} slots remaining</p>
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" variant="outline" onClick={() => toggleStatus(v.id, v.status)}>
@@ -110,3 +110,4 @@ export default function EmployerVacanciesPage() {
     </div>
   );
 }
+

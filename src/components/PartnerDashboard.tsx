@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { Partner } from '@/types';
@@ -27,18 +27,18 @@ export default function PartnerDashboard({ partner }: PartnerDashboardProps) {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-          <p className="text-sm text-gray-500 font-medium">Total Earnings</p>
+        <div className="bg-background rounded-xl border border-border p-6 shadow-sm">
+          <p className="text-sm text-muted-foreground font-medium">Total Earnings</p>
           <p className="text-2xl font-bold text-green-600 mt-1">
             KES {partner.total_earnings.toLocaleString()}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-          <p className="text-sm text-gray-500 font-medium">Referrals</p>
+        <div className="bg-background rounded-xl border border-border p-6 shadow-sm">
+          <p className="text-sm text-muted-foreground font-medium">Referrals</p>
           <p className="text-2xl font-bold text-blue-600 mt-1">{partner.referrals_count}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-          <p className="text-sm text-gray-500 font-medium">Commission Rate</p>
+        <div className="bg-background rounded-xl border border-border p-6 shadow-sm">
+          <p className="text-sm text-muted-foreground font-medium">Commission Rate</p>
           <p className="text-2xl font-bold text-purple-600 mt-1">{partner.commission_rate}%</p>
         </div>
       </div>
@@ -52,11 +52,11 @@ export default function PartnerDashboard({ partner }: PartnerDashboardProps) {
             type="text"
             value={referralLink}
             readOnly
-            className="flex-1 px-4 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:outline-none"
+            className="flex-1 px-4 py-2.5 bg-background/10 border border-white/20 rounded-lg text-white text-sm focus:outline-none"
           />
           <button
             onClick={copyLink}
-            className="px-4 py-2.5 bg-white text-blue-600 rounded-lg font-medium text-sm hover:bg-blue-50 transition-colors"
+            className="px-4 py-2.5 bg-background text-blue-600 rounded-lg font-medium text-sm hover:bg-blue-50 transition-colors"
           >
             {copied ? 'Copied!' : 'Copy'}
           </button>
@@ -71,3 +71,4 @@ export default function PartnerDashboard({ partner }: PartnerDashboardProps) {
     </div>
   );
 }
+

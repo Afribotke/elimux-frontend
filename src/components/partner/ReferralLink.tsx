@@ -49,11 +49,12 @@ export function ReferralLink({ referralCode }: ReferralLinkProps) {
             Share on WhatsApp
           </Button>
         </div>
-        <div className="p-4 bg-slate-50 rounded-lg">
-          <p className="text-sm font-medium text-slate-700">Referral Code</p>
+        <div className="p-4 bg-muted rounded-lg">
+          <p className="text-sm font-medium text-foreground">Referral Code</p>
           <p className="text-2xl font-bold text-emerald-600">{referralCode}</p>
         </div>
       </CardContent>
     </Card>
   );
 }
+

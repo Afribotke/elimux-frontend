@@ -67,16 +67,16 @@ export default function LogbookPage() {
   const totalHours = entries.reduce((sum, e) => sum + (e.hours_worked || 0), 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-muted py-8">
       <div className="max-w-4xl mx-auto px-4">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Attachment Logbook</h1>
-            <p className="text-gray-500">Record your daily industrial attachment activities.</p>
+            <h1 className="text-3xl font-bold text-foreground">Attachment Logbook</h1>
+            <p className="text-muted-foreground">Record your daily industrial attachment activities.</p>
           </div>
           <div className="text-right">
             <p className="text-2xl font-bold text-emerald-600">{totalHours.toFixed(1)}h</p>
-            <p className="text-sm text-gray-500">Total Hours Logged</p>
+            <p className="text-sm text-muted-foreground">Total Hours Logged</p>
           </div>
         </div>
 
@@ -110,7 +110,7 @@ export default function LogbookPage() {
                   <div className="flex items-center gap-3">
                     <BookOpen className="w-5 h-5 text-emerald-600" />
                     <span className="font-medium">Week {entry.week_number}</span>
-                    <span className="text-gray-500">{new Date(entry.entry_date).toLocaleDateString()}</span>
+                    <span className="text-muted-foreground">{new Date(entry.entry_date).toLocaleDateString()}</span>
                   </div>
                   {entry.is_approved ? (
                     <Badge className="bg-emerald-100 text-emerald-700"><CheckCircle className="w-3 h-3 mr-1" />Approved</Badge>
@@ -118,10 +118,10 @@ export default function LogbookPage() {
                     <Badge variant="outline"><Clock className="w-3 h-3 mr-1" />Pending</Badge>
                   )}
                 </div>
-                <p className="text-gray-700 mb-2"><strong>Tasks:</strong> {entry.tasks_completed}</p>
-                {entry.skills_learned && <p className="text-gray-600 text-sm mb-1"><strong>Skills:</strong> {entry.skills_learned}</p>}
-                {entry.challenges_faced && <p className="text-gray-600 text-sm mb-1"><strong>Challenges:</strong> {entry.challenges_faced}</p>}
-                <p className="text-sm text-gray-500 mt-2">Hours: {entry.hours_worked} | Supervisor: {entry.supervisor_name || "N/A"}</p>
+                <p className="text-foreground mb-2"><strong>Tasks:</strong> {entry.tasks_completed}</p>
+                {entry.skills_learned && <p className="text-muted-foreground text-sm mb-1"><strong>Skills:</strong> {entry.skills_learned}</p>}
+                {entry.challenges_faced && <p className="text-muted-foreground text-sm mb-1"><strong>Challenges:</strong> {entry.challenges_faced}</p>}
+                <p className="text-sm text-muted-foreground mt-2">Hours: {entry.hours_worked} | Supervisor: {entry.supervisor_name || "N/A"}</p>
               </CardContent>
             </Card>
           ))}
@@ -130,3 +130,4 @@ export default function LogbookPage() {
     </div>
   );
 }
+

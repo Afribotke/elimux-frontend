@@ -145,11 +145,11 @@ export default function InternshipsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <div className="bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 mb-4">
+            <div className="inline-flex items-center gap-2 bg-background/20 backdrop-blur-sm rounded-full px-4 py-2 mb-4">
               <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
               <span className="text-sm font-medium">{activeVacancies} Active Vacancies Right Now</span>
             </div>
@@ -160,11 +160,11 @@ export default function InternshipsPage() {
             </p>
           </div>
           <div className="max-w-3xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-xl p-2 flex items-center gap-2">
-              <Search className="w-5 h-5 text-gray-400 ml-3" />
+            <div className="bg-background rounded-2xl shadow-xl p-2 flex items-center gap-2">
+              <Search className="w-5 h-5 text-muted-foreground ml-3" />
               <Input
                 placeholder="Search by job title, company or skill..."
-                className="border-0 focus-visible:ring-0 text-gray-900 placeholder:text-gray-400 flex-1"
+                className="border-0 focus-visible:ring-0 text-foreground placeholder:text-muted-foreground flex-1"
                 value={filters.query}
                 onChange={(e) => setFilters({ ...filters, query: e.target.value })}
               />
@@ -178,11 +178,11 @@ export default function InternshipsPage() {
       </div>
 
       {showFilters && (
-        <div className="bg-white border-b shadow-sm">
+        <div className="bg-background border-b shadow-sm">
           <div className="max-w-7xl mx-auto px-4 py-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Profession</label>
+                <label className="text-sm font-medium text-foreground mb-2 block">Profession</label>
                 <Select value={filters.profession} onValueChange={(v) => setFilters({ ...filters, profession: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -191,7 +191,7 @@ export default function InternshipsPage() {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">County</label>
+                <label className="text-sm font-medium text-foreground mb-2 block">County</label>
                 <Select value={filters.county} onValueChange={(v) => setFilters({ ...filters, county: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -200,17 +200,17 @@ export default function InternshipsPage() {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Paid Only</label>
+                <label className="text-sm font-medium text-foreground mb-2 block">Paid Only</label>
                 <div className="flex items-center gap-2 mt-2">
                   <Switch checked={filters.isPaid === true} onCheckedChange={(v) => setFilters({ ...filters, isPaid: v ? true : null })} />
-                  <span className="text-sm text-gray-600">Show paid internships only</span>
+                  <span className="text-sm text-muted-foreground">Show paid internships only</span>
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Remote</label>
+                <label className="text-sm font-medium text-foreground mb-2 block">Remote</label>
                 <div className="flex items-center gap-2 mt-2">
                   <Switch checked={filters.isRemote} onCheckedChange={(v) => setFilters({ ...filters, isRemote: v })} />
-                  <span className="text-sm text-gray-600">Remote/Hybrid only</span>
+                  <span className="text-sm text-muted-foreground">Remote/Hybrid only</span>
                 </div>
               </div>
             </div>
@@ -220,7 +220,7 @@ export default function InternshipsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-2xl font-bold text-foreground">
             {loading ? "Loading..." : `${totalCount} Internships Found`}
           </h2>
           {studentProfile && (
@@ -233,14 +233,14 @@ export default function InternshipsPage() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i}><CardContent className="p-6"><div className="h-32 bg-gray-200 animate-pulse rounded" /></CardContent></Card>
+              <Card key={i}><CardContent className="p-6"><div className="h-32 bg-secondary animate-pulse rounded" /></CardContent></Card>
             ))}
           </div>
         ) : internships.length === 0 ? (
           <div className="text-center py-16">
             <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No internships found</h3>
-            <p className="text-gray-500">Try adjusting your filters or check back later.</p>
+            <h3 className="text-xl font-semibold text-foreground mb-2">No internships found</h3>
+            <p className="text-muted-foreground">Try adjusting your filters or check back later.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -272,7 +272,7 @@ export default function InternshipsPage() {
                     )}
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <p className="text-sm text-gray-600 line-clamp-2">{i.description}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{i.description}</p>
                     <div className="flex flex-wrap gap-2">
                       <Badge variant="secondary" className="text-xs"><Briefcase className="w-3 h-3 mr-1" />{i.profession_category}</Badge>
                       <Badge variant="secondary" className="text-xs"><MapPin className="w-3 h-3 mr-1" />{i.location_county}{i.is_remote && " (Remote)"}</Badge>
@@ -281,11 +281,11 @@ export default function InternshipsPage() {
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-1">
                         <DollarSign className="w-4 h-4 text-green-600" />
-                        <span className={i.is_paid ? "text-green-700 font-medium" : "text-gray-500"}>
+                        <span className={i.is_paid ? "text-green-700 font-medium" : "text-muted-foreground"}>
                           {formatStipend(i.stipend_amount_min, i.stipend_amount_max)}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 text-gray-500">
+                      <div className="flex items-center gap-1 text-muted-foreground">
                         <Users className="w-4 h-4" />
                         <span>{i.remaining_slots} of {i.total_slots} slots left</span>
                       </div>
@@ -294,11 +294,11 @@ export default function InternshipsPage() {
                       <div className="flex items-center gap-1 text-sm">
                         <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                         <span className="font-medium">{i.employer.average_rating.toFixed(1)}</span>
-                        <span className="text-gray-500">({i.employer.review_count} reviews)</span>
+                        <span className="text-muted-foreground">({i.employer.review_count} reviews)</span>
                       </div>
                     )}
                     <div className="flex items-center justify-between pt-2">
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         <Clock className="w-3 h-3 inline mr-1" />
                         Deadline: {new Date(i.application_deadline).toLocaleDateString()}
                       </div>
@@ -316,3 +316,4 @@ export default function InternshipsPage() {
     </div>
   );
 }
+
