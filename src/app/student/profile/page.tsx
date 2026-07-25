@@ -1,18 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { User, GraduationCap, MapPin, Globe, FileText, Save } from "lucide-react";
+import { User, GraduationCap, MapPin, Globe, Save } from "lucide-react";
 
 export default function StudentProfilePage() {
+  const router = useRouter();
   const supabase = createClient();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +38,10 @@ export default function StudentProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { toast.error("Please log in"); return; }
+      if (!user) {
+        router.push("/login?redirect=/student/profile");
+        return;
+      }
 
       const { data } = await supabase
         .from("student_profiles")
@@ -65,12 +70,12 @@ export default function StudentProfilePage() {
       setLoading(false);
     };
     fetchProfile();
-  }, [supabase]);
+  }, [supabase, router]);
 
   const handleSave = async () => {
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) { router.push("/login"); return; }
 
     const updates = {
       full_name: form.full_name,
