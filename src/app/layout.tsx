@@ -1,82 +1,38 @@
-import type { Metadata, Viewport } from 'next'
-import './globals.css'
-import { ThemeProvider } from '@/lib/theme'
-import ThemeToggle from '@/components/ThemeToggle'
-import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
-import MobileNav from '@/components/MobileNav'
-import PointsDisplay from '@/components/PointsDisplay'
-import InstallPrompt from '@/components/InstallPrompt'
-import OfflineIndicator from '@/components/OfflineIndicator'
-import PushNotificationToggle from '@/components/PushNotificationToggle'
-import BackgroundSyncManager from '@/components/BackgroundSyncManager'
-import PoweredByHeaderBadge from '@/components/PoweredByHeaderBadge'
-import DesktopNav from '@/components/DesktopNav'
-import Footer from '@/components/Footer'
-import AppLoadingScreen from '@/components/AppLoadingScreen'
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { AuthProvider } from "@/context/AuthContext";
+import DesktopNav from "@/components/DesktopNav";
+import MobileNav from "@/components/MobileNav";
+import { Toaster } from "sonner";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'ElimuX - Discover Global Education',
-  description: 'Find universities, colleges, TVET institutes, and programs worldwide. AI-powered education discovery platform.',
-  keywords: 'education, university, college, TVET, programs, courses, study abroad, Kenya, Africa',
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'ElimuX',
-  },
-  icons: {
-    icon: '/icon-192x192.png',
-    apple: '/apple-touch-icon.png',
-  },
-}
+  title: "ElimuX — Discover Global Education",
+  description: "Find universities, programs, internships, and career opportunities worldwide.",
+};
 
 export const viewport: Viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
-  themeColor: '#ffc107',
-}
-
-const themeInitScript = `(function(){try{var t=localStorage.getItem('elimux-theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.classList.add(t);}catch(e){document.documentElement.classList.add('dark');}})();`
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-      </head>
-      <body className="antialiased">
-        <ThemeProvider>
-          <AppLoadingScreen />
-          <header className="sticky top-0 z-40 border-b border-border bg-elimux-dark/80 backdrop-blur-sm">
-            <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="font-bold text-foreground flex-shrink-0">ElimuX</span>
-                <PoweredByHeaderBadge />
-              </div>
-              <DesktopNav />
-              <div className="flex items-center gap-2">
-                <PushNotificationToggle />
-                <PointsDisplay />
-                <ThemeToggle />
-              </div>
-            </div>
-          </header>
-          <OfflineIndicator />
-          <div className="pb-16 md:pb-0">
-            {children}
-            <Footer />
-          </div>
+    <html lang="en">
+      <body className={`${inter.className} antialiased bg-slate-50 text-slate-900`}>
+        <AuthProvider>
+          <DesktopNav />
+          <main className="min-h-screen pb-16 lg:pb-0">{children}</main>
           <MobileNav />
-          <ServiceWorkerRegister />
-          <InstallPrompt />
-          <BackgroundSyncManager />
-        </ThemeProvider>
+          <Toaster position="top-right" richColors />
+        </AuthProvider>
       </body>
     </html>
-  )
+  );
 }
