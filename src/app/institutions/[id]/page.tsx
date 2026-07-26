@@ -150,9 +150,31 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
                     Website
                   </a>
                 )}
+                {institution.is_featured && (
+                  <span className="flex items-center gap-1">
+                    <Star className="w-4 h-4 text-warning" />
+                    Popular with students
+                  </span>
+                )}
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="bg-elimux-card border border-border rounded-2xl p-6 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <div className="text-foreground font-bold mb-1 flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-primary-400" />
+              Are you a representative of this institution?
+            </div>
+            <div className="text-muted text-sm">Claim your profile to update programs, respond to inquiries, and access analytics.</div>
+          </div>
+          <Link
+            href="/institution/register"
+            className="bg-primary-600 hover:bg-primary-700 text-elimux-dark px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shrink-0"
+          >
+            Claim Institution →
+          </Link>
         </div>
 
         {accreditations && accreditations.length > 0 && (

@@ -37,6 +37,22 @@ export default async function InstitutionsPage() {
       </h1>
       <p className='text-muted mb-8'>Browse universities, colleges, TVET institutes, and more</p>
 
+      <div className='mb-8 bg-elimux-card border border-border rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4'>
+        <div>
+          <div className='text-foreground font-bold text-lg mb-1 flex items-center gap-2'>
+            <Building2 className='w-5 h-5 text-primary-400' />
+            Institution Representative?
+          </div>
+          <div className='text-muted text-sm'>Claim your institution profile to manage programs, update information, and connect with prospective students.</div>
+        </div>
+        <Link
+          href='/institution/register'
+          className='bg-primary-600 hover:bg-primary-700 text-elimux-dark px-6 py-3 rounded-xl font-semibold text-sm transition-colors shrink-0'
+        >
+          Claim Your Institution →
+        </Link>
+      </div>
+
       <div className='mb-8'>
         <SponsorAdBanner placement='search' />
       </div>
