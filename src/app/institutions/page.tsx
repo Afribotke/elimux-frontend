@@ -3,25 +3,31 @@ import { supabase } from '@/lib/supabase'
 import FeaturedInstitutionCard from '@/components/FeaturedInstitutionCard'
 import InstitutionsBrowser from '@/components/institutions/InstitutionsBrowser'
 import SponsorAdBanner from '@/components/SponsorAdBanner'
-import { listInstitutions } from '@/lib/api'
 import { Building2 } from 'lucide-react'
 
 export const revalidate = 60
 
 export default async function InstitutionsPage() {
-  const [{ data: institutions }, featuredResult] = await Promise.all([
+  const [{ data: institutions }, { data: featuredData }] = await Promise.all([
     supabase
       .from('institutions')
       .select(
-        '*, type:institution_types(name, icon), country:countries(name, flag_emoji), accreditations:institution_accreditations(accreditation_status, body:accreditation_bodies(name, code, logo_url))'
+        '*, type:institution_types(name, icon), country:countries(name, flag_emoji), accreditations:institution_accreditations(accreditation_status)'
       )
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(24),
-    listInstitutions({ featured: true, limit: 4 }).catch(() => ({ data: [] })),
+    supabase
+      .from('institutions')
+      .select(
+        '*, type:institution_types(name, icon), country:countries(name, flag_emoji), accreditations:institution_accreditations(accreditation_status)'
+      )
+      .eq('is_active', true)
+      .eq('is_featured', true)
+      .limit(4),
   ])
 
-  const featuredInstitutions = featuredResult.data
+  const featuredInstitutions = featuredData || []
 
   return (
     <main className='min-h-screen py-12 px-4 max-w-6xl mx-auto'>

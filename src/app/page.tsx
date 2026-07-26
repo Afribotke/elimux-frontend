@@ -16,7 +16,7 @@ import PricingTeaser from '@/components/home/PricingTeaser'
 import FAQSection from '@/components/home/FAQSection'
 import FinalCTA from '@/components/home/FinalCTA'
 import { GraduationCap, Building2, Globe, Sparkles, TrendingUp, Award, ArrowRight } from 'lucide-react'
-import SkolexHome from '@/components/skolex/SkolexHome'
+import NewHomePage from '@/components/home/NewHomePage'
 
 const EXAMPLE_SEARCHES = ['Computer Science in Kenya', 'Business Administration', 'Engineering']
 
@@ -32,7 +32,7 @@ interface StatCounts {
 const SKOLEX_HOME = process.env.NEXT_PUBLIC_FEATURE_SKOLEX_HOME === 'true'
 
 export default function HomePage() {
-  if (SKOLEX_HOME) return <SkolexHome />
+  if (SKOLEX_HOME) return <NewHomePage />
   return <CurrentHome />
 }
 
