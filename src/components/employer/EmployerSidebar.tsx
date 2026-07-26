@@ -9,6 +9,7 @@ import {
   Users,
   Settings,
   Building2,
+  Briefcase,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -20,6 +21,7 @@ const navItems = [
   { href: '/employer/requisitions', label: 'Requisitions', icon: FileText },
   { href: '/employer/requisitions/new', label: 'New Requisition', icon: PlusCircle },
   { href: '/employer/team', label: 'Team', icon: Users },
+  { href: '/employer/vacancies', label: 'Post Internships', icon: Briefcase },
   { href: '/employer/settings', label: 'Settings', icon: Settings },
 ];
 
