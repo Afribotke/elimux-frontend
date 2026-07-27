@@ -20,34 +20,45 @@ function iconFor(name: string): string {
   if (n.includes('law') || n.includes('legal')) return '⚖️';
   if (n.includes('education') || n.includes('teaching')) return '🎓';
   if (n.includes('art') || n.includes('design') || n.includes('humanities') || n.includes('media')) return '🎨';
-  if (n.includes('science') || n.includes('math') || n.includes('mathematics')) return '🧪';
   if (n.includes('agriculture') || n.includes('environment') || n.includes('farming')) return '🌱';
   if (n.includes('aviation') || n.includes('maritime') || n.includes('aerospace')) return '✈️';
   if (n.includes('hospitality') || n.includes('tourism') || n.includes('hotel')) return '🏨';
   if (n.includes('sport') || n.includes('fitness') || n.includes('athletic')) return '🏅';
   if (n.includes('trade') || n.includes('vocational') || n.includes('craft')) return '🔨';
+  // Checked before the science/math branch: "Social Sciences" contains
+  // "science" too, and should read as social, not science.
   if (n.includes('social') || n.includes('community')) return '👥';
   if (n.includes('policy') || n.includes('governance') || n.includes('public')) return '🛡️';
+  if (n.includes('science') || n.includes('math') || n.includes('mathematics')) return '🧪';
   return '📚';
 }
 
-// Color per category
+// Color per category, keyed by the exact slugified name of every category
+// currently in program_categories. Exact match only (no substring fallback):
+// partial matching previously let "social-sciences" steal "science"'s color,
+// and unmatched categories fell to a bg/text pair that render identically
+// (rgb(100,100,100) on rgb(100,100,100)), making the label invisible.
 const CATEGORY_COLORS: Record<string, string> = {
-  'medicine-health': 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100',
-  'technology': 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100',
-  'business': 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100',
-  'engineering': 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100',
-  'law': 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100',
-  'education': 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100',
-  'arts-design': 'bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-100',
-  'science': 'bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100',
-  'agriculture': 'bg-lime-50 text-lime-700 border-lime-200 hover:bg-lime-100',
-  'aviation': 'bg-cyan-50 text-cyan-700 border-cyan-200 hover:bg-cyan-100',
-  'hospitality': 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100',
-  'sport': 'bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100',
-  'trade': 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100',
-  'social': 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100',
-  'policy': 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100',
+  'agriculture-environment': 'bg-lime-50 text-lime-700 border-lime-200 hover:bg-lime-100',
+  'architecture-design': 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 hover:bg-fuchsia-100',
+  'arts-humanities': 'bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-100',
+  'aviation-maritime': 'bg-cyan-50 text-cyan-700 border-cyan-200 hover:bg-cyan-100',
+  'business-management': 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100',
+  'data-analytics': 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100',
+  'education-teaching': 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100',
+  'engineering-technology': 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100',
+  'finance-accounting': 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100',
+  'hospitality-tourism': 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100',
+  'information-technology': 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100',
+  'law-legal-studies': 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100',
+  'media-communication': 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 hover:bg-fuchsia-100',
+  'medicine-health-sciences': 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100',
+  'nursing-caregiving': 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100',
+  'public-policy-governance': 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100',
+  'science-mathematics': 'bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100',
+  'social-sciences': 'bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100',
+  'sports-fitness': 'bg-lime-50 text-lime-700 border-lime-200 hover:bg-lime-100',
+  'trades-vocational': 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100',
 };
 
 function slugify(name: string): string {
@@ -55,12 +66,7 @@ function slugify(name: string): string {
 }
 
 function getCategoryColor(name: string): string {
-  const slug = slugify(name);
-  if (CATEGORY_COLORS[slug]) return CATEGORY_COLORS[slug];
-  for (const [key, color] of Object.entries(CATEGORY_COLORS)) {
-    if (slug.includes(key) || key.includes(slug)) return color;
-  }
-  return 'bg-muted text-muted-foreground border-border hover:bg-accent';
+  return CATEGORY_COLORS[slugify(name)] || 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100';
 }
 
 export default function CategoryPills() {
