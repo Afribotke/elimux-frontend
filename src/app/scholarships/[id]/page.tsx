@@ -8,30 +8,8 @@ import BackButton from '@/components/BackButton'
 import Breadcrumbs from '@/components/Breadcrumbs'
 import { Calendar, Wallet, MapPin, ExternalLink, ClipboardList, Bell } from 'lucide-react'
 
-export async function generateStaticParams() {
-  // Same pagination fix as programs/[id] and institutions/[id]: PostgREST
-  // caps an unpaginated select at 1000 rows.
-  const pageSize = 1000
-  const allIds: string[] = []
-  let page = 0
+export const dynamic = 'force-dynamic'
 
-  while (true) {
-    const { data } = await supabase
-      .from('scholarships')
-      .select('id')
-      .eq('status', 'active')
-      .range(page * pageSize, (page + 1) * pageSize - 1)
-
-    if (!data || data.length === 0) break
-    allIds.push(...data.map((s) => s.id))
-    if (data.length < pageSize) break
-    page++
-  }
-
-  // output: 'export' requires at least one static path per dynamic route.
-  if (allIds.length === 0) return [{ id: '_placeholder' }]
-  return allIds.map((id) => ({ id }))
-}
 
 export default async function ScholarshipDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

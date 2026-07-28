@@ -5,6 +5,9 @@ import InstitutionCard from '@/components/InstitutionCard'
 import AccreditationStatusBadge from '@/components/AccreditationStatusBadge'
 import { ArrowLeft, ShieldCheck, Globe, MapPin } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
+
 interface AccreditedInstitutionLinkRow {
   id: string
   accreditation_status: string
@@ -22,13 +25,6 @@ interface AccreditedInstitutionLinkRow {
     type: { name: string; icon: string | null } | null
     country: { name: string; flag_emoji: string | null } | null
   } | null
-}
-
-export async function generateStaticParams() {
-  const { data } = await supabase.from('accreditation_bodies').select('id').eq('is_active', true)
-
-  if (!data || data.length === 0) return [{ id: '_placeholder' }]
-  return data.map((body) => ({ id: body.id }))
 }
 
 export default async function AccreditationBodyDetailPage({ params }: { params: Promise<{ id: string }> }) {
