@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -33,6 +33,7 @@ export default function NewVacancyPage() {
   const supabase = createClient();
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
+    department_id: '',
     title: "",
     description: "",
     requirements: "",
@@ -157,4 +158,5 @@ export default function NewVacancyPage() {
     </div>
   );
 }
+
 
