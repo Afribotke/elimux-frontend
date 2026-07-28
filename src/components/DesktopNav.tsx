@@ -40,13 +40,13 @@ function NavLink({
 
   const active =
     size === 'md'
-      ? 'bg-gray-100 text-gray-900'
-      : 'bg-white text-gray-800 shadow-sm';
+      ? 'bg-muted text-foreground'
+      : 'bg-background text-foreground shadow-sm';
 
   const inactive =
     size === 'md'
-      ? 'text-gray-500 hover:text-gray-900 hover:bg-gray-50/50'
-      : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100/50';
+      ? 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50';
 
   return (
     <Link href={href} className={`${base} ${isActive ? active : inactive}`}>
@@ -80,7 +80,7 @@ export default function DesktopNav() {
   const isAdmin = (user as any)?.role === 'admin';
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-100">
+    <header className="sticky top-0 z-50 bg-background border-b border-border">
       {/* Line 1 — Primary */}
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center h-[52px]">
@@ -89,7 +89,7 @@ export default function DesktopNav() {
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-white text-sm">
               🎓
             </div>
-            <span className="text-gray-900 font-bold text-lg tracking-tight">
+            <span className="text-foreground font-bold text-lg tracking-tight">
               ElimuX
             </span>
           </Link>
@@ -114,23 +114,23 @@ export default function DesktopNav() {
               <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-full hover:bg-gray-50 transition-colors border border-gray-200"
+                  className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-full hover:bg-muted transition-colors border border-border"
                 >
                   <div className="w-7 h-7 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center text-white text-[10px] font-bold">
                     {(user as any).email?.charAt(0).toUpperCase() || 'U'}
                   </div>
-                  <span className="text-gray-600 text-[13px] font-medium max-w-[100px] truncate">
+                  <span className="text-muted-foreground text-[13px] font-medium max-w-[100px] truncate">
                     {(user as any).email?.split('@')[0] || 'Account'}
                   </span>
-                  <span className="text-gray-400 text-xs">⌄</span>
+                  <span className="text-muted-foreground text-xs">⌄</span>
                 </button>
 
                 {profileOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-gray-100 rounded-xl shadow-lg py-2 z-50">
+                  <div className="absolute right-0 top-full mt-2 w-52 bg-background border border-border rounded-xl shadow-lg py-2 z-50">
                     <Link
                       href="/student/profile"
                       onClick={() => setProfileOpen(false)}
-                      className="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-50"
+                      className="block px-4 py-2 text-foreground text-sm hover:bg-muted"
                     >
                       Profile
                     </Link>
@@ -138,12 +138,12 @@ export default function DesktopNav() {
                       <Link
                         href="/admin"
                         onClick={() => setProfileOpen(false)}
-                        className="block px-4 py-2 text-gray-700 text-sm hover:bg-gray-50"
+                        className="block px-4 py-2 text-foreground text-sm hover:bg-muted"
                       >
                         Admin Dashboard
                       </Link>
                     )}
-                    <div className="border-t border-gray-100 my-1" />
+                    <div className="border-t border-border my-1" />
                     <button
                       onClick={() => {
                         signOut();
@@ -160,13 +160,13 @@ export default function DesktopNav() {
               <div className="flex items-center gap-3">
                 <Link
                   href="/login"
-                  className="text-gray-500 text-[13px] font-medium hover:text-gray-900 transition-colors"
+                  className="text-muted-foreground text-[13px] font-medium hover:text-foreground transition-colors"
                 >
                   Log In
                 </Link>
                 <Link
                   href="/register"
-                  className="bg-gray-900 text-white text-[13px] font-semibold px-4 py-2 rounded-full hover:bg-gray-800 transition-colors"
+                  className="bg-foreground text-background text-[13px] font-semibold px-4 py-2 rounded-full hover:opacity-90 transition-colors"
                 >
                   Get Started
                 </Link>
@@ -177,7 +177,7 @@ export default function DesktopNav() {
       </div>
 
       {/* Line 2 — Secondary */}
-      <div className="hidden lg:block border-t border-gray-50 bg-[#fafafa]">
+      <div className="hidden lg:block border-t border-border bg-muted/30">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center h-[38px]">
             <nav className="flex items-center gap-1 mx-auto">
