@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -45,12 +45,18 @@ export default function EmployerRegisterPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error("Please log in"); return; }
 
-    const { error } = await supabase.from("employers").insert({
-      user_id: user.id,
-      ...form,
-      verification_status: "pending",
-      is_verified: false,
-    });
+    console.log("Submitting employer registration...", { user_id: user.id, form });
+const { data, error } = await supabase
+  .from("employers")
+  .insert({
+    user_id: user.id,
+    ...form,
+    verification_status: "pending",
+    is_verified: false,
+  })
+  .select()
+  .single();
+console.log("Insert result:", { data, error });
 
     if (error) toast.error("Failed to register: " + error.message);
     else {
@@ -119,4 +125,5 @@ export default function EmployerRegisterPage() {
     </div>
   );
 }
+
 
