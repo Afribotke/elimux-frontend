@@ -1,6 +1,8 @@
 {
   "redirects": [
-    { "source": "/programmes", "destination": "/programs", "permanent": true },
-    { "source": "/programmes/:path*", "destination": "/programs/:path*", "permanent": true }
+    { "source": "/programmes", "destination": "/programs/", "permanent": true },
+    { "source": "/programmes/", "destination": "/programs/", "permanent": true },
+    { "source": "/programmes/:path*", "destination": "/programs/:path*", "permanent": true },
+    { "source": "/programmes/:path*/", "destination": "/programs/:path*/", "permanent": true }
   ]
 }
