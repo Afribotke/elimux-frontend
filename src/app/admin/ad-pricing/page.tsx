@@ -21,7 +21,7 @@ export default function AdminAdPricing() {
   const [tab, setTab] = useState("rates");
   const [changed, setChanged] = useState(false);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const ADMIN_KEY = typeof window !== "undefined" ? localStorage.getItem("admin_key") || "" : "";
 
   useEffect(() => { fetchSettings(); }, []);

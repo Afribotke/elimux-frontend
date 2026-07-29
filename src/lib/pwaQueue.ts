@@ -2,7 +2,7 @@ import { getOrCreatePwaDeviceId, bufferActionLocally } from './pwaDevice'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
-// Matches elimux-backend's queued_actions_action_type_check constraint
+// Matches backend queued_actions_action_type_check constraint
 // (src/routes/pwa.ts's QUEUEABLE_ACTION_TYPES) - keep in sync if it changes.
 export type QueueableActionType = 'favorite' | 'review' | 'application' | 'share'
 

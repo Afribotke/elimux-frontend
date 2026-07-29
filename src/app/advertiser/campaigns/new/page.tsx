@@ -36,7 +36,7 @@ export default function CreateCampaign() {
     image_url: "", target_url: ""
   });
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => { fetchPricing(); fetchPlacements(); }, []);
 
