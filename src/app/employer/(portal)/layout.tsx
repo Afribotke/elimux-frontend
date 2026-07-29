@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import EmployerSidebar from '@/components/employer/EmployerSidebar';
+import BrandColorInjector from '@/components/employer/BrandColorInjector';
 import { Loader2 } from 'lucide-react';
 
 export default function EmployerPortalLayout({
@@ -60,6 +61,7 @@ export default function EmployerPortalLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <BrandColorInjector />
       <EmployerSidebar />
       <main className="lg:ml-64 min-h-screen transition-all duration-300">
         <div className="p-6 lg:p-8 max-w-7xl mx-auto">
