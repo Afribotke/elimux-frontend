@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AdminKeyProvider, useAdminKey } from '@/components/admin/AdminKeyContext'
-import { LayoutDashboard, Building2, GraduationCap, MessageSquare, Users, BarChart3, Lock, KeyRound, Tag, Megaphone, Rocket, Award, DollarSign, Search, Bot, Menu, X, Settings, CreditCard, Inbox } from 'lucide-react'
+import { LayoutDashboard, Building2, GraduationCap, MessageSquare, Users, BarChart3, Lock, KeyRound, Tag, Megaphone, Rocket, Award, DollarSign, Search, Bot, Menu, X, Settings, CreditCard, Inbox, Briefcase, Shield } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
@@ -25,6 +25,10 @@ const NAV_ITEMS = [
   { href: '/admin/institutions-performance', label: 'Institution Performance', icon: BarChart3, exact: false },
   { href: '/admin/analytics', label: 'University Analytics', icon: BarChart3, exact: false },
   { href: '/admin/settings', label: 'Platform Pricing', icon: Settings, exact: false },
+  { href: '/admin/internships', label: 'Internships', icon: Briefcase, exact: false },
+  { href: '/admin/employers', label: 'Employers', icon: Building2, exact: false },
+  { href: '/admin/students', label: 'Students', icon: GraduationCap, exact: false },
+  { href: '/admin/accreditation', label: 'Accreditation', icon: Shield, exact: false },
 ]
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
