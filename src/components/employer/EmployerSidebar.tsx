@@ -10,6 +10,7 @@ import {
   Settings,
   Building2,
   Briefcase,
+  ClipboardList,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -22,6 +23,7 @@ const navItems = [
   { href: '/employer/requisitions/new', label: 'New Requisition', icon: PlusCircle },
   { href: '/employer/team', label: 'Team', icon: Users },
   { href: '/employer/vacancies', label: 'Post Internships', icon: Briefcase },
+  { href: '/employer/applications', label: 'Applications', icon: ClipboardList },
   { href: '/employer/settings', label: 'Settings', icon: Settings },
 ];
 
