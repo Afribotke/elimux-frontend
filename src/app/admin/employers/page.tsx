@@ -38,23 +38,23 @@ export default function AdminEmployersPage() {
     load()
   }, [])
 
-  async function updateStatus(id: string, status: 'verified' | 'rejected') {
+  async function updateStatus(id: string, status: 'approved' | 'rejected') {
     setBusyId(id)
     const supabase = createClient()
     const { error: err } = await supabase
       .from('employers')
-      .update({ verification_status: status, is_verified: status === 'verified' })
+      .update({ verification_status: status, is_verified: status === 'approved' })
       .eq('id', id)
 
     if (!err) {
       setEmployers((prev) =>
-        prev.map((e) => (e.id === id ? { ...e, verification_status: status, is_verified: status === 'verified' } : e))
+        prev.map((e) => (e.id === id ? { ...e, verification_status: status, is_verified: status === 'approved' } : e))
       )
     }
     setBusyId(null)
   }
 
-  const verified = employers.filter((e) => e.verification_status === 'verified').length
+  const verified = employers.filter((e) => e.verification_status === 'approved').length
   const pending = employers.filter((e) => e.verification_status === 'pending').length
   const rejected = employers.filter((e) => e.verification_status === 'rejected').length
 
@@ -121,9 +121,9 @@ export default function AdminEmployersPage() {
                     <td className="px-4 py-3 text-muted">{new Date(e.created_at).toLocaleDateString()}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
-                        {e.verification_status !== 'verified' && (
+                        {e.verification_status !== 'approved' && (
                           <button
-                            onClick={() => updateStatus(e.id, 'verified')}
+                            onClick={() => updateStatus(e.id, 'approved')}
                             disabled={busyId === e.id}
                             className="px-2.5 py-1.5 rounded-lg bg-elimux-success/10 text-elimux-success text-xs font-medium disabled:opacity-50"
                           >
@@ -161,7 +161,7 @@ export default function AdminEmployersPage() {
 
 function StatusPill({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    verified: 'bg-elimux-success/10 text-elimux-success',
+    approved: 'bg-elimux-success/10 text-elimux-success',
     pending: 'bg-elimux-warning/10 text-elimux-warning',
     rejected: 'bg-elimux-danger/10 text-elimux-danger',
   }

@@ -95,7 +95,7 @@ export default function EmployerDashboardPage() {
               {employer?.name || 'Your Organization'} — {teamMember?.role?.replace('_', ' ')?.toUpperCase()}
             </p>
           </div>
-          {employer?.verification_status !== 'verified' && (
+          {employer?.verification_status !== 'approved' && (
             <div className="px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm font-medium">
               ⚠️ Account pending verification
             </div>
