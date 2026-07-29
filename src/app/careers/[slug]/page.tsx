@@ -15,7 +15,7 @@ export default async function CareersPage({ params }: CareersPageProps) {
     .from("employers")
     .select("*")
     .eq("slug", slug)
-    .eq("verification_status", "verified")
+    .eq("verification_status", "approved")
     .single();
 
   if (!employer) notFound();
