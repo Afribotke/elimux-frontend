@@ -3,7 +3,19 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { checkApiHealth, createInstitution, createProgram, getAnalyticsOverview, getAnalyticsSearches, type AnalyticsOverview, type SearchTrendPoint } from '@/lib/api'
+import {
+  checkApiHealth,
+  createInstitution,
+  createProgram,
+  getAnalyticsOverview,
+  getAnalyticsSearches,
+  getAnalyticsRevenue,
+  getAnalyticsUsers,
+  type AnalyticsOverview,
+  type SearchTrendPoint,
+  type AnalyticsRevenue,
+  type AnalyticsUserRow,
+} from '@/lib/api'
 import { useAdminKey } from '@/components/admin/AdminKeyContext'
 import InstitutionForm, { type InstitutionFormData } from '@/components/InstitutionForm'
 import ProgramForm, { type ProgramFormData } from '@/components/ProgramForm'
@@ -12,6 +24,49 @@ import ProviderStatus from '@/components/admin/ProviderStatus'
 import StatCard from '@/components/admin/StatCard'
 import LineChart from '@/components/admin/charts/LineChart'
 import { LayoutDashboard, Users, Building2, GraduationCap, MessageSquare, TrendingUp, Shield, Server, CheckCircle2, Settings2, Star, ShieldQuestion, DollarSign, Search, FileCheck2 } from 'lucide-react'
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+function trendPct(current: number, previous: number): number | null {
+  if (previous === 0) return current > 0 ? 100 : null
+  return Math.round(((current - previous) / previous) * 100)
+}
+
+function weekOverWeekSum(records: { created_at: string; amount: number }[]) {
+  const now = Date.now()
+  let last7 = 0
+  let prev7 = 0
+  for (const r of records) {
+    const t = new Date(r.created_at).getTime()
+    if (t >= now - 7 * DAY_MS) last7 += r.amount
+    else if (t >= now - 14 * DAY_MS) prev7 += r.amount
+  }
+  return trendPct(last7, prev7)
+}
+
+function weekOverWeekCount(dates: string[]) {
+  const now = Date.now()
+  let last7 = 0
+  let prev7 = 0
+  for (const d of dates) {
+    const t = new Date(d).getTime()
+    if (t >= now - 7 * DAY_MS) last7++
+    else if (t >= now - 14 * DAY_MS) prev7++
+  }
+  return trendPct(last7, prev7)
+}
+
+function weekOverWeekDailyCounts(points: { date: string; count: number }[]) {
+  const now = Date.now()
+  let last7 = 0
+  let prev7 = 0
+  for (const p of points) {
+    const t = new Date(p.date).getTime()
+    if (t >= now - 7 * DAY_MS) last7 += p.count
+    else if (t >= now - 14 * DAY_MS) prev7 += p.count
+  }
+  return trendPct(last7, prev7)
+}
 
 interface RecentReview {
   id: string
@@ -62,6 +117,8 @@ export default function AdminPage() {
   const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null)
   const [searchTrend, setSearchTrend] = useState<SearchTrendPoint[]>([])
   const [analyticsLoading, setAnalyticsLoading] = useState(true)
+  const [revenue, setRevenue] = useState<AnalyticsRevenue | null>(null)
+  const [userRows, setUserRows] = useState<AnalyticsUserRow[]>([])
 
   useEffect(() => {
     checkApiHealth().then(({ ok }) => setApiStatus(ok ? 'online' : 'offline'))
@@ -125,9 +182,16 @@ export default function AdminPage() {
     async function loadAnalytics() {
       setAnalyticsLoading(true)
       try {
-        const [overviewRes, searchesRes] = await Promise.all([getAnalyticsOverview(adminKey), getAnalyticsSearches(adminKey)])
+        const [overviewRes, searchesRes, revenueRes, usersRes] = await Promise.all([
+          getAnalyticsOverview(adminKey),
+          getAnalyticsSearches(adminKey),
+          getAnalyticsRevenue(adminKey),
+          getAnalyticsUsers(adminKey),
+        ])
         setAnalytics(overviewRes.data)
         setSearchTrend(searchesRes.data.trend)
+        setRevenue(revenueRes.data)
+        setUserRows(usersRes.data)
       } catch {
         setAnalytics(null)
       } finally {
@@ -136,6 +200,19 @@ export default function AdminPage() {
     }
     loadAnalytics()
   }, [adminKey])
+
+  const searchesTrend = weekOverWeekDailyCounts(searchTrend)
+  const revenueTrend = revenue
+    ? weekOverWeekSum(
+        [
+          ...revenue.payment_history.filter((p) => p.status === 'success').map((p) => ({ created_at: p.created_at, amount: p.amount })),
+          ...(revenue.ad_payment_history ?? [])
+            .filter((p) => p.status === 'paid')
+            .map((p) => ({ created_at: p.created_at, amount: Number(p.amount) })),
+        ]
+      )
+    : null
+  const usersTrend = userRows.length > 0 ? weekOverWeekCount(userRows.map((u) => u.last_active)) : null
 
   useEffect(() => {
     async function loadRecentReviews() {
@@ -255,12 +332,13 @@ export default function AdminPage() {
       ) : (
         <>
           <div className='grid grid-cols-2 md:grid-cols-5 gap-4 mb-6'>
-            <StatCard icon={Users} label='Users (device IDs)' value={analytics.total_users.toLocaleString()} />
-            <StatCard icon={DollarSign} label='Revenue (KES)' value={analytics.total_revenue_kes.toLocaleString()} color='text-elimux-success' />
-            <StatCard icon={Search} label='Searches (month)' value={analytics.total_searches.month.toLocaleString()} color='text-elimux-warning' />
+            <StatCard icon={Users} label='Users (device IDs)' value={analytics.total_users.toLocaleString()} trendPct={usersTrend} />
+            <StatCard icon={DollarSign} label='Revenue (KES)' value={analytics.total_revenue_kes.toLocaleString()} color='text-elimux-success' trendPct={revenueTrend} />
+            <StatCard icon={Search} label='Searches (month)' value={analytics.total_searches.month.toLocaleString()} color='text-elimux-warning' trendPct={searchesTrend} />
             <StatCard icon={Star} label='Reviews' value={analytics.total_reviews.toLocaleString()} />
             <StatCard icon={FileCheck2} label='Applications' value={analytics.total_applications.total.toLocaleString()} color='text-elimux-success' />
           </div>
+          <p className='text-xs text-muted -mt-4 mb-6'>Trend badges compare the last 7 days to the prior 7 days. Applications has no trend — the API only exposes an all-time total, not per-record dates.</p>
 
           <div className='bg-elimux-card rounded-xl p-5 border border-border mb-12'>
             <h3 className='text-sm font-medium text-foreground mb-4'>Search activity (last 30 days)</h3>
@@ -411,9 +489,12 @@ export default function AdminPage() {
           <MessageSquare className='w-8 h-8 text-elimux-warning mb-3' />
           <h3 className='text-lg font-bold text-foreground mb-1'>View Messages</h3>
           <p className='text-sm text-muted mb-3'>Check contact form submissions</p>
-          <button className='px-4 py-2 rounded-lg bg-elimux-warning/20 text-elimux-warning text-sm font-medium'>
-            Coming Soon
-          </button>
+          <Link
+            href='/admin/messages'
+            className='inline-block px-4 py-2 rounded-lg bg-elimux-warning/20 text-elimux-warning text-sm font-medium hover:bg-elimux-warning/30 transition-colors'
+          >
+            View Messages
+          </Link>
         </div>
       </div>
 

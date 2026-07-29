@@ -4,7 +4,10 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { getAnalyticsUsers, type AnalyticsUserRow, type ActivityLevel } from '@/lib/api'
 import { useAdminKey } from '@/components/admin/AdminKeyContext'
-import { ArrowLeft, Users } from 'lucide-react'
+import { downloadCsv } from '@/lib/csv'
+import { ArrowLeft, Users, Download } from 'lucide-react'
+
+const PAGE_SIZE = 25
 
 const LEVEL_OPTIONS: { value: ActivityLevel | 'all'; label: string }[] = [
   { value: 'all', label: 'All levels' },
@@ -27,6 +30,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [level, setLevel] = useState<ActivityLevel | 'all'>('all')
+  const [page, setPage] = useState(1)
 
   const load = useCallback(() => {
     if (!adminKey) return
@@ -42,6 +46,21 @@ export default function AdminUsersPage() {
     load()
   }, [load])
 
+  useEffect(() => {
+    setPage(1)
+  }, [level])
+
+  const totalPages = Math.max(1, Math.ceil(users.length / PAGE_SIZE))
+  const pagedUsers = users.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  function exportCsv() {
+    downloadCsv(
+      'users',
+      ['Device ID', 'Activity Count', 'Activity Level', 'Last Active'],
+      users.map((u) => [u.device_id, u.activity_count, u.activity_level, new Date(u.last_active).toISOString()])
+    )
+  }
+
   return (
     <main className="min-h-screen py-12 px-4 max-w-6xl mx-auto">
       <Link href="/admin" className="text-sm text-muted hover:text-foreground flex items-center gap-1 mb-4">
@@ -54,17 +73,26 @@ export default function AdminUsersPage() {
           Users
         </h1>
 
-        <select
-          value={level}
-          onChange={(e) => setLevel(e.target.value as ActivityLevel | 'all')}
-          className="px-4 py-2 rounded-lg bg-elimux-card border border-border text-foreground text-sm focus:outline-none focus:border-primary-500"
-        >
-          {LEVEL_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-3">
+          <select
+            value={level}
+            onChange={(e) => setLevel(e.target.value as ActivityLevel | 'all')}
+            className="px-4 py-2 rounded-lg bg-elimux-card border border-border text-foreground text-sm focus:outline-none focus:border-primary-500"
+          >
+            {LEVEL_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={exportCsv}
+            disabled={users.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted hover:text-foreground hover:bg-muted/10 disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" /> Export CSV
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -90,7 +118,7 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
+              {pagedUsers.map((u) => (
                 <tr key={u.device_id} className="border-t border-border">
                   <td className="px-4 py-3 text-foreground font-mono text-xs">{u.device_id}</td>
                   <td className="px-4 py-3 text-muted tabular-nums">{u.activity_count}</td>
@@ -107,6 +135,32 @@ export default function AdminUsersPage() {
               )}
             </tbody>
           </table>
+          {users.length > 0 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border text-sm">
+              <span className="text-muted">
+                Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, users.length)} of {users.length}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="px-3 py-1.5 rounded-lg border border-border text-muted hover:text-foreground disabled:opacity-40 disabled:hover:text-muted"
+                >
+                  Previous
+                </button>
+                <span className="text-muted">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  className="px-3 py-1.5 rounded-lg border border-border text-muted hover:text-foreground disabled:opacity-40 disabled:hover:text-muted"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </main>

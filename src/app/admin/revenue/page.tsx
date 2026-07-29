@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { getAnalyticsRevenue, type AnalyticsRevenue } from '@/lib/api'
 import { useAdminKey } from '@/components/admin/AdminKeyContext'
 import PieChart from '@/components/admin/charts/PieChart'
-import { ArrowLeft, DollarSign } from 'lucide-react'
+import { ArrowLeft, DollarSign, Download } from 'lucide-react'
+import { downloadCsv } from '@/lib/csv'
 
 type AdPayment = {
   id: string
@@ -37,16 +38,65 @@ export default function AdminRevenuePage() {
       .finally(() => setLoading(false))
   }, [adminKey])
 
+  function exportSubscriptionCsv() {
+    if (!revenue) return
+    downloadCsv(
+      'subscription-payments',
+      ['Date', 'Subscriber', 'Plan', 'Currency', 'Amount', 'Status'],
+      revenue.payment_history.map((p) => [
+        new Date(p.created_at).toISOString(),
+        p.subscriber?.email || '',
+        p.subscription?.plan?.name || '',
+        p.currency,
+        p.amount,
+        p.status,
+      ])
+    )
+  }
+
+  function exportAdPaymentCsv() {
+    if (!revenue) return
+    downloadCsv(
+      'ad-payments',
+      ['Date', 'Advertiser', 'Reference', 'Amount (KES)', 'Status'],
+      (revenue.ad_payment_history ?? []).map((p) => [
+        new Date(p.created_at).toISOString(),
+        p.advertiser?.organization_name || '',
+        p.paystack_reference || '',
+        Number(p.amount),
+        p.status,
+      ])
+    )
+  }
+
   return (
     <main className="min-h-screen py-12 px-4 max-w-6xl mx-auto">
       <Link href="/admin" className="text-sm text-muted hover:text-foreground flex items-center gap-1 mb-4">
         <ArrowLeft className="w-4 h-4" /> Back to Dashboard
       </Link>
 
-      <h1 className="text-3xl font-bold text-foreground mb-8 flex items-center gap-3">
-        <DollarSign className="w-8 h-8 text-primary-400" />
-        Revenue
-      </h1>
+      <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+          <DollarSign className="w-8 h-8 text-primary-400" />
+          Revenue
+        </h1>
+        {revenue && (
+          <div className="flex gap-2">
+            <button
+              onClick={exportSubscriptionCsv}
+              className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted hover:text-foreground hover:bg-muted/10"
+            >
+              <Download className="w-4 h-4" /> Subscriptions CSV
+            </button>
+            <button
+              onClick={exportAdPaymentCsv}
+              className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted hover:text-foreground hover:bg-muted/10"
+            >
+              <Download className="w-4 h-4" /> Ad Payments CSV
+            </button>
+          </div>
+        )}
+      </div>
 
       {error && (
         <div className="mb-6 px-4 py-2 rounded-lg bg-elimux-danger/10 border border-elimux-danger/30 text-elimux-danger text-sm">
