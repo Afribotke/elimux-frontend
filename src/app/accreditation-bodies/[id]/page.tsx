@@ -46,7 +46,7 @@ export default async function AccreditationBodyDetailPage({ params }: { params: 
     .select(
       'id, accreditation_status, accreditation_number, institution:institutions(id, name, description, city, website_url, logo_url, is_verified, founded_year, student_count, type:institution_types(name, icon), country:countries(name, flag_emoji))'
     )
-    .eq('body_id', id)
+    .eq('accreditation_body_id', id)
     .order('created_at', { ascending: false })
     .returns<AccreditedInstitutionLinkRow[]>()
 
