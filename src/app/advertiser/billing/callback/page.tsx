@@ -8,6 +8,8 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { RotateCcw } from 'lucide-react';
 import { advertiserFetch } from '@/lib/advertiserAuth';
 
 function PaystackCallbackContent() {
@@ -15,6 +17,9 @@ function PaystackCallbackContent() {
     const searchParams = useSearchParams();
     const [status, setStatus] = useState<'verifying' | 'success' | 'failed'>('verifying');
     const [message, setMessage] = useState('Verifying your payment...');
+    const [paymentRef, setPaymentRef] = useState<string | null>(null);
+    const [retryAmount, setRetryAmount] = useState<number | null>(null);
+    const [retrying, setRetrying] = useState(false);
 
     useEffect(() => {
         verifyPayment();
@@ -30,15 +35,20 @@ function PaystackCallbackContent() {
             return;
         }
 
-        const paymentRef = reference || trxref;
+        const ref = reference || trxref;
+        setPaymentRef(ref);
 
         try {
-            const response = await advertiserFetch(`/api/advertiser/payments/paystack/verify/${paymentRef}`);
+            const response = await advertiserFetch(`/api/advertiser/payments/paystack/verify/${ref}`);
             const data = await response.json();
 
-            if (!response.ok || !data.success) {
+            const paystackStatus = data?.data?.status;
+            const isPaid = paystackStatus === 'success' || paystackStatus === 'paid';
+
+            if (!response.ok || !data.success || !isPaid) {
                 setStatus('failed');
-                setMessage(data.error || 'Payment verification failed. Please contact support.');
+                setMessage(!response.ok || !data.success ? (data.error || 'Payment verification failed. Please contact support.') : 'The transaction was not completed.');
+                setRetryAmount(data.data?.payment?.amount ?? null);
                 return;
             }
 
@@ -52,6 +62,32 @@ function PaystackCallbackContent() {
         } catch (err: any) {
             setStatus('failed');
             setMessage('Error verifying payment: ' + err.message);
+        }
+    };
+
+    const handleRetry = async () => {
+        if (!retryAmount) {
+            router.push('/advertiser/billing');
+            return;
+        }
+
+        setRetrying(true);
+        try {
+            const response = await advertiserFetch('/api/advertiser/payments/paystack/create', {
+                method: 'POST',
+                body: JSON.stringify({ amount: retryAmount }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Failed to restart payment');
+
+            if (data.data?.authorization_url) {
+                window.location.href = data.data.authorization_url;
+            } else {
+                throw new Error('No authorization URL received');
+            }
+        } catch (err: any) {
+            setMessage('Error retrying payment: ' + err.message);
+            setRetrying(false);
         }
     };
 
@@ -80,6 +116,14 @@ function PaystackCallbackContent() {
                         </div>
                         <h2 className="text-2xl font-bold text-foreground mb-2">Payment Successful!</h2>
                         <p className="text-muted mb-4">{message}</p>
+                        {paymentRef && (
+                            <Link
+                                href={`/receipts/${encodeURIComponent(paymentRef)}`}
+                                className="inline-flex items-center gap-2 px-5 py-2 rounded-lg border border-border text-foreground hover:bg-elimux-dark font-semibold mb-4"
+                            >
+                                View Receipt
+                            </Link>
+                        )}
                         <p className="text-sm text-muted">Redirecting to billing page...</p>
                     </>
                 )}
@@ -93,12 +137,24 @@ function PaystackCallbackContent() {
                         </div>
                         <h2 className="text-2xl font-bold text-foreground mb-2">Payment Failed</h2>
                         <p className="text-muted mb-4">{message}</p>
-                        <button
-                            onClick={() => router.push('/advertiser/billing')}
-                            className="bg-primary-600 hover:bg-primary-700 text-elimux-dark font-semibold px-6 py-2 rounded-lg"
-                        >
-                            Back to Billing
-                        </button>
+                        <div className="flex items-center justify-center gap-3">
+                            {retryAmount && (
+                                <button
+                                    onClick={handleRetry}
+                                    disabled={retrying}
+                                    className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-elimux-dark font-semibold px-6 py-2 rounded-lg"
+                                >
+                                    <RotateCcw className="w-4 h-4" />
+                                    {retrying ? 'Redirecting...' : 'Retry Payment'}
+                                </button>
+                            )}
+                            <button
+                                onClick={() => router.push('/advertiser/billing')}
+                                className="border border-border text-foreground hover:bg-elimux-dark font-semibold px-6 py-2 rounded-lg"
+                            >
+                                Back to Billing
+                            </button>
+                        </div>
                     </>
                 )}
             </div>

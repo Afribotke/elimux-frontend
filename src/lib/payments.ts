@@ -33,6 +33,11 @@ export interface Payment {
   status: 'pending' | 'success' | 'failed' | 'refunded'
   payment_method: string | null
   created_at: string
+  subscriber?: { name: string | null; email: string } | null
+}
+
+export interface SubscriberReceipt extends Payment {
+  subscription: (Subscription & { plan: SubscriptionPlan }) | null
 }
 
 export interface SubscriberSession {
@@ -110,6 +115,12 @@ export async function fetchSubscriptionStatus(session: SubscriberSession): Promi
 export async function fetchPaymentHistory(session: SubscriberSession): Promise<Payment[]> {
   const params = new URLSearchParams({ email: session.email, token: session.access_token })
   const res = await fetch(`${API_URL}/api/payments/history?${params.toString()}`)
+  return handleResponse(res)
+}
+
+export async function fetchSubscriberReceipt(reference: string): Promise<SubscriberReceipt | null> {
+  const res = await fetch(`${API_URL}/api/payments/receipt/${encodeURIComponent(reference)}`)
+  if (res.status === 404) return null
   return handleResponse(res)
 }
 
