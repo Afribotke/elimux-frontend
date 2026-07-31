@@ -90,11 +90,10 @@ export default function ApplyPage() {
     
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
-      
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Not authenticated')
+
       const payload = {
-        student_id: user.id,
         internship_id: internshipId,
         cover_letter: form.coverLetter,
         portfolio_links: form.portfolioLinks ? form.portfolioLinks.split(',').map(s => s.trim()).filter(Boolean) : [],
@@ -106,10 +105,16 @@ export default function ApplyPage() {
         // change. Falls back to the resume already on the student's profile.
         ...(form.resumeUrl ? { answers: { resume_url: form.resumeUrl } } : {}),
       }
-      
+
+      // student_id is no longer sent - the backend derives it from the
+      // bearer token's own student_profiles row (see applications.ts), since
+      // trusting a client-supplied id would let any caller apply as anyone.
       const res = await fetch(`${API_URL}/api/applications`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify(payload),
       })
       
