@@ -32,38 +32,45 @@ export default function ApplyPage() {
 
   useEffect(() => {
     async function loadData() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setError('Please log in to apply')
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          setError('Please log in to apply')
+          return
+        }
+
+        const { data: internData } = await supabase
+          .from('internships')
+          .select('*')
+          .eq('id', internshipId)
+          .single()
+
+        if (!internData) {
+          setError('Internship not found')
+          return
+        }
+
+        setInternship(internData)
+
+        const { data: profileData } = await supabase
+          .from('student_profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single()
+
+        setStudent(profileData || null)
+      } catch (err: any) {
+        // Without this, any thrown error (auth session parse failure, network
+        // rejection) left loading stuck at true forever with no visible error -
+        // the page just hung on "Loading...".
+        console.error('Failed to load application page:', err)
+        setError(err?.message || 'Something went wrong loading this page. Please refresh and try again.')
+      } finally {
         setLoading(false)
-        return
       }
-      
-      const { data: internData } = await supabase
-        .from('internships')
-        .select('*')
-        .eq('id', internshipId)
-        .single()
-      
-      if (!internData) {
-        setError('Internship not found')
-        setLoading(false)
-        return
-      }
-      
-      setInternship(internData)
-      
-      const { data: profileData } = await supabase
-        .from('student_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
-      
-      setStudent(profileData || null)
-      setLoading(false)
     }
-    
+
     loadData()
   }, [internshipId])
 
