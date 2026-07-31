@@ -54,6 +54,12 @@ export default function EmployerRegisterPage() {
         return;
       }
 
+      if (!form.industry || form.industry.trim() === "") {
+        setError("Industry is required. Please select an industry.");
+        toast.error("Industry is required");
+        return;
+      }
+
       // verification_status/is_verified aren't sent - the backend always
       // sets those itself (new employers start pending/unverified
       // regardless of what a caller sends).
@@ -119,9 +125,9 @@ export default function EmployerRegisterPage() {
             {step === 2 && (
               <>
                 <div>
-                  <Label>Industry *</Label>
+                  <Label>Industry <span className="text-red-500">*</span></Label>
                   <Select value={form.industry} onValueChange={(v) => setForm({ ...form, industry: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select industry" /></SelectTrigger>
+                    <SelectTrigger className={!form.industry ? "border-red-300" : ""}><SelectValue placeholder="Select industry" /></SelectTrigger>
                     <SelectContent>{INDUSTRIES.map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
