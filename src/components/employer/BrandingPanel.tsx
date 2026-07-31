@@ -4,6 +4,8 @@ import { useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Save, Loader2, Upload, RotateCcw, Image as ImageIcon } from 'lucide-react';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
 export interface BrandColors {
   primary: string;
   accent: string;
@@ -15,7 +17,7 @@ export interface BrandColors {
 
 export interface BrandingEmployer {
   id: string;
-  name: string;
+  company_name: string;
   logo_url?: string | null;
   branding_primary_color?: string | null;
   brand_colors?: Partial<BrandColors> | null;
@@ -117,22 +119,35 @@ export default function BrandingPanel({
       brand_colors: fullTheme ? colors : null,
     };
 
-    let { error: saveErr } = await supabase.from('employers').update(fullPatch).eq('id', employer.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setError('Please log in again');
+        return;
+      }
 
-    if (saveErr && /brand_colors/i.test(saveErr.message)) {
-      // brand_colors column doesn't exist yet (migration not applied) - fall back
-      // to the single primary-color field so the rest of the save still succeeds.
-      const fallbackPatch = { logo_url: newLogoUrl, branding_primary_color: colors.primary };
-      ({ error: saveErr } = await supabase.from('employers').update(fallbackPatch).eq('id', employer.id));
-    }
+      const res = await fetch(`${API_URL}/api/employers/me`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(fullPatch),
+      });
 
-    setSaving(false);
-
-    if (saveErr) {
-      setError(`Save failed: ${saveErr.message}`);
-    } else {
-      setLogoFile(null);
-      onSaved('Branding saved successfully');
+      if (res.status === 401) {
+        setError('Please log in again');
+      } else if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(`Save failed: ${body.error || 'Unknown error'}`);
+      } else {
+        setLogoFile(null);
+        onSaved('Branding saved successfully');
+      }
+    } catch (err: any) {
+      setError(`Save failed: ${err.message || 'Network error'}`);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -266,7 +281,7 @@ export default function BrandingPanel({
               <div className="w-10 h-10 rounded bg-gray-200" />
             )}
             <div>
-              <p className="font-bold" style={{ color: colors.heading }}>{employer.name}</p>
+              <p className="font-bold" style={{ color: colors.heading }}>{employer.company_name}</p>
               <p className="text-xs" style={{ color: colors.text }}>Careers &amp; Internships</p>
             </div>
           </div>

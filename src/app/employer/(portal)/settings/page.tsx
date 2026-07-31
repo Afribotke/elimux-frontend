@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import BrandingPanel from '@/components/employer/BrandingPanel';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
 type Department = {
   id: string;
   name: string;
@@ -24,15 +26,18 @@ type Department = {
   max_interns: number;
 };
 
+// Field names below match the live `employers` table columns (confirmed via
+// schema introspection) - this page used to send name/website/phone/address/
+// email, none of which exist as columns, so every save silently failed.
 type EmployerProfile = {
   id: string;
-  name: string;
+  company_name: string;
   description: string | null;
   industry: string | null;
-  website: string | null;
-  email: string;
-  phone: string | null;
-  address: string | null;
+  website_url: string | null;
+  company_email: string;
+  company_phone: string | null;
+  location_address: string | null;
   company_size: string | null;
   nita_employer_number: string | null;
   year_established: number | null;
@@ -103,26 +108,50 @@ export default function SettingsPage() {
     setSaving(true);
     setMessage('');
 
-    const { error } = await supabase
-      .from('employers')
-      .update({
-        name: employer.name,
-        description: employer.description,
-        industry: employer.industry,
-        website: employer.website,
-        phone: employer.phone,
-        address: employer.address,
-        company_size: employer.company_size,
-        nita_employer_number: employer.nita_employer_number,
-        year_established: employer.year_established,
-        registration_number: employer.registration_number,
-        county: employer.county,
-        town: employer.town,
-      })
-      .eq('id', employer.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setMessage('Error: Please log in again');
+        setSaving(false);
+        return;
+      }
 
-    setSaving(false);
-    setMessage(error ? `Error: ${error.message}` : 'Company details saved successfully');
+      const res = await fetch(`${API_URL}/api/employers/me`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          company_name: employer.company_name,
+          description: employer.description,
+          industry: employer.industry,
+          website_url: employer.website_url,
+          company_phone: employer.company_phone,
+          company_email: employer.company_email,
+          location_address: employer.location_address,
+          company_size: employer.company_size,
+          nita_employer_number: employer.nita_employer_number,
+          year_established: employer.year_established,
+          registration_number: employer.registration_number,
+          county: employer.county,
+          town: employer.town,
+        }),
+      });
+
+      if (res.status === 401) {
+        setMessage('Error: Please log in again');
+      } else if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setMessage(`Error: ${body.error || 'Failed to save company details'}`);
+      } else {
+        setMessage('Company details saved successfully');
+      }
+    } catch (err: any) {
+      setMessage(`Error: ${err.message || 'Network error'}`);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function addDepartment(e: React.FormEvent) {
@@ -224,8 +253,8 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
                 <input
                   type="text"
-                  value={employer.name}
-                  onChange={e => setEmployer({ ...employer, name: e.target.value })}
+                  value={employer.company_name}
+                  onChange={e => setEmployer({ ...employer, company_name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                   disabled={!canEdit}
@@ -259,8 +288,8 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
                 <input
                   type="url"
-                  value={employer.website || ''}
-                  onChange={e => setEmployer({ ...employer, website: e.target.value })}
+                  value={employer.website_url || ''}
+                  onChange={e => setEmployer({ ...employer, website_url: e.target.value })}
                   placeholder="https://"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   disabled={!canEdit}
@@ -271,8 +300,8 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                 <input
                   type="tel"
-                  value={employer.phone || ''}
-                  onChange={e => setEmployer({ ...employer, phone: e.target.value })}
+                  value={employer.company_phone || ''}
+                  onChange={e => setEmployer({ ...employer, company_phone: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   disabled={!canEdit}
                 />
@@ -282,8 +311,8 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input
                   type="email"
-                  value={employer.email}
-                  onChange={e => setEmployer({ ...employer, email: e.target.value })}
+                  value={employer.company_email}
+                  onChange={e => setEmployer({ ...employer, company_email: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   disabled={!canEdit}
                 />
@@ -293,8 +322,8 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
                 <input
                   type="text"
-                  value={employer.address || ''}
-                  onChange={e => setEmployer({ ...employer, address: e.target.value })}
+                  value={employer.location_address || ''}
+                  onChange={e => setEmployer({ ...employer, location_address: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   disabled={!canEdit}
                 />
