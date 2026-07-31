@@ -32,7 +32,16 @@ const COUNTIES = [
 
 export default function InternshipsPage() {
   const router = useRouter();
-  const supabase = createClient();
+  // createClient() returns a new client instance on every call, not a
+  // singleton. Calling it directly here gave `supabase` a new object
+  // identity on every render, which both effects below depend on - React's
+  // reference-equality check never saw it as "unchanged", so both effects
+  // re-fired every render, forever (fetchProfile in a tight loop calling
+  // auth.getUser() nonstop, and fetchInternships toggling loading
+  // true/false in a loop that looked like a permanent "Loading..." spinner).
+  // useState's lazy initializer runs once and the setter is never called,
+  // so this instance is stable for the component's lifetime.
+  const [supabase] = useState(() => createClient());
   const [internships, setInternships] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
