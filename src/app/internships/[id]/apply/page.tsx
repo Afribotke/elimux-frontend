@@ -22,11 +22,17 @@ export default function ApplyPage() {
   const [student, setStudent] = useState<any>(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  
+  // Kept separate from `error` so a logged-out visitor gets a real "Log in to
+  // apply" call to action instead of collapsing into the generic red error
+  // box - previously the only way out of that box was "Browse internships",
+  // a dead end with no path back to actually applying.
+  const [notLoggedIn, setNotLoggedIn] = useState(false)
+
   const [form, setForm] = useState({
     coverLetter: '',
     portfolioLinks: '',
     videoIntroUrl: '',
+    resumeUrl: '',
     enrollmentLetterUrl: '',
   })
 
@@ -36,7 +42,7 @@ export default function ApplyPage() {
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
-          setError('Please log in to apply')
+          setNotLoggedIn(true)
           return
         }
 
@@ -60,6 +66,9 @@ export default function ApplyPage() {
           .single()
 
         setStudent(profileData || null)
+        if (profileData?.resume_url) {
+          setForm(f => ({ ...f, resumeUrl: profileData.resume_url }))
+        }
       } catch (err: any) {
         // Without this, any thrown error (auth session parse failure, network
         // rejection) left loading stuck at true forever with no visible error -
@@ -91,6 +100,11 @@ export default function ApplyPage() {
         portfolio_links: form.portfolioLinks ? form.portfolioLinks.split(',').map(s => s.trim()).filter(Boolean) : [],
         video_intro_url: form.videoIntroUrl || undefined,
         enrollment_letter_url: form.enrollmentLetterUrl || undefined,
+        // The applications table has no dedicated resume_url column; the
+        // backend's free-form `answers` map is the sanctioned extension point
+        // for exactly this kind of per-application field without a schema
+        // change. Falls back to the resume already on the student's profile.
+        ...(form.resumeUrl ? { answers: { resume_url: form.resumeUrl } } : {}),
       }
       
       const res = await fetch(`${API_URL}/api/applications`, {
@@ -116,10 +130,26 @@ export default function ApplyPage() {
   if (success) return (
     <div className="container mx-auto px-4 py-8 text-center">
       <h2 className="text-2xl font-bold text-green-600 mb-4">Application Submitted!</h2>
-      <p className="text-muted-foreground">Redirecting to your applications...</p>
+      <p className="text-muted-foreground mb-4">Redirecting to your applications...</p>
+      <Link href="/internships/" className="text-primary hover:underline">Back to Internships</Link>
     </div>
   )
-  
+
+  if (notLoggedIn) return (
+    <div className="container mx-auto px-4 py-8 max-w-md text-center">
+      <div className="border rounded-lg bg-card p-8">
+        <h2 className="text-xl font-bold mb-2">Log in to apply</h2>
+        <p className="text-muted-foreground mb-6">You need an account to submit this application.</p>
+        <Link href={`/auth/login?redirect=/internships/${internshipId}/apply`}>
+          <Button className="w-full">Log In to Apply</Button>
+        </Link>
+        <Link href="/internships/" className="text-sm text-muted-foreground hover:underline mt-4 inline-block">
+          Browse internships instead
+        </Link>
+      </div>
+    </div>
+  )
+
   if (error && !internship) return (
     <div className="container mx-auto px-4 py-8">
       <div className="p-4 bg-red-50 text-red-800 rounded">{error}</div>
@@ -211,7 +241,23 @@ export default function ApplyPage() {
                   placeholder="https://youtube.com/..."
                 />
               </div>
-              
+
+              <div className="space-y-2">
+                <Label htmlFor="resumeUrl">Resume / CV Link</Label>
+                <Input
+                  id="resumeUrl"
+                  type="url"
+                  value={form.resumeUrl}
+                  onChange={e => setForm({...form, resumeUrl: e.target.value})}
+                  placeholder="https://drive.google.com/..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  {student?.resume_url
+                    ? 'Pre-filled from your profile. Change it to submit a different resume for this application.'
+                    : 'Upload to Google Drive/Dropbox and paste the shareable link.'}
+                </p>
+              </div>
+
               {internship?.requires_university_verification && (
                 <div className="space-y-2">
                   <Label htmlFor="enrollmentLetterUrl">Enrollment Letter URL <span className="text-red-500">*</span></Label>
