@@ -26,6 +26,7 @@ export default function EmployerRegisterPage() {
   const supabase = createClient();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
     company_name: "",
     company_email: "",
@@ -41,29 +42,42 @@ export default function EmployerRegisterPage() {
   });
 
   const handleSubmit = async () => {
+    setError("");
     setSubmitting(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { toast.error("Please log in"); return; }
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please log in");
+        setError("Please log in to register as an employer.");
+        return;
+      }
 
-    console.log("Submitting employer registration...", { user_id: user.id, form });
-const { data, error } = await supabase
-  .from("employers")
-  .insert({
-    user_id: user.id,
-    ...form,
-    verification_status: "pending",
-    is_verified: false,
-  })
-  .select()
-  .single();
-console.log("Insert result:", { data, error });
+      const { data, error: insertError } = await supabase
+        .from("employers")
+        .insert({
+          user_id: user.id,
+          ...form,
+          verification_status: "pending",
+          is_verified: false,
+        })
+        .select()
+        .single();
 
-    if (error) toast.error("Failed to register: " + error.message);
-    else {
+      if (insertError) {
+        setError("Failed to register: " + insertError.message);
+        toast.error("Failed to register: " + insertError.message);
+        return;
+      }
+
       toast.success("Registration submitted for review");
       router.push("/employer/dashboard");
+    } catch (err: any) {
+      const message = err?.message || "An unexpected error occurred. Please try again.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   return (
@@ -74,6 +88,12 @@ console.log("Insert result:", { data, error });
           <h1 className="text-3xl font-bold text-foreground">Register as Employer</h1>
           <p className="text-muted-foreground">Post internships and find verified student talent.</p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+            <strong>Error:</strong> {error}
+          </div>
+        )}
 
         <Card>
           <CardHeader>
