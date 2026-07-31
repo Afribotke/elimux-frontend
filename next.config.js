@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  distDir: 'dist',
   images: {
     unoptimized: true
   },
@@ -8,5 +7,6 @@ const nextConfig = {
 }
 
 module.exports = nextConfig
+
 
 
