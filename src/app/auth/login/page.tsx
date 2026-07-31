@@ -12,12 +12,25 @@ import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, LogIn } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { getRoleHomePath, type UserRole } from '@/lib/auth/rbac'
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  // This is the front door for every account type (student, employer,
+  // etc. - see header comment). It must write the session with the same
+  // client every downstream page reads it with. It previously used the
+  // plain @supabase/supabase-js client from '@/lib/supabase', while
+  // employer/student pages (register, settings, apply, profile, logbook)
+  // all read the session via the @supabase/ssr browser client from
+  // '@/lib/supabase/client' - two different storage formats under
+  // (coincidentally) similar-looking keys, so a session written here was
+  // never visible to getSession() on those pages. Verified in production:
+  // this broke employer registration outright for a genuinely logged-in
+  // user, and by the same mechanism almost certainly broke the internship
+  // application flow too.
+  const supabase = createClient()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)

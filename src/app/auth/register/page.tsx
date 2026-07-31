@@ -13,11 +13,15 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, User, UserPlus } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { getRoleHomePath } from '@/lib/auth/rbac'
 
 export default function RegisterPage() {
   const router = useRouter()
+  // Must match the client /auth/login uses (see its comment) - this page
+  // creates the student account that then uses apply/profile/logbook,
+  // all of which read the session via '@/lib/supabase/client'.
+  const supabase = createClient()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
