@@ -21,6 +21,8 @@ const INDUSTRIES = [
 
 const COMPANY_SIZES = ["1-10","11-50","51-200","201-500","500+"];
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
 export default function EmployerRegisterPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -45,27 +47,30 @@ export default function EmployerRegisterPage() {
     setError("");
     setSubmitting(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         toast.error("Please log in");
         setError("Please log in to register as an employer.");
         return;
       }
 
-      const { data, error: insertError } = await supabase
-        .from("employers")
-        .insert({
-          user_id: user.id,
-          ...form,
-          verification_status: "pending",
-          is_verified: false,
-        })
-        .select()
-        .single();
+      // verification_status/is_verified aren't sent - the backend always
+      // sets those itself (new employers start pending/unverified
+      // regardless of what a caller sends).
+      const res = await fetch(`${API_URL}/api/employers/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(form),
+      });
 
-      if (insertError) {
-        setError("Failed to register: " + insertError.message);
-        toast.error("Failed to register: " + insertError.message);
+      const result = await res.json();
+
+      if (!result.success) {
+        setError("Failed to register: " + result.error);
+        toast.error("Failed to register: " + result.error);
         return;
       }
 
