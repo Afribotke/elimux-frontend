@@ -1,11 +1,23 @@
-.git
-.next
+# Dependencies
 node_modules
-*.log
-.env.local
-.env.development
-.env.test
+.pnp
+.pnp.js
+
+# Build outputs (both old and new)
+.next
+dist
+out
+
+# Cache
+*.pack
+.cache
+
+# Native binaries
+*.node
+
+# Testing
 coverage
-playwright-report
-test-results
-out/
+*.log
+
+# Local env files
+.env*.local
