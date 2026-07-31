@@ -10,6 +10,7 @@ import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  manifest: '/manifest.json',
   title: "ElimuX — Discover Global Education",
   description: "Find universities, programs, internships, and career opportunities worldwide.",
 };
@@ -45,3 +46,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+

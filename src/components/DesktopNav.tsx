@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useState, useRef, useEffect } from 'react';
+import PoweredByHeaderBadge from './PoweredByHeaderBadge';
 
 const PRIMARY_NAV = [
   { icon: '🏠', label: 'Home', href: '/' },
@@ -104,6 +105,8 @@ export default function DesktopNav() {
                 size="md"
               />
             ))}
+                <PoweredByHeaderBadge />
+
           </nav>
 
           {/* Right Actions */}
@@ -189,6 +192,8 @@ export default function DesktopNav() {
                   size="sm"
                 />
               ))}
+                  <PoweredByHeaderBadge />
+
             </nav>
           </div>
         </div>
@@ -196,3 +201,4 @@ export default function DesktopNav() {
     </header>
   );
 }
+
