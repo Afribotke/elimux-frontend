@@ -1,8 +1,18 @@
 ﻿'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
 import { User } from '@/types';
+
+// Must share the same client every other auth-aware page uses
+// (src/lib/supabase/client.ts is a memoized singleton). This provider wraps
+// every page from the root layout and previously used the separate plain
+// @supabase/supabase-js client from '@/lib/supabase' - two independent
+// GoTrueClients both reading/writing the same localStorage auth-token key
+// caused exactly the "Multiple GoTrueClient instances" conflict: verified
+// in production that it made supabase.auth.getSession() on other pages
+// intermittently miss a perfectly valid, non-expired session.
+const supabase = createClient();
 
 interface AuthContextType {
   user: User | null;
