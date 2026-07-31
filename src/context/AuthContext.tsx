@@ -31,17 +31,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (userId: string) => {
+    // There is no 'profiles' table - student_profiles.user_id is the FK to
+    // the auth user (student_profiles.id is that row's own PK, a separate
+    // value). Keep `id` on the returned object as the auth user id, not
+    // the profile row id, since refreshUser() below re-fetches by user.id.
     const { data, error } = await supabase
-      .from('profiles')
+      .from('student_profiles')
       .select('*')
-      .eq('id', userId)
+      .eq('user_id', userId)
       .single();
-    
+
     if (error) {
       console.error('Failed to fetch profile:', error);
       return null;
     }
-    return data as User;
+    return { ...data, id: userId, role: 'student' } as User;
   }, []);
 
   useEffect(() => {
