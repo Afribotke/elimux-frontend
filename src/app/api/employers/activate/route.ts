@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-function getSupabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-  )
-}
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+)
 
 export async function POST(request: Request) {
   try {
-    const supabase = getSupabaseAdmin()
     const { token, password, companyName, industry, location, website, phone, description } = await request.json()
     if (!token || !password) {
       return NextResponse.json({ error: "Missing token or password" }, { status: 400 })
@@ -18,16 +15,16 @@ export async function POST(request: Request) {
 
     const { data: employer } = await supabase
       .from("employers")
-      .select("id, email, status")
+      .select("id, company_email, verification_status, is_active")
       .eq("invitation_token", token)
       .single()
 
-    if (!employer || employer.status !== "invited") {
+    if (!employer || employer.verification_status !== "pending" || employer.is_active) {
       return NextResponse.json({ error: "Invalid or expired invitation" }, { status: 400 })
     }
 
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email: employer.email,
+      email: employer.company_email,
       password,
       email_confirm: true,
       user_metadata: { role: "employer", company_name: companyName }
@@ -43,11 +40,12 @@ export async function POST(request: Request) {
         user_id: authData.user.id,
         company_name: companyName,
         industry: industry || null,
-        location: location || null,
-        website: website || null,
-        phone: phone || null,
+        location_county: location || null,
+        website_url: website || null,
+        company_phone: phone || null,
         description: description || null,
-        status: "active",
+        verification_status: "approved",
+        is_active: true,
         invitation_token: null
       })
       .eq("id", employer.id)

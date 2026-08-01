@@ -2,12 +2,10 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { randomBytes } from "crypto"
 
-function getSupabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-  )
-}
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+)
 
 function generateToken() {
   return randomBytes(32).toString("hex")
@@ -15,7 +13,6 @@ function generateToken() {
 
 export async function POST(request: Request) {
   try {
-    const supabase = getSupabaseAdmin()
     const { employers } = await request.json()
     if (!Array.isArray(employers) || employers.length === 0) {
       return NextResponse.json({ error: "No employers provided" }, { status: 400 })
@@ -36,7 +33,7 @@ export async function POST(request: Request) {
       const { data: existing } = await supabase
         .from("employers")
         .select("id")
-        .eq("email", email)
+        .eq("company_email", email)
         .single()
 
       if (existing) {
@@ -46,12 +43,13 @@ export async function POST(request: Request) {
 
       const { error: insertError } = await supabase.from("employers").insert({
         company_name,
-        email,
+        company_email: email,
         industry: industry || null,
-        location: location || null,
-        website: website || null,
-        phone: phone || null,
-        status: "invited",
+        location_county: location || null,
+        website_url: website || null,
+        company_phone: phone || null,
+        verification_status: "pending",
+        is_active: false,
         invitation_token: token
       })
 
