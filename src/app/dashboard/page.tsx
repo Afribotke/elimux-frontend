@@ -1,13 +1,15 @@
 import { Metadata } from "next"
-import { getDashboardStats } from "@/lib/dashboard-data"
+import { getDashboardStatsServer } from "@/lib/dashboard-stats-server"
 
 export const metadata: Metadata = {
   title: "Admin Dashboard | Elimux",
   description: "Elimux administration panel",
 }
 
+export const dynamic = "force-dynamic"
+
 export default async function DashboardPage() {
-  const stats = await getDashboardStats()
+  const stats = await getDashboardStatsServer()
 
   return (
     <main className="min-h-screen bg-gray-50 p-6 dark:bg-slate-950">
