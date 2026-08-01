@@ -35,7 +35,7 @@ export default function PaymentModal({ isOpen, onClose, amount, currency = "USD"
   const handlePaystack = async () => {
     setLoading(true); setError("")
     try {
-      const key = process.env.NEXT_PUBLIC_PAYSTACK_KEY
+      const key = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
       if (!key) throw new Error("Paystack key not configured")
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/paystack/initialize`, {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -80,3 +80,4 @@ export default function PaymentModal({ isOpen, onClose, amount, currency = "USD"
     </div>
   )
 }
+
