@@ -1,8 +1,16 @@
 "use client"
-import { useState, useEffect } from "react"
+import { Suspense, useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 
 export default function EmployerActivatePage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><p className="text-gray-600 dark:text-gray-400">Loading...</p></div>}>
+      <EmployerActivateForm />
+    </Suspense>
+  )
+}
+
+function EmployerActivateForm() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const token = searchParams.get("token")
@@ -50,7 +58,7 @@ export default function EmployerActivatePage() {
       const res = await fetch("/api/employers/activate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, password, ...form })
+        body: JSON.stringify({ token, ...form })
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Activation failed")

@@ -2,10 +2,12 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { randomBytes } from "crypto"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-)
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+  )
+}
 
 function generateToken() {
   return randomBytes(32).toString("hex")
@@ -13,6 +15,7 @@ function generateToken() {
 
 export async function POST(request: Request) {
   try {
+    const supabase = getSupabaseAdmin()
     const { employers } = await request.json()
     if (!Array.isArray(employers) || employers.length === 0) {
       return NextResponse.json({ error: "No employers provided" }, { status: 400 })
