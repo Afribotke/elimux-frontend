@@ -7,11 +7,44 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 )
 
-function generateToken() {
-  return randomBytes(32).toString("hex")
+// Helper: verify admin auth from request cookies
+async function verifyAdminAuth(request: Request) {
+  const cookieHeader = request.headers.get("cookie") || ""
+  const authCookie = cookieHeader.split(";").find(c => c.trim().startsWith("sb-ohlgjvenwekpbpkykutz-auth-token="))
+
+  if (!authCookie) {
+    return { authorized: false, error: "No session found" }
+  }
+
+  const token = authCookie.split("=")[1].trim()
+  const { data: { user }, error } = await supabase.auth.getUser(token)
+
+  if (error || !user) {
+    return { authorized: false, error: "Invalid session" }
+  }
+
+  // Check admin role in user metadata or public.users table
+  const { data: userData } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single()
+
+  const role = userData?.role || user.user_metadata?.role || "student"
+  if (role !== "admin" && role !== "super_admin") {
+    return { authorized: false, error: "Admin access required" }
+  }
+
+  return { authorized: true, userId: user.id }
 }
 
 export async function POST(request: Request) {
+  // AUTH GUARD: Only admins can bulk upload employers
+  const auth = await verifyAdminAuth(request)
+  if (!auth.authorized) {
+    return NextResponse.json({ error: auth.error }, { status: 401 })
+  }
+
   try {
     const { employers } = await request.json()
     if (!Array.isArray(employers) || employers.length === 0) {
@@ -77,3 +110,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message || "Bulk upload failed" }, { status: 500 })
   }
 }
+
