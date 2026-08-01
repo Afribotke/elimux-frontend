@@ -7,6 +7,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 )
 
+function generateToken() {
+  return randomBytes(32).toString("hex")
+}
+
 // Helper: verify admin auth from request cookies
 async function verifyAdminAuth(request: Request) {
   const cookieHeader = request.headers.get("cookie") || ""
@@ -23,7 +27,6 @@ async function verifyAdminAuth(request: Request) {
     return { authorized: false, error: "Invalid session" }
   }
 
-  // Check admin role in user metadata or public.users table
   const { data: userData } = await supabase
     .from("users")
     .select("role")
@@ -110,4 +113,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message || "Bulk upload failed" }, { status: 500 })
   }
 }
-
