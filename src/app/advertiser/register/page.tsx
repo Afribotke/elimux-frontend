@@ -114,6 +114,7 @@ export default function AdvertiserRegisterPage() {
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: formData.company_email,
         password,
+        options: { emailRedirectTo: ${window.location.origin}/auth/callback },
       })
 
       if (signUpError) throw new Error(signUpError.message)
@@ -383,3 +384,4 @@ export default function AdvertiserRegisterPage() {
     </div>
   )
 }
+
