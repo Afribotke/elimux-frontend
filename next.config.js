@@ -11,6 +11,11 @@ const nextConfig = {
         destination: '/opportunities',
         permanent: true,
       },
+      {
+        source: '/internships/',
+        destination: '/opportunities/',
+        permanent: true,
+      },
     ]
   },
 }
