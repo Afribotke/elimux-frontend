@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 import Link from "next/link"
+import { createClient } from "@/lib/supabase/server"
 
 export const metadata: Metadata = {
   title: "Opportunities | Elimux",
@@ -8,21 +9,22 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic"
 
-async function getOpportunities(type: string) {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/internships?type=${type}`, {
-      cache: "no-store"
-    })
-    if (!res.ok) return []
-    return res.json()
-  } catch {
-    return []
-  }
-}
-
 export default async function OpportunitiesPage() {
-  const internships = await getOpportunities("internship")
-  const attachments = await getOpportunities("attachment")
+  const supabase = await createClient()
+
+  const { data: attachments } = await supabase
+    .from("internships")
+    .select("*, employer:employers(company_name, location_county, website_url)")
+    .eq("type", "attachment")
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+
+  const { data: internships } = await supabase
+    .from("internships")
+    .select("*, employer:employers(company_name, location_county, website_url)")
+    .eq("type", "internship")
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
 
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-12 dark:bg-slate-950">
@@ -42,7 +44,7 @@ export default async function OpportunitiesPage() {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Attachment Placements</h2>
             <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900/20 dark:text-amber-400">
-              {attachments.length} Active
+              {(attachments || []).length} Active
             </span>
           </div>
           <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
@@ -50,7 +52,7 @@ export default async function OpportunitiesPage() {
             <span className="font-semibold text-amber-700 dark:text-amber-400"> Only verified students can apply.</span>
           </p>
 
-          {attachments.length === 0 ? (
+          {(!attachments || attachments.length === 0) ? (
             <div className="rounded-xl bg-white p-8 text-center shadow-sm dark:bg-slate-900">
               <p className="text-gray-500 dark:text-gray-400">No attachment placements available right now.</p>
               <p className="mt-2 text-sm text-gray-400 dark:text-gray-500">Check back soon or contact your university placement office.</p>
@@ -89,14 +91,14 @@ export default async function OpportunitiesPage() {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Internships</h2>
             <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
-              {internships.length} Active
+              {(internships || []).length} Active
             </span>
           </div>
           <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
             Work experience opportunities for recent graduates. Build your career with leading employers.
           </p>
 
-          {internships.length === 0 ? (
+          {(!internships || internships.length === 0) ? (
             <div className="rounded-xl bg-white p-8 text-center shadow-sm dark:bg-slate-900">
               <p className="text-gray-500 dark:text-gray-400">No internships available right now.</p>
               <p className="mt-2 text-sm text-gray-400 dark:text-gray-500">Check back soon or set up job alerts.</p>
