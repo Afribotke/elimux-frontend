@@ -20,8 +20,9 @@ async function getAttachment(id: string) {
   }
 }
 
-export default async function AttachmentDetailPage({ params }: { params: { id: string } }) {
-  const job = await getAttachment(params.id)
+export default async function AttachmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const job = await getAttachment(id)
   if (!job || job.type !== "attachment") {
     return <div className="flex min-h-screen items-center justify-center"><p className="text-gray-600 dark:text-gray-400">Attachment placement not found</p></div>
   }
