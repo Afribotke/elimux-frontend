@@ -1,3 +1,12 @@
+$ErrorActionPreference="Stop"
+$frontend="C:\Users\ELON\Projects-2026\IDEA STORE\elimux-frontend"
+Set-Location $frontend
+
+Write-Host "`n=== UNIFY INTERNSHIPS + ATTACHMENTS ===" -ForegroundColor Cyan
+
+# --- 1. Overwrite /opportunities with tab-based unified page ---
+Write-Host "[1/4] Creating unified opportunities page with tabs..." -ForegroundColor Yellow
+$opportunitiesPage = @'
 "use client"
 import { Suspense, useState, useEffect } from "react"
 import Link from "next/link"
@@ -195,3 +204,73 @@ export default function OpportunitiesPage() {
     </Suspense>
   )
 }
+'@
+Set-Content -LiteralPath "src/app/opportunities/page.tsx" $opportunitiesPage -Force
+Write-Host "  Created: unified opportunities page with tabs" -ForegroundColor Green
+
+# --- 2. Create API route that returns all opportunities ---
+Write-Host "[2/4] Creating unified API route..." -ForegroundColor Yellow
+New-Item -ItemType Directory -Path "src/app/api/opportunities" -Force | Out-Null
+$apiRoute = @'
+import { NextResponse } from "next/server"
+
+export async function GET() {
+  try {
+    const { createClient } = await import("@supabase/supabase-js")
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+    )
+
+    const { data, error } = await supabase
+      .from("internships")
+      .select("*, employer:employers(company_name, location_county, website_url)")
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json(data || [])
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Failed to fetch opportunities" }, { status: 500 })
+  }
+}
+'@
+Set-Content -LiteralPath "src/app/api/opportunities/route.ts" $apiRoute -Force
+Write-Host "  Created: /api/opportunities route" -ForegroundColor Green
+
+# --- 3. Update nav links ---
+Write-Host "[3/4] Updating navigation..." -ForegroundColor Yellow
+$navFiles = @("src/components/DesktopNav.tsx", "src/components/MobileNav.tsx", "src/components/Navbar.tsx")
+foreach ($navFile in $navFiles) {
+    if (Test-Path -LiteralPath $navFile) {
+        $navContent = Get-Content -LiteralPath $navFile -Raw
+        # Replace "Internships" link with "Opportunities" pointing to /opportunities
+        if ($navContent -match "Internships") {
+            $navContent = $navContent -replace "href:(\s*)[`"']/internships[`"']", 'href:$1"/opportunities"'
+            $navContent = $navContent -replace "href=[`"']*/internships[`"']*", 'href="/opportunities"'
+            $navContent = $navContent -replace "Internships", "Opportunities"
+            Set-Content -LiteralPath $navFile $navContent -Force
+            Write-Host "  Updated: $navFile" -ForegroundColor Green
+        }
+    }
+}
+
+# --- 4. Build, commit, deploy ---
+Write-Host "[4/4] Building..." -ForegroundColor Yellow
+npm run build
+Write-Host "  Build passed" -ForegroundColor Green
+
+git add -A
+git commit -m "feat: unify internships and attachments into single opportunities page with tabs"
+git push origin main
+Write-Host "  Pushed" -ForegroundColor Green
+
+vercel --prod
+Write-Host "  Deployed" -ForegroundColor Green
+
+Write-Host "`n=== UNIFICATION COMPLETE ===" -ForegroundColor Cyan
+Write-Host "Live at: https://v2.elimux.ke/opportunities" -ForegroundColor Green
+Write-Host "Tabs: All Opportunities | Internships | Attachments" -ForegroundColor Green

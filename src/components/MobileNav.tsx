@@ -25,7 +25,7 @@ const navLinks = [
   { href: "/institutions", label: "Institutions", icon: Building2 },
   { href: "/programs", label: "Programs", icon: BookOpen },
   { href: "/ai-search", label: "AI Search", icon: Sparkles },
-  { href: "/internships", label: "Internships", icon: Briefcase },
+  { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/for-employers", label: "For Employers", icon: Users },
   { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/partner", label: "Partner", icon: Handshake },
@@ -52,7 +52,7 @@ export default function MobileNav() {
             { href: "/", label: "Home", icon: GraduationCap },
             { href: "/institutions", label: "Institutions", icon: Building2 },
             { href: "/ai-search", label: "AI", icon: Sparkles },
-            { href: "/internships", label: "Jobs", icon: Briefcase },
+            { href: "/opportunities", label: "Jobs", icon: Briefcase },
           ].map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -179,4 +179,5 @@ export default function MobileNav() {
     </>
   );
 }
+
 

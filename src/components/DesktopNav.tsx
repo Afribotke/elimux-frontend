@@ -11,7 +11,7 @@ const PRIMARY_NAV = [
   { icon: '🏠', label: 'Home', href: '/' },
   { icon: '🏛️', label: 'Institutions', href: '/institutions' },
   { icon: '✨', label: 'AI Search', href: '/ai-search' },
-  { icon: '💼', label: 'Internships', href: '/internships' },
+  { icon: '💼', label: 'Opportunities', href: "/opportunities" },
   { icon: '📋', label: 'Programs', href: '/programs' },
 ];
 
@@ -201,4 +201,5 @@ export default function DesktopNav() {
     </header>
   );
 }
+
 
