@@ -5,6 +5,11 @@ import type { NextRequest } from "next/server"
 const PROTECTED_PATHS = ["/dashboard", "/admin"]
 
 export async function middleware(request: NextRequest) {
+  // SINGLE-HOP REDIRECT: /internships → /opportunities/ (runs before trailingSlash normalization)
+  if (request.nextUrl.pathname === '/internships' || request.nextUrl.pathname === '/internships/') {
+    return NextResponse.redirect(new URL('/opportunities/', request.url), 308)
+  }
+
   const { pathname } = request.nextUrl
 
   // Check if this is a protected route
@@ -31,3 +36,4 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: ["/dashboard/:path*", "/admin/:path*"]
 }
+

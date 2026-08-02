@@ -8,19 +8,13 @@ const nextConfig = {
     return [
       {
         source: '/internships',
-        destination: '/opportunities',
-        permanent: true,
-      },
-      {
-        source: '/internships/',
         destination: '/opportunities/',
-        permanent: true,
-      },
+        permanent: true},
     ]
-  },
-}
+  }}
 
 module.exports = nextConfig
+
 
 
 
