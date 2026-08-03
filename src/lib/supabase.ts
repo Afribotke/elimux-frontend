@@ -1,14 +1,8 @@
-import { createClient } from '@supabase/supabase-js'
+// Re-export the singleton client to prevent multiple GoTrueClient instances
+import { createClient } from './supabase/client'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-  },
-})
+export const supabase = createClient()
+export default createClient
 
 export type Tables = {
   countries: {
