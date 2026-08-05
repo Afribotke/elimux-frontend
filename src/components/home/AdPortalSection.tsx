@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
 const AD_CATEGORIES = [
   { icon: '🎓', name: 'Education' },
   { icon: '💰', name: 'Finance' },
@@ -16,18 +18,32 @@ const AD_CATEGORIES = [
   { icon: '🛡️', name: 'Insurance' },
 ];
 
-const AD_SLOTS = [
-  { category: 'Education', price: 'KES 10,000/month' },
-  { category: 'Education', price: 'KES 10,000/month' },
-  { category: 'Education', price: 'KES 10,000/month' },
-  { category: 'Education', price: 'KES 10,000/month' },
-];
+// Duplicated below to give the marquee a seamless infinite loop
+const SLOT_COUNT = 8;
 
 export default function AdPortalSection() {
   const [activeCat, setActiveCat] = useState('Education');
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic price from GET /api/config/public (see elimux-backend/src/routes/config.ts)
+  const [priceKes, setPriceKes] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_URL}/api/config/public`)
+      .then((r) => r.json())
+      .then((res) => {
+        if (!cancelled) setPriceKes(res?.data?.ad_placeholder_price_kes ?? null);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const price = priceKes
+    ? `KES ${Number(priceKes).toLocaleString('en-KE')}/month`
+    : 'KES 10,000/month';
 
   function checkScroll() {
     const el = scrollRef.current;
@@ -61,7 +77,7 @@ export default function AdPortalSection() {
       {/* Header Row */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 bg-green-500 rounded-full" />
+          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
           <span className="text-[#7c6f50] text-xs font-semibold tracking-widest uppercase">
             LIVE Partners & Advertisers
           </span>
@@ -76,7 +92,6 @@ export default function AdPortalSection() {
 
       {/* Category Pills with Scroll Arrows */}
       <div className="relative mb-6">
-        {/* Left Arrow */}
         {canScrollLeft && (
           <button
             onClick={() => scroll('left')}
@@ -86,7 +101,6 @@ export default function AdPortalSection() {
           </button>
         )}
 
-        {/* Scrollable Pills */}
         <div
           ref={scrollRef}
           className="flex gap-2 overflow-x-auto py-1 px-1"
@@ -108,7 +122,6 @@ export default function AdPortalSection() {
           ))}
         </div>
 
-        {/* Right Arrow */}
         {canScrollRight && (
           <button
             onClick={() => scroll('right')}
@@ -118,30 +131,34 @@ export default function AdPortalSection() {
           </button>
         )}
 
-        {/* Right Edge Fade */}
         {canScrollRight && (
           <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-white to-transparent pointer-events-none z-[5]" />
         )}
       </div>
 
-      {/* Ad Placeholder Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {AD_SLOTS.map((slot, i) => (
-          <div
-            key={i}
-            className="bg-[#fafaf9] border border-dashed border-gray-300 rounded-2xl p-6 text-center cursor-pointer hover:border-gray-400 hover:bg-white transition-all group"
-            onClick={() => { window.location.href = '/advertise'; }}
-          >
-            <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-200">📣</div>
-            <div className="text-gray-900 text-sm font-semibold mb-1">Your ad here</div>
-            <div className="text-gray-400 text-xs mb-2">
-              Be the first {activeCat} advertiser
+      {/* Marquee Ad Ribbon */}
+      <div className="relative overflow-hidden mb-8 group">
+        <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
+        <div className="flex animate-marquee group-hover:[animation-play-state:paused]">
+          {[...Array(SLOT_COUNT * 2)].map((_, i) => (
+            <div
+              key={i}
+              className="shrink-0 w-56 mx-2 bg-[#fafaf9] border border-dashed border-gray-300 rounded-2xl p-5 text-center cursor-pointer hover:border-gray-400 hover:bg-white hover:shadow-lg transition-all"
+              onClick={() => { window.location.href = '/advertise'; }}
+            >
+              <div className="text-2xl mb-2">📣</div>
+              <div className="text-gray-900 text-sm font-semibold mb-0.5">Your ad here</div>
+              <div className="text-gray-400 text-xs mb-1.5">
+                Be the first {activeCat} advertiser
+              </div>
+              <div className="text-[#7c6f50] text-xs font-medium">
+                From {price}
+              </div>
             </div>
-            <div className="text-[#7c6f50] text-xs font-medium">
-              From {slot.price}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Dark CTA Banner */}
@@ -167,6 +184,17 @@ export default function AdPortalSection() {
           </a>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+          animation: marquee 25s linear infinite;
+          width: max-content;
+        }
+      `}</style>
     </div>
   );
 }
