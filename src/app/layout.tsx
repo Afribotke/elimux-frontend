@@ -7,6 +7,7 @@ import DesktopNav from "@/components/DesktopNav";
 import MobileNav from "@/components/MobileNav";
 import { CookieConsent } from "@/components/legal/CookieConsent";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import BackgroundSyncManager from "@/components/BackgroundSyncManager";
 import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -44,6 +45,7 @@ export default function RootLayout({
             <Toaster position="top-right" richColors />
             <CookieConsent />
             <ServiceWorkerRegister />
+            <BackgroundSyncManager />
           </AuthProvider>
         </ThemeProvider>
       </body>

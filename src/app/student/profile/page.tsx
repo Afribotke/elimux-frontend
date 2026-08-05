@@ -12,7 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { User, GraduationCap, MapPin, Globe, Save } from "lucide-react";
+import { User, GraduationCap, MapPin, Globe, Save, Bell } from "lucide-react";
+import PushNotificationToggle from "@/components/PushNotificationToggle";
 
 export default function StudentProfilePage() {
   const router = useRouter();
@@ -172,6 +173,15 @@ export default function StudentProfilePage() {
             <div><Label>LinkedIn URL</Label><Input value={form.linkedin_url} onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })} /></div>
             <div><Label>GitHub URL</Label><Input value={form.github_url} onChange={(e) => setForm({ ...form, github_url: e.target.value })} /></div>
             <div><Label>Skills (comma separated)</Label><Textarea value={form.skills} onChange={(e) => setForm({ ...form, skills: e.target.value })} /></div>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Bell className="w-5 h-5" />Notifications</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <PushNotificationToggle />
           </CardContent>
         </Card>
 
