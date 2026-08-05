@@ -6,6 +6,7 @@ import CareerSearchDropdown from './CareerSearchDropdown';
 import GradeMatcher from './GradeMatcher';
 import AdPortalSection from './AdPortalSection';
 import PopularPrograms from './PopularPrograms';
+import SponsorBanner from './SponsorBanner';
 import AISearchOverlay from '@/components/search/AISearchOverlay';
 import type { TabType } from '@/types/home';
 
@@ -92,6 +93,7 @@ export default function NewHomePage() {
       <div className="max-w-5xl mx-auto px-4">
         <AdPortalSection />
         <PopularPrograms />
+        <SponsorBanner />
       </div>
 
       {/* Footer spacer */}
