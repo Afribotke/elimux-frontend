@@ -1,16 +1,43 @@
 import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import DetailActions from '@/components/DetailActions'
 import { ReviewsSection } from '@/components/ReviewsSection'
 import BackButton from '@/components/BackButton'
 import Breadcrumbs from '@/components/Breadcrumbs'
 import TrackPageView from '@/components/TrackPageView'
 import ProgramVerificationBadge from '@/components/ProgramVerificationBadge'
+import { JsonLd } from '@/components/JsonLd'
 import { Clock, DollarSign, MapPin, BookOpen, GraduationCap, ClipboardList, Sparkles } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+
+  const { data: program } = await supabase
+    .from('programs')
+    .select('*, institution:institutions(id, name, city, country:countries(name))')
+    .eq('id', id)
+    .eq('is_active', true)
+    .single()
+
+  if (!program) {
+    return { title: 'Program Not Found', description: 'This program could not be found on ElimuX.' }
+  }
+
+  const institutionName = program.institution?.name || 'a leading institution'
+  const description = program.description || `Study ${program.name} at ${institutionName} via ElimuX.`
+
+  return {
+    title: program.name,
+    description,
+    alternates: { canonical: `https://www.elimux.ke/programs/${id}` },
+    openGraph: { title: program.name, description, type: 'article', url: `https://www.elimux.ke/programs/${id}` },
+    twitter: { card: 'summary_large_image', title: program.name, description },
+  }
+}
 
 export default async function ProgramDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -28,8 +55,22 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
 
   const categoryColor = program.category?.color || '#FFC107'
 
+  const courseSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    name: program.name,
+    description: program.description,
+    provider: {
+      '@type': 'CollegeOrUniversity',
+      name: program.institution?.name,
+      address: program.institution?.city,
+    },
+    category: program.category?.name,
+  }
+
   return (
     <main className="min-h-screen py-12 px-4">
+      <JsonLd data={courseSchema} />
       <TrackPageView
         eventType="page_view"
         metadata={{ path: `/programs/${id}`, program_id: id }}

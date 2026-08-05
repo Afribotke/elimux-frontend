@@ -14,8 +14,39 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   manifest: '/manifest.json',
-  title: "ElimuX — Discover Global Education",
-  description: "Find universities, programs, internships, and career opportunities worldwide.",
+  title: {
+    default: "ElimuX — Discover Global Education & Career Opportunities",
+    template: "%s | ElimuX",
+  },
+  description: "ElimuX is the global education discovery platform. Find courses, internships, and attachments across Kenya, Africa, and worldwide institutions.",
+  keywords: ["education", "courses", "internships", "attachments", "Kenya", "Africa", "university", "college", "TVET"],
+  authors: [{ name: "ElimuX" }],
+  creator: "ElimuX",
+  metadataBase: new URL("https://www.elimux.ke"),
+  openGraph: {
+    type: "website",
+    locale: "en_KE",
+    url: "https://www.elimux.ke",
+    siteName: "ElimuX",
+    title: "ElimuX — Discover Global Education & Career Opportunities",
+    description: "Find courses, internships, and attachments across Kenya, Africa, and worldwide institutions.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ElimuX — Discover Global Education & Career Opportunities",
+    description: "Find courses, internships, and attachments across Kenya, Africa, and worldwide institutions.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export const viewport: Viewport = {

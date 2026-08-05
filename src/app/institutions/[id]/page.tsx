@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import ProgramCard from '@/components/ProgramCard'
 import DetailActions from '@/components/DetailActions'
 import TrackPageView from '@/components/TrackPageView'
@@ -9,10 +10,35 @@ import BackButton from '@/components/BackButton'
 import Breadcrumbs from '@/components/Breadcrumbs'
 import { ReviewsSection } from '@/components/ReviewsSection'
 import InstitutionLogo from '@/components/InstitutionLogo'
+import { JsonLd } from '@/components/JsonLd'
 import { MapPin, Users, Globe, Star, CheckCircle, GraduationCap, ShieldCheck, FileText } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+
+  const { data: institution } = await supabase
+    .from('institutions')
+    .select('name, description, location')
+    .eq('id', id)
+    .eq('is_active', true)
+    .single()
+
+  if (!institution) {
+    return { title: 'Institution Not Found', description: 'This institution could not be found on ElimuX.' }
+  }
+
+  const description = institution.description || `${institution.name} — discover programs and opportunities on ElimuX.`
+
+  return {
+    title: institution.name,
+    description,
+    alternates: { canonical: `https://www.elimux.ke/institutions/${id}` },
+    openGraph: { title: institution.name, description, type: 'website', url: `https://www.elimux.ke/institutions/${id}` },
+    twitter: { card: 'summary_large_image', title: institution.name, description },
+  }
+}
 
 interface InstitutionAccreditationJoinRow {
   id: string
@@ -54,8 +80,17 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
     .order('created_at', { ascending: false })
     .returns<InstitutionAccreditationJoinRow[]>()
 
+  const institutionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollegeOrUniversity',
+    name: institution.name,
+    description: institution.description,
+    address: { '@type': 'PostalAddress', addressLocality: institution.location || institution.city },
+  }
+
   return (
     <main className="min-h-screen py-12 px-4">
+      <JsonLd data={institutionSchema} />
       <TrackPageView eventType="page_view" metadata={{ path: `/institutions/${id}`, institution_id: id }} />
       <div className="max-w-4xl mx-auto">
         <BackButton fallbackHref="/institutions" label="All Institutions" className="mb-2" />
