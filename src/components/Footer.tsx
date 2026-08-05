@@ -38,6 +38,7 @@ export default function Footer() {
           <Link href="/ads/self-serve" className="hover:text-foreground transition-colors">Advertise</Link>
           <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
           <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+          <Link href="/cookies" className="hover:text-foreground transition-colors">Cookie Policy</Link>
         </div>
 
         <div>

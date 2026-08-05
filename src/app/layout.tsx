@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/context/AuthContext";
 import DesktopNav from "@/components/DesktopNav";
 import MobileNav from "@/components/MobileNav";
+import { CookieConsent } from "@/components/legal/CookieConsent";
 import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -40,6 +41,7 @@ export default function RootLayout({
             <main className="min-h-screen pb-16 lg:pb-0">{children}</main>
             <MobileNav />
             <Toaster position="top-right" richColors />
+            <CookieConsent />
           </AuthProvider>
         </ThemeProvider>
       </body>
