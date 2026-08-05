@@ -1,4 +1,6 @@
 import { Metadata } from "next"
+import { redirect } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
 import { getDashboardStatsServer } from "@/lib/dashboard-stats-server"
 
 export const metadata: Metadata = {
@@ -9,6 +11,33 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic"
 
 export default async function DashboardPage() {
+  const supabase = await createClient()
+
+  // Without this race, a slow/hung Supabase auth API leaves this server
+  // component - and the page request rendering it - stuck forever.
+  const authResult = await Promise.race([
+    supabase.auth.getUser(),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Auth service timeout")), 8000)
+    )
+  ])
+  const { data: { user } } = authResult as any
+
+  if (!user) {
+    redirect("/")
+  }
+
+  const { data: userData } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single()
+
+  const role = userData?.role || user.user_metadata?.role || "student"
+  if (role !== "admin" && role !== "super_admin") {
+    redirect("/")
+  }
+
   const stats = await getDashboardStatsServer()
 
   return (
