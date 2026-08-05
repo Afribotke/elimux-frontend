@@ -104,6 +104,7 @@ export default function AdminScraperPage() {
             onChange={(e) => setInstitutionId(e.target.value)}
             required
             className="px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500 md:w-64"
+            aria-label="Institution to scrape"
           >
             <option value="">Select institution</option>
             {institutions.map((i) => (

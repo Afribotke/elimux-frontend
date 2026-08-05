@@ -89,6 +89,7 @@ export default function ScholarshipAlertForm({ defaultKeywords, defaultCountryId
           value={countryId}
           onChange={(e) => setCountryId(e.target.value)}
           className="w-full px-4 py-3 min-h-[44px] rounded-lg bg-elimux-dark border border-border text-foreground focus:ring-2 focus:ring-primary-500"
+          aria-label="Country"
         >
           <option value="">Any country</option>
           {countries.map((c) => (
@@ -102,6 +103,7 @@ export default function ScholarshipAlertForm({ defaultKeywords, defaultCountryId
           value={studyLevel}
           onChange={(e) => setStudyLevel(e.target.value)}
           className="w-full px-4 py-3 min-h-[44px] rounded-lg bg-elimux-dark border border-border text-foreground focus:ring-2 focus:ring-primary-500"
+          aria-label="Study Level"
         >
           <option value="">Any level</option>
           {STUDY_LEVELS.map((l) => (

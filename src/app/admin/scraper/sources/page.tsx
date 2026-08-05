@@ -126,6 +126,7 @@ export default function AdminScraperSourcesPage() {
             onChange={(e) => setInstitutionId(e.target.value)}
             required
             className="px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500 md:w-56"
+            aria-label="Institution"
           >
             <option value="">Select institution</option>
             {institutions.map((i) => (
@@ -146,6 +147,7 @@ export default function AdminScraperSourcesPage() {
             value={sourceType}
             onChange={(e) => setSourceType(e.target.value as (typeof SOURCE_TYPES)[number])}
             className="px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+            aria-label="Source type"
           >
             {SOURCE_TYPES.map((t) => (
               <option key={t} value={t}>
@@ -157,6 +159,7 @@ export default function AdminScraperSourcesPage() {
             value={crawlFrequency}
             onChange={(e) => setCrawlFrequency(e.target.value as (typeof CRAWL_FREQUENCIES)[number])}
             className="px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+            aria-label="Crawl frequency"
           >
             {CRAWL_FREQUENCIES.map((f) => (
               <option key={f} value={f}>
@@ -218,6 +221,7 @@ export default function AdminScraperSourcesPage() {
                       value={source.crawl_frequency}
                       onChange={(e) => handleFrequencyChange(source.id, e.target.value)}
                       className="px-2 py-1 rounded-lg bg-elimux-dark border border-border text-foreground text-xs focus:outline-none focus:border-primary-500"
+                      aria-label={`Crawl frequency for ${source.institution?.name || 'source'}`}
                     >
                       {CRAWL_FREQUENCIES.map((f) => (
                         <option key={f} value={f}>

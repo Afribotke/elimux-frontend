@@ -104,6 +104,7 @@ export default function InstitutionForm({ types, countries, onSubmit, onClose }:
                   value={formData.type_id}
                   onChange={(e) => setFormData({ ...formData, type_id: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                  aria-label="Institution Type"
                 >
                   <option value="">Select type</option>
                   {types.map((type) => (
@@ -121,6 +122,7 @@ export default function InstitutionForm({ types, countries, onSubmit, onClose }:
                   value={formData.country_id}
                   onChange={(e) => setFormData({ ...formData, country_id: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                  aria-label="Country"
                 >
                   <option value="">Select country</option>
                   {countries.map((country) => (

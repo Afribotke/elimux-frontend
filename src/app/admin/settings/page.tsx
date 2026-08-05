@@ -133,6 +133,7 @@ export default function AdminSettingsPage() {
                     value={drafts[s.key] ?? s.value}
                     onChange={(e) => setDrafts((p) => ({ ...p, [s.key]: e.target.value }))}
                     className="px-3 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                    aria-label={s.description || s.key}
                   >
                     <option value="true">true</option>
                     <option value="false">false</option>

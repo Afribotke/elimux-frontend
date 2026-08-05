@@ -333,6 +333,7 @@ export default function InstitutionOnboardingPage() {
                       value={institution.type_id}
                       onChange={(e) => setInstitution({ ...institution, type_id: e.target.value })}
                       className={inputClass}
+                      aria-label="Institution Type"
                     >
                       <option value="">Select type</option>
                       {types.map((t) => (
@@ -348,6 +349,7 @@ export default function InstitutionOnboardingPage() {
                       value={institution.country_id}
                       onChange={(e) => setInstitution({ ...institution, country_id: e.target.value })}
                       className={inputClass}
+                      aria-label="Country"
                     >
                       <option value="">Select country</option>
                       {countries.map((c) => (
@@ -468,6 +470,7 @@ export default function InstitutionOnboardingPage() {
                             value={program.category_id}
                             onChange={(e) => updateProgram(program.key, { category_id: e.target.value })}
                             className={inputClass}
+                            aria-label={`Program ${idx + 1} Category`}
                           >
                             <option value="">Category</option>
                             {categories.map((c) => (
@@ -478,6 +481,7 @@ export default function InstitutionOnboardingPage() {
                             value={program.level}
                             onChange={(e) => updateProgram(program.key, { level: e.target.value })}
                             className={inputClass}
+                            aria-label={`Program ${idx + 1} Level`}
                           >
                             <option value="">Level</option>
                             {LEVELS.map((l) => (
@@ -505,6 +509,7 @@ export default function InstitutionOnboardingPage() {
                             value={program.currency}
                             onChange={(e) => updateProgram(program.key, { currency: e.target.value })}
                             className={inputClass}
+                            aria-label={`Program ${idx + 1} Currency`}
                           >
                             <option value="USD">USD</option>
                             <option value="KES">KES</option>

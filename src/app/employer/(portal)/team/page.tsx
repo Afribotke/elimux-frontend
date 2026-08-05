@@ -165,6 +165,7 @@ export default function TeamPage() {
           value={filterRole}
           onChange={e => setFilterRole(e.target.value)}
           className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          aria-label="Filter by role"
         >
           <option value="all">All Roles</option>
           <option value="super_admin">Super Admin</option>
@@ -429,6 +430,7 @@ function InviteModal({
               value={role}
               onChange={e => setRole(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              aria-label="Role"
             >
               <option value="viewer">Viewer — Can view only</option>
               <option value="supervisor">Supervisor — Can manage assigned interns</option>
@@ -443,6 +445,7 @@ function InviteModal({
               value={departmentId}
               onChange={e => setDepartmentId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              aria-label="Department"
             >
               <option value="">No department</option>
               {departments.map(d => (

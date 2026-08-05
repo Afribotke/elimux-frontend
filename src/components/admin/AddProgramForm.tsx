@@ -119,6 +119,7 @@ export default function AddProgramForm({ institutions, categories, initialData, 
                   value={formData.institution_id}
                   onChange={(e) => setFormData({ ...formData, institution_id: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                  aria-label="Institution"
                 >
                   <option value="">Select institution</option>
                   {institutions.map((inst) => (
@@ -136,6 +137,7 @@ export default function AddProgramForm({ institutions, categories, initialData, 
                   value={formData.category_id}
                   onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                  aria-label="Category"
                 >
                   <option value="">Select category</option>
                   {categories.map((cat) => (
@@ -168,6 +170,7 @@ export default function AddProgramForm({ institutions, categories, initialData, 
                     value={formData.currency}
                     onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                     className="px-2 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                    aria-label="Currency"
                   >
                     <option value="USD">USD</option>
                     <option value="KES">KES</option>
@@ -195,6 +198,7 @@ export default function AddProgramForm({ institutions, categories, initialData, 
                   value={formData.level}
                   onChange={(e) => setFormData({ ...formData, level: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                  aria-label="Level"
                 >
                   <option value="">Select level</option>
                   <option value="Certificate">Certificate</option>
@@ -213,6 +217,7 @@ export default function AddProgramForm({ institutions, categories, initialData, 
                   value={formData.mode}
                   onChange={(e) => setFormData({ ...formData, mode: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                  aria-label="Mode"
                 >
                   <option value="">Select mode</option>
                   <option value="On-campus">On-campus</option>

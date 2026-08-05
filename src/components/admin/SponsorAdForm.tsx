@@ -135,6 +135,7 @@ export default function SponsorAdForm({ initialData, onSubmit, onClose }: Sponso
                 value={formData.placement}
                 onChange={(e) => setFormData({ ...formData, placement: e.target.value })}
                 className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                aria-label="Placement"
               >
                 {PLACEMENTS.map((p) => (
                   <option key={p} value={p}>

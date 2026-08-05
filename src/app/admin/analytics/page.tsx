@@ -62,6 +62,7 @@ export default function AdminUniversityAnalyticsPage() {
           value={institutionId}
           onChange={(e) => setInstitutionId(e.target.value)}
           className="px-4 py-2.5 rounded-lg bg-elimux-card border border-border text-foreground focus:outline-none focus:border-primary-500 min-w-[220px]"
+          aria-label="Select institution"
         >
           {institutions.map((inst) => (
             <option key={inst.id} value={inst.id}>

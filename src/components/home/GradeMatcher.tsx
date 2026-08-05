@@ -132,6 +132,7 @@ export default function GradeMatcher() {
               value={selectedGrade}
               onChange={(e) => setSelectedGrade(e.target.value as KcseGrade)}
               className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-800 text-sm outline-none appearance-none focus:border-gray-400 transition-all"
+              aria-label="My KCSE Grade"
             >
               {KCSE_GRADES.map((g) => (
                 <option key={g.grade} value={g.grade}>{g.label}</option>

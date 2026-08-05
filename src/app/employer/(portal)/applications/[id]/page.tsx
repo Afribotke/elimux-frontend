@@ -203,6 +203,7 @@ export default function ApplicationDetailPage() {
                 value={app.status}
                 onChange={(e) => updateStatus(e.target.value)}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                aria-label="Application status"
               >
                 {STATUS_OPTIONS.map((s) => (
                   <option key={s} value={s}>{s.replace(/_/g, " ")}</option>

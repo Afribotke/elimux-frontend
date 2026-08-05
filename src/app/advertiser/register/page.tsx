@@ -292,6 +292,7 @@ export default function AdvertiserRegisterPage() {
                   value={formData.industry_type}
                   onChange={handleChange}
                   className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                  aria-label="Industry Type"
                 >
                   {INDUSTRY_TYPES.map((type) => (
                     <option key={type.value} value={type.value}>

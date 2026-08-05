@@ -163,7 +163,7 @@ export default function CreateCampaign() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">Placement *</label>
-                <select required value={form.placement} onChange={(e) => handleChange("placement", e.target.value)} className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500">
+                <select required value={form.placement} onChange={(e) => handleChange("placement", e.target.value)} className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500" aria-label="Placement">
                   <option value="">Select placement...</option>
                   {placements.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.type})</option>)}
                 </select>

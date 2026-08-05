@@ -58,6 +58,7 @@ export default function ScholarshipFilters({ filters, onChange }: ScholarshipFil
           value={filters.country_id || ''}
           onChange={(e) => set({ country_id: e.target.value })}
           className="w-full px-4 py-3 min-h-[44px] rounded-lg bg-elimux-dark border border-border text-foreground focus:ring-2 focus:ring-primary-500"
+          aria-label="Country"
         >
           <option value="">All Countries</option>
           {countries.map((c) => (

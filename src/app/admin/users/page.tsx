@@ -78,6 +78,7 @@ export default function AdminUsersPage() {
             value={level}
             onChange={(e) => setLevel(e.target.value as ActivityLevel | 'all')}
             className="px-4 py-2 rounded-lg bg-elimux-card border border-border text-foreground text-sm focus:outline-none focus:border-primary-500"
+            aria-label="Filter by activity level"
           >
             {LEVEL_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>

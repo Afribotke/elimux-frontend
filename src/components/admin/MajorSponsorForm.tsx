@@ -143,6 +143,7 @@ export default function MajorSponsorForm({ initialData, onSubmit, onClose }: Maj
                 value={formData.sponsorship_tier}
                 onChange={(e) => setFormData({ ...formData, sponsorship_tier: e.target.value as CreateMajorSponsorInput['sponsorship_tier'] })}
                 className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500 capitalize"
+                aria-label="Sponsorship Tier"
               >
                 {TIERS.map((t) => (
                   <option key={t} value={t} className="capitalize">
