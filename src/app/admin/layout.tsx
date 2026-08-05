@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AdminKeyProvider, useAdminKey } from '@/components/admin/AdminKeyContext'
-import { LayoutDashboard, Building2, GraduationCap, MessageSquare, Users, BarChart3, Lock, KeyRound, Tag, Megaphone, Rocket, Award, DollarSign, Search, Bot, Menu, X, Settings, CreditCard, Inbox, Briefcase, Shield } from 'lucide-react'
+import { LayoutDashboard, Building2, GraduationCap, MessageSquare, Users, BarChart3, Lock, KeyRound, Tag, Megaphone, Rocket, Award, DollarSign, Search, Bot, Menu, X, Settings, CreditCard, Inbox, Briefcase, Shield, LogOut } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
@@ -105,6 +105,13 @@ function AdminGate({ children }: { children: React.ReactNode }) {
 
 function AdminNavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname()
+  const { setAdminKey } = useAdminKey()
+
+  function handleLogout() {
+    setAdminKey('')
+    window.location.href = '/'
+  }
+
   return (
     <>
       {NAV_ITEMS.map((item) => {
@@ -123,6 +130,13 @@ function AdminNavLinks({ onNavigate }: { onNavigate?: () => void }) {
           </Link>
         )
       })}
+      <button
+        onClick={handleLogout}
+        className="flex items-center gap-2 px-3 py-3 md:py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] text-elimux-danger hover:bg-elimux-danger/10 mt-2 border-t border-border pt-4"
+      >
+        <LogOut className="w-4 h-4" />
+        Sign Out
+      </button>
     </>
   )
 }
