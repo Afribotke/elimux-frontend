@@ -29,7 +29,7 @@ export function CookieConsent() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-slate-900 text-white p-4 z-50">
+    <div className="fixed bottom-16 md:bottom-0 left-0 right-0 bg-slate-900 text-white p-4 z-[60]">
       <div className="container mx-auto max-w-4xl flex flex-col md:flex-row items-center gap-4">
         <div className="flex-1">
           <p className="text-sm">
