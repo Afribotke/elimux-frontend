@@ -204,6 +204,7 @@ function ProgramsPageInner() {
               value={filters.category}
               onChange={(e) => { setFilters(f => ({ ...f, category: e.target.value })); setPage(1); }}
               className="w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-blue-500"
+              aria-label="Category"
             >
               <option value="">All Categories</option>
               {categories.map(c => (
@@ -216,6 +217,7 @@ function ProgramsPageInner() {
               value={filters.country}
               onChange={(e) => { setFilters(f => ({ ...f, country: e.target.value })); setPage(1); }}
               className="w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-blue-500"
+              aria-label="Country"
             >
               <option value="">All Countries</option>
               {countries.map(c => (
@@ -228,6 +230,7 @@ function ProgramsPageInner() {
               value={filters.level}
               onChange={(e) => { setFilters(f => ({ ...f, level: e.target.value })); setPage(1); }}
               className="w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-blue-500"
+              aria-label="Education Level"
             >
               <option value="">All Levels</option>
               {levels.map(l => (

@@ -78,6 +78,7 @@ export default function SearchBar({ onSearch, variant = 'hero' }: SearchBarProps
                 value={filters.country || ''}
                 onChange={(e) => setFilters({ ...filters, country: e.target.value || undefined })}
                 className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Country"
               >
                 <option value="">All Countries</option>
                 <option value="Kenya">Kenya</option>
@@ -94,6 +95,7 @@ export default function SearchBar({ onSearch, variant = 'hero' }: SearchBarProps
                 value={filters.level || ''}
                 onChange={(e) => setFilters({ ...filters, level: e.target.value || undefined })}
                 className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Education Level"
               >
                 <option value="">All Levels</option>
                 <option value="Certificate">Certificate</option>
@@ -106,6 +108,7 @@ export default function SearchBar({ onSearch, variant = 'hero' }: SearchBarProps
                 value={filters.duration || ''}
                 onChange={(e) => setFilters({ ...filters, duration: e.target.value || undefined })}
                 className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Duration"
               >
                 <option value="">Any Duration</option>
                 <option value="6 months">6 Months</option>
@@ -118,6 +121,7 @@ export default function SearchBar({ onSearch, variant = 'hero' }: SearchBarProps
                 value={filters.field || ''}
                 onChange={(e) => setFilters({ ...filters, field: e.target.value || undefined })}
                 className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Field of Study"
               >
                 <option value="">All Fields</option>
                 <option value="Technology">Technology</option>

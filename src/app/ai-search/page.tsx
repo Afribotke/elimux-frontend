@@ -138,6 +138,7 @@ function AISearchContent() {
               value={countryId}
               onChange={(e) => setCountryId(e.target.value)}
               className="pl-9 pr-4 py-2 rounded-xl bg-elimux-card border border-border text-muted text-sm focus:outline-none focus:border-primary-500 appearance-none cursor-pointer"
+              aria-label="Country"
             >
               <option value="">All Countries</option>
               {countries.map((c) => (
@@ -152,6 +153,7 @@ function AISearchContent() {
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
               className="pl-9 pr-4 py-2 rounded-xl bg-elimux-card border border-border text-muted text-sm focus:outline-none focus:border-primary-500 appearance-none cursor-pointer"
+              aria-label="Category"
             >
               <option value="">All Categories</option>
               {categories.map((c) => (
@@ -166,6 +168,7 @@ function AISearchContent() {
               value={level}
               onChange={(e) => setLevel(e.target.value)}
               className="pl-9 pr-4 py-2 rounded-xl bg-elimux-card border border-border text-muted text-sm focus:outline-none focus:border-primary-500 appearance-none cursor-pointer"
+              aria-label="Education Level"
             >
               <option value="">Any Level</option>
               <option value="Certificate">Certificate</option>
@@ -182,6 +185,7 @@ function AISearchContent() {
               value={maxBudget ?? ''}
               onChange={(e) => setMaxBudget(e.target.value ? parseInt(e.target.value, 10) : null)}
               className="pl-9 pr-4 py-2 rounded-xl bg-elimux-card border border-border text-muted text-sm focus:outline-none focus:border-primary-500 appearance-none cursor-pointer"
+              aria-label="Maximum Budget"
             >
               <option value="">Any Budget</option>
               <option value="1000">Under $1,000</option>
