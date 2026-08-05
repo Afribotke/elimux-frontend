@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { getUserWithTimeout } from '@/lib/client-auth';
 import EmployerSidebar from '@/components/employer/EmployerSidebar';
 import BrandColorInjector from '@/components/employer/BrandColorInjector';
 import { Loader2 } from 'lucide-react';
@@ -19,7 +20,7 @@ export default function EmployerPortalLayout({
 
   useEffect(() => {
     async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await getUserWithTimeout();
 
       if (!user) {
         router.push('/auth/login?redirect=/employer/dashboard');

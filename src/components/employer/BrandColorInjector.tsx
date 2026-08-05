@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getUserWithTimeout } from '@/lib/client-auth';
 
 const CSS_VAR_MAP: Record<string, string> = {
   primary: '--brand-primary',
@@ -18,7 +19,7 @@ export default function BrandColorInjector() {
 
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await getUserWithTimeout();
       if (!user) return;
 
       const { data: teamMember } = await supabase
