@@ -144,7 +144,7 @@ export default function EmployerLandingPage() {
         <div className="max-w-3xl mx-auto">
           <h2 className="text-3xl font-bold mb-4">Ready to Streamline Your Intern Program?</h2>
           <p className="text-blue-100 mb-8 text-lg">
-            Join KRA, Safaricom, KPLC, and hundreds of organizations already using ElimuX.
+            Join DemoCorp, Sample Energy, Test Tech, and hundreds of organizations already using ElimuX.
           </p>
           <Link
             href="/employer/register"

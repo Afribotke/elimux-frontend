@@ -19,7 +19,7 @@ const FALLBACK_PROGRAMS: Program[] = [
   {
     id: '3', name: 'Craft Certificate in Electrical Installation', minimum_kcse_grade: 'D',
     duration: '18 Months', category: 'Engineering',
-    institution: { name: 'Kenya Power Training School', location: 'Ruaraka', country: 'Kenya' },
+    institution: { name: 'Sample Training Institute', location: 'Ruaraka', country: 'Kenya' },
   },
   {
     id: '4', name: 'Diploma in Journalism & Media', minimum_kcse_grade: 'C-',
