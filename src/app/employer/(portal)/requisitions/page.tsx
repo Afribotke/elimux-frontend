@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getUserWithTimeout } from '@/lib/client-auth';
 import Link from 'next/link';
 import { Plus, Clock, CheckCircle2, XCircle, FileText, Eye, Loader2 } from 'lucide-react';
 
@@ -16,7 +17,7 @@ export default function RequisitionsListPage() {
   }, []);
 
   async function loadData() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await getUserWithTimeout();
     if (!user) return;
 
     const { data: me } = await supabase

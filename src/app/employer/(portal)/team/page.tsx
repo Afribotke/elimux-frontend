@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getUserWithTimeout } from '@/lib/client-auth';
 import {
   Users,
   Plus,
@@ -52,7 +53,7 @@ export default function TeamPage() {
   async function loadData() {
     setLoading(true);
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await getUserWithTimeout();
     if (!user) return;
 
     // Get current user's role
@@ -319,7 +320,7 @@ function InviteModal({
     setLoading(true);
     setError('');
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await getUserWithTimeout();
     if (!user) {
       setError('Not authenticated');
       setLoading(false);

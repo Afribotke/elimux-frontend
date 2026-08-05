@@ -9,6 +9,7 @@ import { CommissionTracker } from "@/components/partner/CommissionTracker";
 import { PartnerStats } from "@/components/partner/PartnerStats";
 import { usePartner } from "@/hooks/usePartner";
 import { supabase } from "@/lib/supabase";
+import { getUserWithTimeout } from "@/lib/client-auth";
 import { toast } from "sonner";
 
 interface PartnerData {
@@ -33,7 +34,7 @@ export default function PartnerDashboardPage() {
   }, []);
 
   const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await getUserWithTimeout();
     if (!user) {
       router.push("/partner/login");
       return;

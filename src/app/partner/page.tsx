@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
+import { getUserWithTimeout } from "@/lib/client-auth";
 import { toast } from "sonner";
 
 export default function PartnerLandingPage() {
@@ -25,7 +26,7 @@ export default function PartnerLandingPage() {
     setIsLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await getUserWithTimeout();
 
       if (!user) {
         // Store form data in session storage for post-login

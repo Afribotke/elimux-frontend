@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
+import { getUserWithTimeout } from "@/lib/client-auth";
 import { toast } from "sonner";
 
 interface PricingTier {
@@ -66,7 +67,7 @@ export default function SelfServeAdPortalPage() {
   }, []);
 
   const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await getUserWithTimeout();
     setIsLoggedIn(!!user);
     setIsLoading(false);
   };

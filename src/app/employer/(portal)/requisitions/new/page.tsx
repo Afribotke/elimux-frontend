@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { getUserWithTimeout } from '@/lib/client-auth';
 import {
   ArrowLeft,
   Plus,
@@ -69,7 +70,7 @@ export default function NewRequisitionPage() {
     setLoading(true);
     setError('');
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await getUserWithTimeout();
     if (!user) {
       setError('Not authenticated');
       setLoading(false);

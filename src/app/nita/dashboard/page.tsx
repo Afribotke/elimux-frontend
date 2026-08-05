@@ -11,7 +11,16 @@ export const dynamic = "force-dynamic";
 
 export default async function NitaDashboardPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+
+  // Without this race, a slow/hung Supabase auth API leaves this server
+  // component - and the page request rendering it - stuck forever.
+  const authResult = await Promise.race([
+    supabase.auth.getUser(),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Auth service timeout")), 8000)
+    )
+  ]);
+  const { data: { user } } = authResult as any;
 
   if (!user) {
     redirect("/auth/login?redirect=/nita/dashboard");

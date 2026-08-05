@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getUserWithTimeout } from "@/lib/client-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Zap, Trophy, Star, TrendingUp } from "lucide-react";
@@ -17,7 +18,7 @@ export default function GamificationPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await getUserWithTimeout();
       if (user) {
         const { data: pts } = await supabase.from("gamification_points").select("points").eq("user_id", user.id);
         const total = (pts || []).reduce((sum: number, p: any) => sum + (p.points || 0), 0);

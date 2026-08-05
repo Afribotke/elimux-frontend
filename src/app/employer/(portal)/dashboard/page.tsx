@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getUserWithTimeout } from '@/lib/client-auth';
 import StatsCard from '@/components/employer/StatsCard';
 import {
   Users,
@@ -29,7 +30,7 @@ export default function EmployerDashboardPage() {
   }, []);
 
   async function loadData() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await getUserWithTimeout();
     if (!user) return;
 
     const { data: me } = await supabase

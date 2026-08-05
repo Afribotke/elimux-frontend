@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { getUserWithTimeout } from "@/lib/client-auth";
 import { toast } from "sonner";
 
 interface Campaign {
@@ -33,7 +34,7 @@ export default function AdDashboardPage() {
 
   const fetchCampaigns = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await getUserWithTimeout();
       if (!user) {
         router.push("/auth/login");
         return;

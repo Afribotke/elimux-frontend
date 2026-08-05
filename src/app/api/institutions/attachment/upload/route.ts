@@ -21,7 +21,21 @@ export async function POST(request: Request) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
   )
 
-  const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token)
+  let authResult
+  try {
+    authResult = await Promise.race([
+      supabaseAuth.auth.getUser(token),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Auth service timeout")), 8000)
+      )
+    ])
+  } catch (raceErr: any) {
+    if (raceErr?.message === "Auth service timeout") {
+      return NextResponse.json({ error: "Authentication service temporarily unavailable. Please try again." }, { status: 503 })
+    }
+    throw raceErr
+  }
+  const { data: { user }, error: authError } = authResult as any
   if (authError || !user) {
     return NextResponse.json({ error: "Invalid session" }, { status: 401 })
   }

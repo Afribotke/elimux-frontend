@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getUserWithTimeout } from "@/lib/client-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +26,7 @@ export default function EmployerVacanciesPage() {
 
   useEffect(() => {
     const fetchVacancies = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await getUserWithTimeout();
       if (!user) return;
       const { data: emp } = await supabase.from("employers").select("id").eq("user_id", user.id).single();
       if (!emp) return;

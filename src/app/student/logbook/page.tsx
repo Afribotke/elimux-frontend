@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getUserWithTimeout } from "@/lib/client-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,7 +32,7 @@ export default function LogbookPage() {
   }, []);
 
   const fetchEntries = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await getUserWithTimeout();
     if (!user) return;
     const { data: profile } = await supabase.from("student_profiles").select("id").eq("user_id", user.id).single();
     if (!profile) return;
@@ -46,7 +47,7 @@ export default function LogbookPage() {
   };
 
   const handleSubmit = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await getUserWithTimeout();
     if (!user) return;
     const { data: profile } = await supabase.from("student_profiles").select("id").eq("user_id", user.id).single();
     if (!profile) return;

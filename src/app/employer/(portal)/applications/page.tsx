@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getUserWithTimeout } from "@/lib/client-auth";
 import { Loader2, User, Mail, Phone, Calendar, CheckCircle, XCircle, Eye } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -36,7 +37,7 @@ export default function EmployerApplications() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await getUserWithTimeout();
       if (!user) return;
 
       const { data: teamMember } = await supabase

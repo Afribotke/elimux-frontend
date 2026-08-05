@@ -21,7 +21,22 @@ function generateToken() {
 // here as "Invalid session" regardless of whether the user was logged in.
 async function verifyAdminAuth() {
   const authClient = await createServerSupabaseClient()
-  const { data: { user }, error } = await authClient.auth.getUser()
+
+  let authResult
+  try {
+    authResult = await Promise.race([
+      authClient.auth.getUser(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Auth service timeout")), 8000)
+      )
+    ])
+  } catch (raceErr: any) {
+    if (raceErr?.message === "Auth service timeout") {
+      return { authorized: false, error: "Authentication service temporarily unavailable. Please try again.", status: 503 }
+    }
+    throw raceErr
+  }
+  const { data: { user }, error } = authResult as any
 
   if (error || !user) {
     return { authorized: false, error: "Invalid session" }
@@ -45,7 +60,7 @@ export async function POST(request: Request) {
   // AUTH GUARD: Only admins can bulk upload employers
   const auth = await verifyAdminAuth()
   if (!auth.authorized) {
-    return NextResponse.json({ error: auth.error }, { status: 401 })
+    return NextResponse.json({ error: auth.error }, { status: auth.status || 401 })
   }
 
   try {
