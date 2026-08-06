@@ -7,8 +7,7 @@ import { useAdminKey } from "@/components/admin/AdminKeyContext";
 interface ResultItem {
   name: string;
   status: string;
-  suggested_url?: string | null;
-  note?: string;
+  error?: string;
 }
 
 interface Summary {
@@ -32,8 +31,8 @@ export default function EmployerNameDiscoverPage() {
     if (loading) {
       setProgress(0);
       intervalRef.current = setInterval(() => {
-        setProgress(prev => prev >= 90 ? prev : prev + Math.random() * 15);
-      }, 300);
+        setProgress(prev => prev >= 95 ? prev : prev + Math.random() * 10);
+      }, 200);
     } else {
       if (intervalRef.current) clearInterval(intervalRef.current);
       setProgress(100);
@@ -73,28 +72,19 @@ export default function EmployerNameDiscoverPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Employer Name Upload</h1>
         </div>
 
-        {/* WARNING BANNER */}
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-6 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-amber-800 dark:text-amber-400">Liability Warning</p>
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-400">How it works</p>
             <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-              Discovered website URLs are <strong>suggestions only</strong> and are NOT displayed publicly.
-              Employers must verify their own URL during registration. This prevents misrepresentation and protects ElimuX from liability.
+              1. Paste names → stored instantly (no delays)<br/>
+              2. Website URLs discovered separately per employer<br/>
+              3. Employers verify their own URL during registration
             </p>
           </div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-            Paste employer names below (one per line). The system will:
-          </p>
-          <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1 mb-4 list-disc pl-5">
-            <li>Normalize names to Title Case automatically</li>
-            <li>Optionally suggest website URLs (marked as unverified)</li>
-            <li>Check for duplicates automatically</li>
-          </ul>
-
           <textarea
             value={names}
             onChange={(e) => setNames(e.target.value)}
@@ -106,7 +96,7 @@ export default function EmployerNameDiscoverPage() {
           {loading && (
             <div className="mb-4">
               <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                <span>Processing...</span>
+                <span>Storing names...</span>
                 <span>{Math.min(Math.round(progress), 100)}%</span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
@@ -126,7 +116,7 @@ export default function EmployerNameDiscoverPage() {
 
           <button onClick={handleUpload} disabled={loading}
             className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-            {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</> : <><Upload className="w-4 h-4" /> Upload Employer Names</>}
+            {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Storing {Math.round(progress)}%...</> : <><Upload className="w-4 h-4" /> Upload Employer Names</>}
           </button>
 
           {error && !loading && (
@@ -137,7 +127,6 @@ export default function EmployerNameDiscoverPage() {
           )}
         </div>
 
-        {/* Results */}
         {results.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-6">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Results</h3>
@@ -146,21 +135,19 @@ export default function EmployerNameDiscoverPage() {
                 <div key={i} className="text-xs flex items-center gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
                   <span className={`w-2 h-2 rounded-full shrink-0 ${r.status === "created" ? "bg-green-500" : r.status === "skipped" ? "bg-yellow-500" : "bg-red-500"}`} />
                   <span className="flex-1 text-gray-700 dark:text-gray-300 truncate font-medium">{r.name}</span>
-                  {r.suggested_url && (
-                    <span className="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded font-mono truncate max-w-[120px]">
-                      ? {r.suggested_url.replace(/^https?:\/\//, "")}
-                    </span>
-                  )}
                   <span className="text-gray-500 shrink-0">{r.status}</span>
                 </div>
               ))}
             </div>
-            <p className="text-[10px] text-gray-400 mt-2">
-              <AlertTriangle className="w-3 h-3 inline mr-1" />
-              Suggested URLs are not verified. Employers must confirm their URL during registration.
-            </p>
           </div>
         )}
+
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+          <p className="text-sm text-blue-700 dark:text-blue-400">
+            <strong>Liability Note:</strong> Website URLs are discovered separately and marked as suggestions only.
+            Employers must verify their own URL during registration. This prevents misrepresentation.
+          </p>
+        </div>
       </div>
     </div>
   );
