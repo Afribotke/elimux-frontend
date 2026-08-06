@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Building2, CheckCircle } from "lucide-react";
+import { Building2, CheckCircle, Search } from "lucide-react";
+import { useEmployerNames } from "@/lib/useEmployerNames";
 
 const INDUSTRIES = [
   "Engineering","Information Technology","Healthcare and Medicine","Education",
@@ -22,6 +23,88 @@ const INDUSTRIES = [
 const COMPANY_SIZES = ["1-10","11-50","51-200","201-500","500+"];
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
+// ── Employer Name Auto-Complete ──
+// Searches employer_names table as user types 3+ letters
+function EmployerAutocomplete({ value, onSelect }: { value: string; onSelect: (name: string, suggestedUrl?: string | null) => void }) {
+  const [query, setQuery] = useState(value);
+  const [open, setOpen] = useState(false);
+  const { results, loading, search } = useEmployerNames();
+
+  useEffect(() => {
+    if (query.length >= 3) {
+      search(query);
+      setOpen(true);
+    } else {
+      setOpen(false);
+    }
+  }, [query, search]);
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            onSelect(e.target.value);
+          }}
+          onFocus={() => query.length >= 3 && setOpen(true)}
+          placeholder="Start typing your company name..."
+          className="pl-10"
+        />
+      </div>
+
+      {open && (results.length > 0 || loading) && (
+        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          {loading && (
+            <div className="px-4 py-2 text-xs text-gray-500">Searching...</div>
+          )}
+          {results.map((employer) => (
+            <button
+              key={employer.id}
+              type="button"
+              className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0"
+              onClick={() => {
+                setQuery(employer.name);
+                onSelect(employer.name, employer.suggested_website_url);
+                setOpen(false);
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-900 dark:text-white">{employer.name}</span>
+                {employer.suggested_website_url && (
+                  <span className="text-[10px] text-blue-600 truncate max-w-[120px]">
+                    {employer.suggested_website_url.replace(/^https?:\/\//, "")}
+                  </span>
+                )}
+              </div>
+              {employer.suggested_website_url && (
+                <p className="text-[10px] text-gray-400 mt-0.5">
+                  Suggested URL — verify during registration
+                </p>
+              )}
+            </button>
+          ))}
+          {results.length === 0 && !loading && query.length >= 3 && (
+            <div className="px-4 py-2 text-xs text-gray-500">
+              No matches found. You can still register with this name.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Click outside to close */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
 
 export default function EmployerRegisterPage() {
   const router = useRouter();
@@ -114,7 +197,15 @@ export default function EmployerRegisterPage() {
           <CardContent className="space-y-4">
             {step === 1 && (
               <>
-                <div><Label>Company Name *</Label><Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} /></div>
+                <div className="relative">
+                  <Label>Company Name *</Label>
+                  <EmployerAutocomplete
+                    value={form.company_name}
+                    onSelect={(name, suggestedUrl) => {
+                      setForm({ ...form, company_name: name, website_url: suggestedUrl || form.website_url });
+                    }}
+                  />
+                </div>
                 <div><Label>Company Email *</Label><Input type="email" value={form.company_email} onChange={(e) => setForm({ ...form, company_email: e.target.value })} /></div>
                 <div><Label>Company Phone</Label><Input value={form.company_phone} onChange={(e) => setForm({ ...form, company_phone: e.target.value })} /></div>
                 <div><Label>Registration Number</Label><Input value={form.registration_number} onChange={(e) => setForm({ ...form, registration_number: e.target.value })} /></div>

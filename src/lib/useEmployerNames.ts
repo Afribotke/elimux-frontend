@@ -5,8 +5,9 @@ import { useState, useCallback } from "react";
 interface EmployerName {
   id: string;
   name: string;
-  website_url: string | null;
-  discovery_status: string;
+  suggested_website_url: string | null;
+  verified_website_url: string | null;
+  verification_status: string;
 }
 
 export function useEmployerNames() {
