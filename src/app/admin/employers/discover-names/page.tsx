@@ -8,6 +8,7 @@ interface ResultItem {
   name: string;
   status: string;
   website_url?: string | null;
+  abbreviation?: string | null;
 }
 
 export default function EmployerNameDiscoverPage() {
@@ -99,15 +100,15 @@ export default function EmployerNameDiscoverPage() {
           </p>
           <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1 mb-4 list-disc pl-5">
             <li>Normalize names to Title Case automatically</li>
+            <li>Extract abbreviations (e.g., Kenya Revenue Authority → KRA)</li>
+            <li>Discover website URLs using abbreviations + full names</li>
             <li>Check for duplicates automatically</li>
-            <li>Attempt to discover website URLs safely (no scraping)</li>
-            <li>Mark all entries as pending verification</li>
           </ul>
 
           <textarea
             value={names}
             onChange={(e) => setNames(e.target.value)}
-            placeholder="KENYA POWER LIMITED&#10;safaricom limited&#10;Equity Bank&#10;KCB Group"
+            placeholder="Kenya Revenue Authority&#10;Kenya Power & Lighting Company&#10;Safaricom Limited&#10;KCB Group"
             disabled={loading}
             className="w-full h-64 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-yellow-500 focus:outline-none resize-none mb-4 disabled:opacity-50"
           />
@@ -175,6 +176,11 @@ export default function EmployerNameDiscoverPage() {
                     r.status === "created" ? "bg-green-500" : r.status === "skipped" ? "bg-yellow-500" : "bg-red-500"
                   }`} />
                   <span className="flex-1 text-gray-700 dark:text-gray-300 truncate font-medium">{r.name}</span>
+                  {r.abbreviation && (
+                    <span className="text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-500 px-1.5 py-0.5 rounded font-mono">
+                      {r.abbreviation}
+                    </span>
+                  )}
                   <span className="text-gray-500 shrink-0">{r.status}</span>
                   {r.website_url && (
                     <a
