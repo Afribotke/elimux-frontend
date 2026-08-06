@@ -83,7 +83,7 @@ export default function AdPortalSection() {
           </span>
         </div>
         <a
-          href="/advertise"
+          href="/ads/self-serve"
           className="text-gray-900 text-sm underline underline-offset-4 decoration-gray-400 hover:text-[#7c6f50] transition-colors"
         >
           Advertise here →
@@ -146,7 +146,7 @@ export default function AdPortalSection() {
             <div
               key={i}
               className="shrink-0 w-56 mx-2 bg-[#fafaf9] border border-dashed border-gray-300 rounded-2xl p-5 text-center cursor-pointer hover:border-gray-400 hover:bg-white hover:shadow-lg transition-all"
-              onClick={() => { window.location.href = '/advertise'; }}
+              onClick={() => { window.location.href = '/ads/self-serve'; }}
             >
               <div className="text-2xl mb-2">📣</div>
               <div className="text-gray-900 text-sm font-semibold mb-0.5">Your ad here</div>
@@ -177,7 +177,7 @@ export default function AdPortalSection() {
             WhatsApp us
           </a>
           <a
-            href="/advertise"
+            href="/ads/self-serve"
             className="inline-flex items-center gap-2 bg-[#fbbf24] text-[#0f172a] px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-[#f59e0b] transition-colors"
           >
             Advertise
@@ -198,3 +198,4 @@ export default function AdPortalSection() {
     </div>
   );
 }
+
