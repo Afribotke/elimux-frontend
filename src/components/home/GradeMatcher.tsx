@@ -215,18 +215,7 @@ export default function GradeMatcher() {
           )}
         </div>
       )}
-
-      {/* Empty State */}
-      {!hasSearched && (
-        <div className="text-center py-10">
-          <div className="text-4xl mb-3">🎯</div>
-          <div className="text-gray-400 text-sm leading-relaxed">
-            Select your KCSE grade above and tap<br />
-            <strong className="text-[#7c6f50]">&quot;Find My Courses&quot;</strong> to discover every<br />
-            program you qualify for.
-          </div>
-        </div>
-      )}
     </div>
   );
 }
+
