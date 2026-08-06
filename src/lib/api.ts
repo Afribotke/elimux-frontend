@@ -823,6 +823,61 @@ export function deleteScrapingSource(id: string, adminKey: string) {
   return request<{ message: string }>(`/api/admin/scraper/sources/${id}`, { method: 'DELETE' }, adminKey)
 }
 
+// TVETA registry scraper (separate from the AI program scraper above — this
+// one cross-checks institutions against the government accreditation list)
+
+export interface TvetaScrapedInstitution {
+  id: string
+  name: string
+  registration_number: string | null
+  category: string | null
+  institution_type: string | null
+  county: string | null
+  status: string
+  source_url: string
+  scraped_at: string
+  review_status: 'pending' | 'approved' | 'rejected' | 'duplicate'
+}
+
+export interface TvetaStatus {
+  pending: number
+  approved: number
+  total: number
+}
+
+export interface TvetaRunResult {
+  success: boolean
+  pagesScanned: number
+  institutionsFound: number
+  inserted: number
+  duplicates: number
+  robotsRules: string
+}
+
+export function runTvetaScraper(adminKey: string) {
+  return request<TvetaRunResult>('/api/tveta/run', { method: 'POST' }, adminKey)
+}
+
+export function getTvetaStatus(adminKey: string) {
+  return request<TvetaStatus>('/api/tveta/status', {}, adminKey)
+}
+
+export function listTvetaPending(adminKey: string) {
+  return request<{ data: TvetaScrapedInstitution[] }>('/api/tveta/pending', {}, adminKey)
+}
+
+export function approveTveta(id: string, adminKey: string) {
+  return request<{ success: boolean; institutionId: string; message: string }>(
+    `/api/tveta/approve/${id}`,
+    { method: 'POST' },
+    adminKey
+  )
+}
+
+export function rejectTveta(id: string, adminKey: string) {
+  return request<{ success: boolean }>(`/api/tveta/reject/${id}`, { method: 'POST' }, adminKey)
+}
+
 // Scholarships
 
 export interface ScholarshipRow {
