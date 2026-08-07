@@ -7,32 +7,32 @@ import type { Program } from '@/types/home';
 
 const FALLBACK_PROGRAMS: Program[] = [
   {
-    id: '1', name: 'Diploma in Business Management', minimum_kcse_grade: 'C-',
+    id: '1', name: 'Diploma in Business Management', minimum_kcse_grade: 'C-', kcse_grade_is_estimated: true,
     duration: '2 Years', category: 'Business',
     institution: { name: 'Kenya Institute of Management', location: 'Nairobi', country: 'Kenya' },
   },
   {
-    id: '2', name: 'Certificate in Information Technology', minimum_kcse_grade: 'D+',
+    id: '2', name: 'Certificate in Information Technology', minimum_kcse_grade: 'D+', kcse_grade_is_estimated: true,
     duration: '1 Year', category: 'Technology',
     institution: { name: 'Technical University of Kenya', location: 'Nairobi', country: 'Kenya' },
   },
   {
-    id: '3', name: 'Craft Certificate in Electrical Installation', minimum_kcse_grade: 'D',
+    id: '3', name: 'Craft Certificate in Electrical Installation', minimum_kcse_grade: 'D', kcse_grade_is_estimated: true,
     duration: '18 Months', category: 'Engineering',
     institution: { name: 'Sample Training Institute', location: 'Ruaraka', country: 'Kenya' },
   },
   {
-    id: '4', name: 'Diploma in Journalism & Media', minimum_kcse_grade: 'C-',
+    id: '4', name: 'Diploma in Journalism & Media', minimum_kcse_grade: 'C-', kcse_grade_is_estimated: true,
     duration: '2 Years', category: 'Arts & Design',
     institution: { name: 'Multimedia University of Kenya', location: 'Athi River', country: 'Kenya' },
   },
   {
-    id: '5', name: 'Certificate in Hospitality Management', minimum_kcse_grade: 'D+',
+    id: '5', name: 'Certificate in Hospitality Management', minimum_kcse_grade: 'D+', kcse_grade_is_estimated: true,
     duration: '1 Year', category: 'Business',
     institution: { name: 'Kenya Utalii College', location: 'Nairobi', country: 'Kenya' },
   },
   {
-    id: '6', name: 'Diploma in Pharmacy', minimum_kcse_grade: 'C',
+    id: '6', name: 'Diploma in Pharmacy', minimum_kcse_grade: 'C', kcse_grade_is_estimated: true,
     duration: '3 Years', category: 'Medicine & Health',
     institution: { name: 'Kenya Medical Training College', location: 'Nairobi', country: 'Kenya' },
   },
@@ -66,6 +66,7 @@ export default function GradeMatcher() {
           id,
           name,
           minimum_kcse_grade,
+          kcse_grade_is_estimated,
           duration,
           category:program_categories ( name ),
           institutions ( name, location, country )
@@ -85,6 +86,7 @@ export default function GradeMatcher() {
           id: item.id,
           name: item.name,
           minimum_kcse_grade: item.minimum_kcse_grade,
+          kcse_grade_is_estimated: item.kcse_grade_is_estimated ?? true,
           duration: item.duration || 'N/A',
           category: item.category?.name || 'General',
           institution: {
@@ -186,8 +188,14 @@ export default function GradeMatcher() {
                         <span
                           className="text-[10px] px-2 py-0.5 rounded-md font-semibold shrink-0 ml-2"
                           style={{ backgroundColor: pColor.bg, color: pColor.text }}
+                          title={
+                            program.kcse_grade_is_estimated
+                              ? 'AI-estimated based on program level and field, not an official cutoff. Confirm with the institution before applying.'
+                              : undefined
+                          }
                         >
                           {program.minimum_kcse_grade}
+                          {program.kcse_grade_is_estimated && <span className="opacity-70"> (est.)</span>}
                         </span>
                       </div>
                       <div className="text-gray-500 text-xs mb-2">{program.institution.name}</div>
