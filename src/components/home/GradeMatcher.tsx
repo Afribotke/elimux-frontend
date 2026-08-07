@@ -67,7 +67,7 @@ export default function GradeMatcher() {
           name,
           minimum_kcse_grade,
           duration,
-          category,
+          category:program_categories ( name ),
           institutions ( name, location, country )
         `)
         .lte('minimum_kcse_grade_numeric', studentNumeric)
@@ -86,7 +86,7 @@ export default function GradeMatcher() {
           name: item.name,
           minimum_kcse_grade: item.minimum_kcse_grade,
           duration: item.duration || 'N/A',
-          category: item.category || 'General',
+          category: item.category?.name || 'General',
           institution: {
             name: item.institutions?.name || 'Unknown Institution',
             location: item.institutions?.location || 'N/A',
