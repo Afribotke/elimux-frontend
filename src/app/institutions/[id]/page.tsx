@@ -6,6 +6,7 @@ import ProgramCard from '@/components/ProgramCard'
 import DetailActions from '@/components/DetailActions'
 import TrackPageView from '@/components/TrackPageView'
 import AccreditationStatusBadge from '@/components/AccreditationStatusBadge'
+import TvetaBadge from '@/components/TvetaBadge'
 import BackButton from '@/components/BackButton'
 import Breadcrumbs from '@/components/Breadcrumbs'
 import { ReviewsSection } from '@/components/ReviewsSection'
@@ -115,11 +116,19 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
                   <h1 className="text-2xl md:text-3xl font-bold text-foreground">{institution.name}</h1>
                   {institution.is_verified && <CheckCircle className="w-6 h-6 text-success flex-shrink-0" />}
                 </div>
+
                 <DetailActions
                   itemId={institution.id}
                   itemType="institution"
                   name={institution.name}
                   description={institution.description}
+                />
+              </div>
+
+              <div className="mb-3">
+                <TvetaBadge
+                  registrationNumber={institution.tveta_registration_number}
+                  accredited={institution.tveta_accredited}
                 />
               </div>
 

@@ -878,6 +878,20 @@ export function rejectTveta(id: string, adminKey: string) {
   return request<{ success: boolean }>(`/api/tveta/reject/${id}`, { method: 'POST' }, adminKey)
 }
 
+// Public TVETA lookup (no admin key) - used by /verify-college
+export interface TvetaPublicSearchResult {
+  id: string
+  name: string
+  registrationNumber: string | null
+  accredited: boolean
+  category: string | null
+  county: string | null
+}
+
+export function searchTvetaPublic(q: string) {
+  return request<{ data: TvetaPublicSearchResult[] }>(`/api/tveta/public-search${buildQuery({ q })}`)
+}
+
 // Scholarships
 
 export interface ScholarshipRow {
