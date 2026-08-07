@@ -67,7 +67,8 @@ export default function ShareResultsModal({ isOpen, onClose, programs, query }: 
     const url = await ensureShareLink()
     if (!url) return
     trackEvent('share', { platform: 'whatsapp', url, item_type: 'search_results' })
-    window.open(`https://wa.me/?text=${encodeURIComponent(`${summaryText}\n${url}`)}`, '_blank', 'noopener,noreferrer')
+    const message = `Hi, I found these programs on ElimuX and wanted to share them with you. Please check this link:\n${summaryText}\n${url}`
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer')
   }
 
   async function handleEmail() {
@@ -168,7 +169,7 @@ export default function ShareResultsModal({ isOpen, onClose, programs, query }: 
             className="flex items-center gap-3 px-4 py-3 rounded-xl bg-elimux-dark border border-border text-foreground hover:border-primary-500/50 transition-all disabled:opacity-50"
           >
             <MessageCircle className="w-5 h-5 text-primary-400 flex-shrink-0" />
-            <span className="text-sm font-medium">Share on WhatsApp</span>
+            <span className="text-sm font-medium">Share with Parent</span>
           </button>
 
           <button
