@@ -3,10 +3,12 @@ import { createClient } from "@supabase/supabase-js"
 import { createClient as createServerSupabaseClient } from "@/lib/supabase/server"
 import { randomBytes } from "crypto"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+  )
+}
 
 function generateToken() {
   return randomBytes(32).toString("hex")
@@ -20,6 +22,7 @@ function generateToken() {
 // to getUser(token) sends GoTrue a malformed token, which always failed
 // here as "Invalid session" regardless of whether the user was logged in.
 async function verifyAdminAuth() {
+  const supabase = getSupabase()
   const authClient = await createServerSupabaseClient()
 
   let authResult
@@ -57,6 +60,8 @@ async function verifyAdminAuth() {
 }
 
 export async function POST(request: Request) {
+  const supabase = getSupabase()
+
   // AUTH GUARD: Only admins can bulk upload employers
   const auth = await verifyAdminAuth()
   if (!auth.authorized) {
