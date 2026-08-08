@@ -17,6 +17,7 @@ import FAQSection from '@/components/home/FAQSection'
 import FinalCTA from '@/components/home/FinalCTA'
 import { GraduationCap, Building2, Globe, Sparkles, TrendingUp, Award, ArrowRight } from 'lucide-react'
 import NewHomePage from '@/components/home/NewHomePage'
+import GradeSearch from '@/components/grade-search/GradeSearch'
 
 const EXAMPLE_SEARCHES = ['Computer Science in Kenya', 'Business Administration', 'Engineering']
 
@@ -149,6 +150,10 @@ function CurrentHome() {
             </Link>
           </div>
         </div>
+      </section>
+
+      <section className='py-12 md:py-16 px-4 bg-background'>
+        <GradeSearch />
       </section>
 
       <TrustBar />

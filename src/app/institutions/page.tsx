@@ -8,24 +8,14 @@ import { Building2 } from 'lucide-react'
 export const revalidate = 60
 
 export default async function InstitutionsPage() {
-  const [{ data: institutions }, { data: featuredData }] = await Promise.all([
-    supabase
-      .from('institutions')
-      .select(
-        '*, type:institution_types(name, icon), country:countries(name, flag_emoji), accreditations:institution_accreditations(accreditation_status)'
-      )
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .limit(24),
-    supabase
-      .from('institutions')
-      .select(
-        '*, type:institution_types(name, icon), country:countries(name, flag_emoji), accreditations:institution_accreditations(accreditation_status)'
-      )
-      .eq('is_active', true)
-      .eq('is_featured', true)
-      .limit(4),
-  ])
+  const { data: featuredData } = await supabase
+    .from('institutions')
+    .select(
+      '*, type:institution_types(name, icon), country:countries(name, flag_emoji), accreditations:institution_accreditations(accreditation_status)'
+    )
+    .eq('is_active', true)
+    .eq('is_featured', true)
+    .limit(4)
 
   const featuredInstitutions = featuredData || []
 
@@ -70,7 +60,7 @@ export default async function InstitutionsPage() {
         </div>
       )}
 
-      <InstitutionsBrowser initialInstitutions={institutions || []} />
+      <InstitutionsBrowser />
     </main>
   )
 }
