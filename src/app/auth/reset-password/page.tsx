@@ -25,41 +25,57 @@ function ResetPasswordForm() {
     setError('')
 
     if (!code) {
-      setError('This reset link is invalid or has expired.')
+      setError('Invalid or expired password reset link. Please request a new one.')
       return
     }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.')
-      return
-    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match.')
       return
     }
 
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
+
     setLoading(true)
 
-    // Exchanged here (submit time) rather than on page load: exchanging on
-    // mount lets an email security scanner's link-prefetch silently consume
-    // the single-use code before the real user clicks it, which then makes
-    // a legitimate click fail with "invalid or expired".
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-    if (exchangeError) {
-      setError('This reset link is invalid or has expired. Please request a new one.')
-      setLoading(false)
-      return
+    // 20-second timeout wrapper — Supabase usage limits cause hangs
+    const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {
+      return Promise.race([
+        promise,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error('Request timed out. Please try again in a moment.')), ms)
+        ),
+      ])
     }
 
-    const { error: updateError } = await supabase.auth.updateUser({ password })
-    if (updateError) {
-      setError(updateError.message)
-      setLoading(false)
-      return
-    }
+    try {
+      // Exchanged here (submit time) rather than on page load: exchanging on
+      // mount lets an email security scanner's link-prefetch silently consume
+      // the single-use code before the real user clicks it, which then makes
+      // a legitimate click fail with "invalid or expired".
+      const { error: exchangeError } = await withTimeout(
+        supabase.auth.exchangeCodeForSession(code),
+        20000
+      )
+      if (exchangeError) throw exchangeError
 
-    setDone(true)
-    await supabase.auth.signOut()
-    setTimeout(() => router.push('/auth/login'), 3000)
+      const { error: updateError } = await withTimeout(
+        supabase.auth.updateUser({ password }),
+        20000
+      )
+      if (updateError) throw updateError
+
+      setDone(true)
+      await supabase.auth.signOut()
+      setTimeout(() => router.push('/auth/login'), 3000)
+    } catch (err: any) {
+      setError(err.message || 'Failed to reset password. Please request a new link.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (done) {
