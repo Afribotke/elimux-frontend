@@ -98,9 +98,14 @@ function LoginForm() {
             </div>
 
             <div>
-              <label htmlFor="password" className="text-sm text-muted mb-1 block flex items-center gap-2">
-                <Lock className="w-4 h-4" /> Password
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="password" className="text-sm text-muted flex items-center gap-2">
+                  <Lock className="w-4 h-4" /> Password
+                </label>
+                <Link href="/auth/forgot-password" className="text-sm text-primary-400 hover:text-primary-300">
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 id="password"
                 name="password"
