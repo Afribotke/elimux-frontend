@@ -4,11 +4,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AdminKeyProvider, useAdminKey } from '@/components/admin/AdminKeyContext'
-import { LayoutDashboard, Building2, GraduationCap, MessageSquare, Users, BarChart3, Lock, KeyRound, Tag, Megaphone, Rocket, Award, DollarSign, Search, Bot, Menu, X, Settings, CreditCard, Inbox, Briefcase, Shield, LogOut } from 'lucide-react'
+import { LayoutDashboard, Building2, GraduationCap, MessageSquare, Users, BarChart3, Lock, KeyRound, Tag, Megaphone, Rocket, Award, DollarSign, Search, Bot, Menu, X, Settings, CreditCard, Inbox, Briefcase, Shield, LogOut, CheckCircle2 } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/admin/institutions', label: 'Institutions', icon: Building2, exact: false },
+  { href: '/admin/institution-claims', label: 'Institution Claims', icon: CheckCircle2, exact: false },
   { href: '/admin/programs', label: 'Programs', icon: GraduationCap, exact: false },
   { href: '/admin/pricing', label: 'Pricing', icon: Tag, exact: false },
   { href: '/admin/reviews', label: 'Reviews', icon: MessageSquare, exact: false },
