@@ -78,11 +78,14 @@ export default function UniversityPlacementsPage() {
       .maybeSingle();
 
     if (inst) {
+      // 'pending' isn't a legal attachment_status value (CHECK constraint
+      // allows not_placed/applied/interview/accepted/rejected/completed) -
+      // 'not_placed' is the actual "eligible, not yet assigned" state.
       const { data: eligibleData } = await supabase
         .from('attachment_eligible_students')
         .select('*')
         .eq('institution_id', inst.id)
-        .eq('attachment_status', 'pending');
+        .eq('attachment_status', 'not_placed');
       setStudents(eligibleData || []);
     }
 
