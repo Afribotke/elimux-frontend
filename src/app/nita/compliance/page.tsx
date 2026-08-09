@@ -38,7 +38,7 @@ export default function NitaCompliancePage() {
               {flags.map(flag => (
                 <tr key={flag.id} className="border-t">
                   <td className="px-4 py-3 font-medium">{flag.employer?.company_name}</td>
-                  <td className="px-4 py-3 text-gray-500">{flag.employer?.nita_registration_number || 'N/A'}</td>
+                  <td className="px-4 py-3 text-gray-500">{flag.employer?.nita_employer_number || 'N/A'}</td>
                   <td className="px-4 py-3 capitalize">{flag.flag_type.replace('_', ' ')}</td>
                   <td className="px-4 py-3"><SeverityBadge severity={flag.severity} /></td>
                   <td className="px-4 py-3 text-gray-500">{new Date(flag.created_at).toLocaleDateString()}</td>
