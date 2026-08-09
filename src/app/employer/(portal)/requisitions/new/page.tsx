@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+const ROLES_ALLOWED_TO_CREATE = ['super_admin', 'admin', 'manager'];
+
 export default function NewRequisitionPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -39,14 +41,36 @@ export default function NewRequisitionPage() {
   });
 
   const [departments, setDepartments] = useState<{id: string; name: string}[]>([]);
+  const [role, setRole] = useState<string | null>(null);
+  const [roleChecked, setRoleChecked] = useState(false);
 
-  // Load departments on mount
+  const canCreate = role !== null && ROLES_ALLOWED_TO_CREATE.includes(role);
+
+  // Load departments and the current user's employer role on mount
   useEffect(() => {
     async function loadDepts() {
       const { data } = await supabase.from('employer_departments').select('id, name');
       if (data) setDepartments(data);
     }
+
+    async function loadRole() {
+      const { data: { user } } = await getUserWithTimeout();
+      if (!user) {
+        setRoleChecked(true);
+        return;
+      }
+      const { data: teamMember } = await supabase
+        .from('employer_team_members')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .single();
+      setRole(teamMember?.role ?? null);
+      setRoleChecked(true);
+    }
+
     loadDepts();
+    loadRole();
   }, []);
 
   const addField = (field: 'requirements' | 'skills_required') => {
@@ -67,6 +91,12 @@ export default function NewRequisitionPage() {
 
   const handleSubmit = async (e: React.FormEvent, status: 'draft' | 'pending_approval') => {
     e.preventDefault();
+
+    if (!canCreate) {
+      setError('You do not have permission to create requisitions. Contact an employer admin or manager.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -137,6 +167,12 @@ export default function NewRequisitionPage() {
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
           {error}
+        </div>
+      )}
+
+      {roleChecked && !canCreate && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+          Only employer admins and managers can create requisitions. You can view existing requisitions, but you won't be able to submit this form.
         </div>
       )}
 
@@ -351,7 +387,7 @@ export default function NewRequisitionPage() {
           <button
             type="button"
             onClick={e => handleSubmit(e, 'draft')}
-            disabled={loading}
+            disabled={loading || !canCreate}
             className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             Save as Draft
@@ -359,7 +395,7 @@ export default function NewRequisitionPage() {
           <button
             type="button"
             onClick={e => handleSubmit(e, 'pending_approval')}
-            disabled={loading}
+            disabled={loading || !canCreate}
             className="flex-1 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
