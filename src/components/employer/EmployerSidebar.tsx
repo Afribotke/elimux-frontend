@@ -11,6 +11,7 @@ import {
   Building2,
   Briefcase,
   ClipboardList,
+  GraduationCap,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -24,6 +25,7 @@ const navItems = [
   { href: '/employer/team', label: 'Team', icon: Users },
   { href: '/employer/vacancies', label: 'Post Internships', icon: Briefcase },
   { href: '/employer/applications', label: 'Applications', icon: ClipboardList },
+  { href: '/employer/attachments', label: 'Attachment Students', icon: GraduationCap },
   { href: '/employer/settings', label: 'Settings', icon: Settings },
 ];
 

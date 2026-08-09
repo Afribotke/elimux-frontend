@@ -1,134 +1,224 @@
-"use client";
+'use client';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { getUserWithTimeout } from "@/lib/client-auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import { BookOpen, Plus, CheckCircle, Clock } from "lucide-react";
+const supabase = createClient();
+
+interface Attachment {
+  id: string;
+  status: string;
+  start_date: string;
+  end_date: string | null;
+  department: string | null;
+  supervisor_name: string | null;
+  supervisor_email: string | null;
+  evaluation_score: number | null;
+  certificate_issued: boolean;
+  university: { name: string } | null;
+  employer: { company_name: string } | null;
+}
+
+interface LogbookEntry {
+  id: string;
+  entry_date: string;
+  week_number: number | null;
+  tasks_completed: string;
+  skills_learned: string | null;
+  challenges_faced: string | null;
+  supervisor_comments: string | null;
+  hours_worked: number;
+}
 
 export default function LogbookPage() {
-  const supabase = createClient();
-  const [entries, setEntries] = useState<any[]>([]);
+  const router = useRouter();
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [selectedAttachment, setSelectedAttachment] = useState<Attachment | null>(null);
+  const [logbookEntries, setLogbookEntries] = useState<LogbookEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    entry_date: new Date().toISOString().split("T")[0],
-    week_number: 1,
-    tasks_completed: "",
-    skills_learned: "",
-    challenges_faced: "",
-    supervisor_name: "",
-    hours_worked: 8,
-  });
+  const [showEntryForm, setShowEntryForm] = useState(false);
+
+  useEffect(() => { fetchAttachments(); }, []);
+
+  async function fetchAttachments() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { router.push('/login'); return; }
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/attachments`, {
+      headers: { Authorization: `Bearer ${session.access_token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setAttachments(data.data || []);
+      if (data.data?.length > 0) setSelectedAttachment(data.data[0]);
+    }
+    setLoading(false);
+  }
+
+  async function fetchLogbook(attachmentId: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/attachments/${attachmentId}/logbook`, {
+      headers: { Authorization: `Bearer ${session.access_token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setLogbookEntries(data.data || []);
+    }
+  }
 
   useEffect(() => {
-    fetchEntries();
-  }, []);
+    if (selectedAttachment) fetchLogbook(selectedAttachment.id);
+  }, [selectedAttachment]);
 
-  const fetchEntries = async () => {
-    const { data: { user } } = await getUserWithTimeout();
-    if (!user) return;
-    const { data: profile } = await supabase.from("student_profiles").select("id").eq("user_id", user.id).single();
-    if (!profile) return;
+  async function submitEntry(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!selectedAttachment) return;
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
 
-    const { data } = await supabase
-      .from("logbook_entries")
-      .select("*")
-      .eq("student_id", profile.id)
-      .order("entry_date", { ascending: false });
-    setEntries(data || []);
-    setLoading(false);
-  };
-
-  const handleSubmit = async () => {
-    const { data: { user } } = await getUserWithTimeout();
-    if (!user) return;
-    const { data: profile } = await supabase.from("student_profiles").select("id").eq("user_id", user.id).single();
-    if (!profile) return;
-
-    const { error } = await supabase.from("logbook_entries").insert({
-      student_id: profile.id,
-      ...form,
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/attachments/${selectedAttachment.id}/logbook`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
+        entry_date: fd.get('entry_date'),
+        week_number: fd.get('week_number') ? parseInt(fd.get('week_number') as string) : null,
+        tasks_completed: fd.get('tasks_completed'),
+        skills_learned: fd.get('skills_learned'),
+        challenges_faced: fd.get('challenges_faced'),
+        hours_worked: fd.get('hours_worked') ? parseInt(fd.get('hours_worked') as string) : 0
+      })
     });
-
-    if (error) toast.error("Failed to add entry");
-    else {
-      toast.success("Logbook entry added");
-      setShowForm(false);
-      fetchEntries();
+    if (res.ok) {
+      setShowEntryForm(false);
+      form.reset();
+      fetchLogbook(selectedAttachment.id);
     }
-  };
+  }
 
-  const totalHours = entries.reduce((sum, e) => sum + (e.hours_worked || 0), 0);
+  if (loading) return <div className="p-8">Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-muted py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Attachment Logbook</h1>
-            <p className="text-muted-foreground">Record your daily industrial attachment activities.</p>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold mb-2">My Attachment</h1>
+        <p className="text-gray-500 mb-6">View placement details and submit logbook entries</p>
+
+        {attachments.length === 0 ? (
+          <div className="bg-white rounded-xl shadow p-8 text-center">
+            <p className="text-gray-500">You have no active attachment placements.</p>
           </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-emerald-600">{totalHours.toFixed(1)}h</p>
-            <p className="text-sm text-muted-foreground">Total Hours Logged</p>
-          </div>
-        </div>
-
-        <Button className="mb-6 bg-emerald-600 hover:bg-emerald-700" onClick={() => setShowForm(!showForm)}>
-          <Plus className="w-4 h-4 mr-2" />{showForm ? "Cancel" : "Add Entry"}
-        </Button>
-
-        {showForm && (
-          <Card className="mb-6">
-            <CardHeader><CardTitle>New Logbook Entry</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div><Label>Date</Label><Input type="date" value={form.entry_date} onChange={(e) => setForm({ ...form, entry_date: e.target.value })} /></div>
-                <div><Label>Week #</Label><Input type="number" value={form.week_number} onChange={(e) => setForm({ ...form, week_number: parseInt(e.target.value) || 1 })} /></div>
-                <div><Label>Hours Worked</Label><Input type="number" step="0.5" value={form.hours_worked} onChange={(e) => setForm({ ...form, hours_worked: parseFloat(e.target.value) || 0 })} /></div>
-              </div>
-              <div><Label>Tasks Completed</Label><Textarea value={form.tasks_completed} onChange={(e) => setForm({ ...form, tasks_completed: e.target.value })} /></div>
-              <div><Label>Skills Learned</Label><Textarea value={form.skills_learned} onChange={(e) => setForm({ ...form, skills_learned: e.target.value })} /></div>
-              <div><Label>Challenges Faced</Label><Textarea value={form.challenges_faced} onChange={(e) => setForm({ ...form, challenges_faced: e.target.value })} /></div>
-              <div><Label>Supervisor Name</Label><Input value={form.supervisor_name} onChange={(e) => setForm({ ...form, supervisor_name: e.target.value })} /></div>
-              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleSubmit}>Save Entry</Button>
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="space-y-4">
-          {entries.map((entry) => (
-            <Card key={entry.id}>
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <BookOpen className="w-5 h-5 text-emerald-600" />
-                    <span className="font-medium">Week {entry.week_number}</span>
-                    <span className="text-muted-foreground">{new Date(entry.entry_date).toLocaleDateString()}</span>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Attachment Details */}
+            <div className="lg:col-span-1 space-y-4">
+              {attachments.map(att => (
+                <div
+                  key={att.id}
+                  onClick={() => setSelectedAttachment(att)}
+                  className={`bg-white rounded-xl shadow p-4 cursor-pointer border-2 ${selectedAttachment?.id === att.id ? 'border-blue-500' : 'border-transparent'}`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      att.status === 'active' ? 'bg-green-100 text-green-700' :
+                      att.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>{att.status}</span>
+                    {att.certificate_issued && <span className="text-xs text-purple-600 font-medium">📜 Certificate</span>}
                   </div>
-                  {entry.is_approved ? (
-                    <Badge className="bg-emerald-100 text-emerald-700"><CheckCircle className="w-3 h-3 mr-1" />Approved</Badge>
-                  ) : (
-                    <Badge variant="outline"><Clock className="w-3 h-3 mr-1" />Pending</Badge>
+                  <h3 className="font-semibold">{att.employer?.company_name || 'Unknown Employer'}</h3>
+                  <p className="text-sm text-gray-500">{att.university?.name || 'Unknown University'}</p>
+                  <p className="text-sm text-gray-400 mt-1">{att.start_date} → {att.end_date || 'Ongoing'}</p>
+                  {att.evaluation_score !== null && <p className="text-sm text-blue-600 mt-1">Score: {att.evaluation_score}/100</p>}
+                </div>
+              ))}
+            </div>
+
+            {/* Logbook */}
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-xl shadow p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Logbook Entries</h2>
+                  {selectedAttachment?.status === 'active' && (
+                    <button
+                      onClick={() => setShowEntryForm(!showEntryForm)}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
+                    >
+                      + Add Entry
+                    </button>
                   )}
                 </div>
-                <p className="text-foreground mb-2"><strong>Tasks:</strong> {entry.tasks_completed}</p>
-                {entry.skills_learned && <p className="text-muted-foreground text-sm mb-1"><strong>Skills:</strong> {entry.skills_learned}</p>}
-                {entry.challenges_faced && <p className="text-muted-foreground text-sm mb-1"><strong>Challenges:</strong> {entry.challenges_faced}</p>}
-                <p className="text-sm text-muted-foreground mt-2">Hours: {entry.hours_worked} | Supervisor: {entry.supervisor_name || "N/A"}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+
+                {showEntryForm && (
+                  <form onSubmit={submitEntry} className="bg-gray-50 rounded-lg p-4 mb-6 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="entry_date" required className="w-full px-3 py-2 border rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Week #</label>
+                        <input type="number" name="week_number" className="w-full px-3 py-2 border rounded-lg" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tasks Completed *</label>
+                      <textarea name="tasks_completed" required rows={3} className="w-full px-3 py-2 border rounded-lg" placeholder="Describe what you worked on today..." />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Skills Learned</label>
+                      <textarea name="skills_learned" rows={2} className="w-full px-3 py-2 border rounded-lg" placeholder="New skills or knowledge gained..." />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Challenges Faced</label>
+                      <textarea name="challenges_faced" rows={2} className="w-full px-3 py-2 border rounded-lg" placeholder="Any difficulties encountered..." />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Hours Worked</label>
+                      <input type="number" name="hours_worked" min="0" className="w-full px-3 py-2 border rounded-lg" placeholder="8" />
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Submit Entry</button>
+                      <button type="button" onClick={() => setShowEntryForm(false)} className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
+                    </div>
+                  </form>
+                )}
+
+                <div className="space-y-3">
+                  {logbookEntries.length === 0 ? (
+                    <p className="text-gray-400 text-center py-8">No logbook entries yet. Start by adding your first entry above.</p>
+                  ) : (
+                    logbookEntries.map(entry => (
+                      <div key={entry.id} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <span className="font-medium">{new Date(entry.entry_date).toLocaleDateString()}</span>
+                            {entry.week_number && <span className="text-sm text-gray-500 ml-2">Week {entry.week_number}</span>}
+                          </div>
+                          <span className="text-sm text-gray-400">{entry.hours_worked}h</span>
+                        </div>
+                        <p className="text-sm text-gray-700 mb-2">{entry.tasks_completed}</p>
+                        {entry.skills_learned && <p className="text-xs text-green-600 mb-1">Skills: {entry.skills_learned}</p>}
+                        {entry.challenges_faced && <p className="text-xs text-amber-600 mb-1">Challenges: {entry.challenges_faced}</p>}
+                        {entry.supervisor_comments && (
+                          <div className="mt-2 bg-blue-50 rounded p-2">
+                            <p className="text-xs text-blue-700 font-medium">Supervisor: {entry.supervisor_comments}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
