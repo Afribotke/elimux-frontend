@@ -11,10 +11,33 @@ export default function RequisitionsListPage() {
   const [loading, setLoading] = useState(true);
   const [requisitions, setRequisitions] = useState<any[]>([]);
   const [teamMember, setTeamMember] = useState<any>(null);
+  const [actioningId, setActioningId] = useState<string | null>(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadData();
   }, []);
+
+  async function actOnRequisition(id: string, action: 'approve' | 'reject') {
+    setError('');
+    setActioningId(id);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setActioningId(null); return; }
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/requisitions/${id}/${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({})
+    });
+
+    if (res.ok) {
+      await loadData();
+    } else {
+      const body = await res.json().catch(() => ({}));
+      setError(body.error || `Failed to ${action} requisition`);
+    }
+    setActioningId(null);
+  }
 
   async function loadData() {
     const { data: { user } } = await getUserWithTimeout();
@@ -41,6 +64,7 @@ export default function RequisitionsListPage() {
   }
 
   const canCreate = teamMember && ['super_admin', 'admin', 'manager'].includes(teamMember.role);
+  const canApprove = teamMember && ['super_admin', 'admin'].includes(teamMember.role);
 
   if (loading) {
     return (
@@ -52,6 +76,11 @@ export default function RequisitionsListPage() {
 
   return (
     <div>
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          {error}
+        </div>
+      )}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Requisitions</h1>
@@ -102,10 +131,24 @@ export default function RequisitionsListPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <button className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Eye className="w-4 h-4" /></button>
-                      {teamMember?.role === 'super_admin' && req.status === 'pending_approval' && (
+                      {canApprove && req.status === 'pending_approval' && (
                         <>
-                          <button className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"><CheckCircle2 className="w-4 h-4" /></button>
-                          <button className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><XCircle className="w-4 h-4" /></button>
+                          <button
+                            onClick={() => actOnRequisition(req.id, 'approve')}
+                            disabled={actioningId === req.id}
+                            title="Approve and post as a live internship"
+                            className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            {actioningId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                          </button>
+                          <button
+                            onClick={() => actOnRequisition(req.id, 'reject')}
+                            disabled={actioningId === req.id}
+                            title="Reject"
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
                         </>
                       )}
                     </div>
