@@ -1250,3 +1250,60 @@ export function unsubscribePush(deviceId: string) {
     body: JSON.stringify({ device_id: deviceId }),
   })
 }
+
+// Admin dashboard
+
+export interface AdminDashboardStats {
+  totals: {
+    institutions: number
+    programs: number
+    employers: number
+    internships: number
+    reviews: number
+    attachments: number
+    open_nita_flags: number
+  }
+  growth_30d: {
+    institutions: number
+    employers: number
+    internships: number
+  }
+}
+
+export function getAdminDashboardStats(adminKey: string) {
+  return request<{ data: AdminDashboardStats }>('/api/admin/dashboard/stats', {}, adminKey)
+}
+
+export interface AdminAuditLogEntry {
+  id: string
+  action: string
+  entity: string
+  entity_type: string
+  user_id: string | null
+  user_email: string | null
+  metadata: Record<string, unknown> | null
+  created_at: string
+}
+
+export function listAdminAuditLog(params: { page?: number; limit?: number } = {}, adminKey: string) {
+  return request<{ data: AdminAuditLogEntry[]; total: number; page: number }>(
+    `/api/admin/dashboard/audit-log${buildQuery(params)}`,
+    {},
+    adminKey
+  )
+}
+
+export interface AdminNitaFlag {
+  id: string
+  employer_id: string | null
+  flag_type: string
+  flag_reason: string
+  severity: string | null
+  resolved: boolean
+  created_at: string
+  employer: { id: string; company_name: string; nita_employer_number: string | null; user_id: string | null } | null
+}
+
+export function listAdminNitaFlags(adminKey: string) {
+  return request<{ data: AdminNitaFlag[] }>('/api/admin/dashboard/nita', {}, adminKey)
+}

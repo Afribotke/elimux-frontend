@@ -41,6 +41,7 @@ import {
   AlertCircle,
   DollarSign,
   PieChart,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -150,6 +151,7 @@ const NAV_SECTIONS: NavSection[] = [
     icon: Monitor,
     items: [
       { label: "Overview", href: "/admin", icon: LayoutDashboard },
+      { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
       { label: "Analytics", href: "/admin/analytics", icon: TrendingUp },
       { label: "Searches", href: "/admin/searches", icon: Search },
       { label: "Institution Performance", href: "/admin/institutions-performance", icon: BarChart3 },
@@ -203,6 +205,8 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "TVETA Scraper", href: "/admin/tveta-scraper", icon: Monitor },
       { label: "Accreditation", href: "/admin/accreditation", icon: Award },
       { label: "Internships", href: "/admin/internships", icon: Briefcase },
+      { label: "NITA Compliance", href: "/admin/nita", icon: ShieldAlert },
+      { label: "Audit Log", href: "/admin/audit", icon: FileText },
       { label: "Settings", href: "/admin/settings", icon: Settings },
     ],
   },
