@@ -1,76 +1,121 @@
-import { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+'use client';
 
-export const metadata: Metadata = {
-  title: "NITA Dashboard | Elimux",
-  description: "NITA registered employers and inspections",
-};
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
-export const dynamic = "force-dynamic";
+const supabase = createClient();
 
-export default async function NitaDashboardPage() {
-  const supabase = await createClient();
+interface DashboardStats {
+  summary: {
+    total_attachments: number; active_attachments: number; completed_attachments: number;
+    completion_rate: number; avg_evaluation_score: number; total_employers: number;
+    nita_registered_employers: number; compliance_rate: number; open_flags: number;
+  };
+  open_flags: any[];
+}
 
-  // Without this race, a slow/hung Supabase auth API leaves this server
-  // component - and the page request rendering it - stuck forever.
-  const authResult = await Promise.race([
-    supabase.auth.getUser(),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Auth service timeout")), 8000)
-    )
-  ]);
-  const { data: { user } } = authResult as any;
+export default function NitaDashboardPage() {
+  const router = useRouter();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  if (!user) {
-    redirect("/auth/login?redirect=/nita/dashboard");
+  useEffect(() => { checkAuth(); }, []);
+
+  async function checkAuth() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { router.push('/nita/login'); return; }
+
+    const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id).single();
+    if (!['nita_admin', 'elimux_admin', 'admin'].includes(roleData?.role)) {
+      router.push('/'); return;
+    }
+    fetchDashboard(session.access_token);
   }
 
-  const { data: userData } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  const role = userData?.role || user.user_metadata?.role || "student";
-  if (role !== "admin" && role !== "super_admin" && role !== "nita_admin") {
-    redirect("/dashboard");
+  async function fetchDashboard(token: string) {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/nita/dashboard`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error('Failed to load dashboard');
+      setStats(await res.json());
+    } catch (err: any) { setError(err.message); } finally { setLoading(false); }
   }
 
-  const { data: employers } = await supabase
-    .from("employers")
-    .select("*, inspections:nita_inspections(*)")
-    .eq("nita_registered", true)
-    .order("created_at", { ascending: false });
+  if (loading) return <div className="p-8 text-center">Loading NITA dashboard...</div>;
+  if (error) return <div className="p-8 text-red-600">{error}</div>;
+  if (!stats) return null;
 
+  const s = stats.summary;
   return (
-    <main className="min-h-screen bg-gray-50 p-6 dark:bg-slate-950">
-      <div className="mx-auto max-w-6xl">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">NITA Dashboard</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">NITA registered employers and inspection history.</p>
-        <div className="mt-8">
-          {(!employers || employers.length === 0) ? (
-            <div className="rounded-xl bg-white p-12 text-center shadow-sm dark:bg-slate-900">
-              <p className="text-gray-500 dark:text-gray-400">No NITA registered employers found.</p>
-            </div>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">NITA National Dashboard</h1>
+        <p className="text-gray-500 mb-8">Real-time attachment and compliance intelligence</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <StatCard label="Total Attachments" value={s.total_attachments} color="blue" />
+          <StatCard label="Active Now" value={s.active_attachments} color="green" />
+          <StatCard label="Completed" value={s.completed_attachments} color="purple" />
+          <StatCard label="Completion Rate" value={`${s.completion_rate}%`} color="indigo" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <StatCard label="Total Employers" value={s.total_employers} color="gray" />
+          <StatCard label="NITA Registered" value={s.nita_registered_employers} color="emerald" />
+          <StatCard label="Compliance Rate" value={`${s.compliance_rate}%`} color={s.compliance_rate > 80 ? 'emerald' : 'amber'} />
+          <StatCard label="Open Flags" value={s.open_flags} color={s.open_flags > 0 ? 'red' : 'emerald'} />
+        </div>
+
+        <div className="bg-white rounded-xl shadow p-6 mb-8">
+          <h2 className="text-lg font-semibold mb-4">Open Compliance Flags</h2>
+          {stats.open_flags.length === 0 ? (
+            <p className="text-green-600">All employers are compliant. No flags raised.</p>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {employers.map((e: any) => (
-                <div key={e.id} className="rounded-xl bg-white p-6 shadow-sm dark:bg-slate-900">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{e.company_name}</h3>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{e.nita_registration_number || "No NITA number"}</p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-600 dark:bg-green-900/20 dark:text-green-400">NITA Registered</span>
-                    {e.inspections?.length > 0 && (
-                      <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">{e.inspections.length} Inspections</span>
-                    )}
-                  </div>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr><th className="px-4 py-2 text-left">Employer</th><th className="px-4 py-2 text-left">Flag Type</th><th className="px-4 py-2 text-left">Reason</th><th className="px-4 py-2 text-left">Severity</th></tr>
+                </thead>
+                <tbody>
+                  {stats.open_flags.map((flag: any) => (
+                    <tr key={flag.id} className="border-t">
+                      <td className="px-4 py-2">{flag.employer?.company_name || 'Unknown'}</td>
+                      <td className="px-4 py-2 capitalize">{flag.flag_type.replace('_', ' ')}</td>
+                      <td className="px-4 py-2">{flag.flag_reason}</td>
+                      <td className="px-4 py-2"><SeverityBadge severity={flag.severity} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
+
+        <div className="flex gap-4">
+          <button onClick={() => router.push('/nita/compliance')} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">View Full Compliance Report</button>
+          <button onClick={() => router.push('/nita/reports')} className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900">Export Reports</button>
+        </div>
       </div>
-    </main>
+    </div>
   );
+}
+
+function StatCard({ label, value, color }: { label: string; value: string | number; color: string }) {
+  const colorMap: Record<string, string> = {
+    blue: 'bg-blue-50 text-blue-700', green: 'bg-green-50 text-green-700', purple: 'bg-purple-50 text-purple-700',
+    indigo: 'bg-indigo-50 text-indigo-700', gray: 'bg-gray-50 text-gray-700', emerald: 'bg-emerald-50 text-emerald-700',
+    amber: 'bg-amber-50 text-amber-700', red: 'bg-red-50 text-red-700',
+  };
+  return (
+    <div className={`rounded-xl p-4 ${colorMap[color] || colorMap.gray}`}>
+      <div className="text-2xl font-bold">{value}</div>
+      <div className="text-sm opacity-80">{label}</div>
+    </div>
+  );
+}
+
+function SeverityBadge({ severity }: { severity: string }) {
+  const styles: Record<string, string> = { critical: 'bg-red-100 text-red-700', warning: 'bg-amber-100 text-amber-700', info: 'bg-blue-100 text-blue-700' };
+  return <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[severity] || styles.info}`}>{severity}</span>;
 }
