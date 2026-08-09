@@ -14,6 +14,15 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   manifest: '/manifest.json',
+  icons: {
+    icon: '/icon-192x192.png',
+    apple: '/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'ElimuX',
+  },
   title: {
     default: "ElimuX — Discover Global Education & Career Opportunities",
     template: "%s | ElimuX",
@@ -52,6 +61,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: '#1e40af',
 };
 
 export default function RootLayout({
