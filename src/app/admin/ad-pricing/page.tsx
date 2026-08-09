@@ -22,7 +22,7 @@ export default function AdminAdPricing() {
   const [changed, setChanged] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
-  const ADMIN_KEY = typeof window !== "undefined" ? localStorage.getItem("admin_key") || "" : "";
+  const ADMIN_KEY = typeof window !== "undefined" ? sessionStorage.getItem("elimux-admin-key") || "" : "";
 
   useEffect(() => { fetchSettings(); }, []);
 
