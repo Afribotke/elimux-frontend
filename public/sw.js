@@ -1,5 +1,5 @@
-const STATIC_CACHE = 'elimux-static-v3';
-const API_CACHE = 'elimux-api-v3';
+const STATIC_CACHE = 'elimux-static-v4';
+const API_CACHE = 'elimux-api-v4';
 const CURRENT_CACHES = [STATIC_CACHE, API_CACHE];
 
 const STATIC_ASSETS = [
