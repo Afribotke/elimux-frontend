@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   FileText,
-  PlusCircle,
   Users,
   Settings,
   Building2,
@@ -21,7 +20,6 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { href: '/employer/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/employer/requisitions', label: 'Requisitions', icon: FileText },
-  { href: '/employer/requisitions/new', label: 'New Requisition', icon: PlusCircle },
   { href: '/employer/team', label: 'Team', icon: Users },
   { href: '/employer/vacancies', label: 'Post Internships', icon: Briefcase },
   { href: '/employer/applications', label: 'Applications', icon: ClipboardList },
