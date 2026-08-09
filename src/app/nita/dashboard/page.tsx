@@ -27,8 +27,8 @@ export default function NitaDashboardPage() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { router.push('/nita/login'); return; }
 
-    const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id).single();
-    if (!['nita_admin', 'elimux_admin', 'admin'].includes(roleData?.role)) {
+    const { data: roleRows } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id).in('role', ['nita_admin', 'elimux_admin', 'admin']);
+    if (!roleRows || roleRows.length === 0) {
       router.push('/'); return;
     }
     fetchDashboard(session.access_token);

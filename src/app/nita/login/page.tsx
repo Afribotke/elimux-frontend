@@ -17,8 +17,8 @@ export default function NitaLoginPage() {
     const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
     if (authError || !data.session) { setError(authError?.message || 'Login failed'); setLoading(false); return; }
 
-    const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', data.session.user.id).single();
-    if (!['nita_admin', 'elimux_admin', 'admin'].includes(roleData?.role)) {
+    const { data: roleRows } = await supabase.from('user_roles').select('role').eq('user_id', data.session.user.id).in('role', ['nita_admin', 'elimux_admin', 'admin']);
+    if (!roleRows || roleRows.length === 0) {
       setError('Access denied. NITA admin credentials required.'); await supabase.auth.signOut(); setLoading(false); return;
     }
     router.push('/nita/dashboard');
