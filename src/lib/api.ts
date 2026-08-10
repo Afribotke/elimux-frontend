@@ -1261,6 +1261,7 @@ export interface AdminDashboardStats {
     internships: number
     reviews: number
     attachments: number
+    contact_messages: number
     open_nita_flags: number
   }
   growth_30d: {

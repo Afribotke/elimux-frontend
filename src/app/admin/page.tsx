@@ -11,10 +11,12 @@ import {
   getAnalyticsSearches,
   getAnalyticsRevenue,
   getAnalyticsUsers,
+  getAdminDashboardStats,
   type AnalyticsOverview,
   type SearchTrendPoint,
   type AnalyticsRevenue,
   type AnalyticsUserRow,
+  type AdminDashboardStats,
 } from '@/lib/api'
 import { useAdminKey } from '@/components/admin/AdminKeyContext'
 import InstitutionForm, { type InstitutionFormData } from '@/components/InstitutionForm'
@@ -92,7 +94,6 @@ export default function AdminPage() {
     institutions: 0,
     programs: 0,
     reviews: 0,
-    messages: 0,
     institutionTypes: 0,
     categories: 0,
   })
@@ -148,7 +149,6 @@ export default function AdminPage() {
       { count: institutions },
       { count: programs },
       { count: reviews },
-      { count: messages },
       { count: institutionTypes },
       { count: categories },
     ] = await Promise.all([
@@ -156,7 +156,6 @@ export default function AdminPage() {
       supabase.from('institutions').select('*', { count: 'exact', head: true }),
       supabase.from('programs').select('*', { count: 'exact', head: true }),
       supabase.from('reviews').select('*', { count: 'exact', head: true }),
-      supabase.from('contact_messages').select('*', { count: 'exact', head: true }),
       supabase.from('institution_types').select('*', { count: 'exact', head: true }),
       supabase.from('program_categories').select('*', { count: 'exact', head: true }),
     ])
@@ -166,7 +165,6 @@ export default function AdminPage() {
       institutions: institutions || 0,
       programs: programs || 0,
       reviews: reviews || 0,
-      messages: messages || 0,
       institutionTypes: institutionTypes || 0,
       categories: categories || 0,
     })
@@ -176,6 +174,21 @@ export default function AdminPage() {
   useEffect(() => {
     loadStats()
   }, [])
+
+  // contact_messages has no public RLS policy (by design — submissions contain
+  // PII), so its count can only be read via the backend's service-role key,
+  // gated on the admin key like the rest of the analytics below.
+  const [dashboardStats, setDashboardStats] = useState<AdminDashboardStats | null>(null)
+  const [dashboardStatsLoading, setDashboardStatsLoading] = useState(true)
+
+  useEffect(() => {
+    if (!adminKey) return
+    setDashboardStatsLoading(true)
+    getAdminDashboardStats(adminKey)
+      .then((res) => setDashboardStats(res.data))
+      .catch(() => setDashboardStats(null))
+      .finally(() => setDashboardStatsLoading(false))
+  }, [adminKey])
 
   useEffect(() => {
     if (!adminKey) return
@@ -285,7 +298,12 @@ export default function AdminPage() {
     { icon: Building2, label: 'Institutions', value: stats.institutions, color: 'text-elimux-success' },
     { icon: GraduationCap, label: 'Programs', value: stats.programs, color: 'text-elimux-warning' },
     { icon: Users, label: 'Reviews', value: stats.reviews, color: 'text-primary-400' },
-    { icon: MessageSquare, label: 'Messages', value: stats.messages, color: 'text-elimux-danger' },
+    {
+      icon: MessageSquare,
+      label: 'Messages',
+      value: dashboardStatsLoading ? '…' : (dashboardStats?.totals.contact_messages ?? 0),
+      color: 'text-elimux-danger',
+    },
     { icon: TrendingUp, label: 'Inst. Types', value: stats.institutionTypes, color: 'text-elimux-success' },
     { icon: LayoutDashboard, label: 'Categories', value: stats.categories, color: 'text-elimux-warning' },
   ]
