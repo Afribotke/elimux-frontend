@@ -1446,3 +1446,100 @@ export interface AdminNitaFlag {
 export function listAdminNitaFlags(adminKey: string) {
   return request<{ data: AdminNitaFlag[] }>('/api/admin/dashboard/nita', {}, adminKey)
 }
+
+// ElimuX-owned compliance layer — separate from the NITA flags above.
+// See elimux-sql/37_compliance_layer.sql for the schema and rationale.
+
+export interface ComplianceFlag {
+  id: string
+  employer_id: string
+  flag_type: 'fraud' | 'fake_listing' | 'policy_violation' | 'user_complaint' | 'payment_issue' | 'other'
+  flag_reason: string
+  severity: 'info' | 'warning' | 'high' | 'critical'
+  source: 'admin' | 'user_report' | 'automated'
+  resolved: boolean
+  resolved_by: string | null
+  resolution_notes: string | null
+  resolved_at: string | null
+  created_at: string
+  updated_at: string
+  employer: { id: string; company_name: string; company_email: string } | null
+}
+
+export function listComplianceFlags(
+  adminKey: string,
+  params: { resolved?: boolean; severity?: string; source?: string; limit?: number; offset?: number } = {}
+) {
+  return request<{ data: ComplianceFlag[]; count: number }>(
+    `/api/admin/compliance-flags${buildQuery(params)}`,
+    {},
+    adminKey
+  )
+}
+
+export function createComplianceFlag(
+  payload: { employer_id: string; flag_type: ComplianceFlag['flag_type']; flag_reason: string; severity?: ComplianceFlag['severity']; source?: ComplianceFlag['source'] },
+  adminKey: string
+) {
+  return request<{ data: ComplianceFlag; message: string }>(
+    '/api/admin/compliance-flags',
+    { method: 'POST', body: JSON.stringify(payload) },
+    adminKey
+  )
+}
+
+export function resolveComplianceFlag(
+  id: string,
+  payload: { resolved: boolean; resolution_notes?: string; resolved_by?: string },
+  adminKey: string
+) {
+  return request<{ data: ComplianceFlag; message: string }>(
+    `/api/admin/compliance-flags/${id}`,
+    { method: 'PATCH', body: JSON.stringify(payload) },
+    adminKey
+  )
+}
+
+export interface VerifiedEmployer {
+  id: string
+  employer_id: string
+  verified_by: string | null
+  verification_method: 'document_review' | 'business_registry_check' | 'phone_verification' | 'automated'
+  verification_notes: string | null
+  documents_reviewed: string[]
+  tier: 'standard' | 'premium' | 'verified_partner'
+  verified_at: string
+  expires_at: string | null
+  is_active: boolean
+  created_at: string
+  employer: { id: string; company_name: string; company_email: string; industry: string | null; location_county: string | null } | null
+}
+
+export function listVerifiedEmployers(
+  adminKey: string,
+  params: { employer_id?: string; is_active?: boolean; limit?: number; offset?: number } = {}
+) {
+  return request<{ data: VerifiedEmployer[]; count: number }>(
+    `/api/admin/verified-employers${buildQuery(params)}`,
+    {},
+    adminKey
+  )
+}
+
+export function createVerifiedEmployer(
+  payload: {
+    employer_id: string
+    verification_method: VerifiedEmployer['verification_method']
+    verification_notes?: string
+    documents_reviewed?: string[]
+    tier?: VerifiedEmployer['tier']
+    verified_by?: string
+  },
+  adminKey: string
+) {
+  return request<{ data: VerifiedEmployer; message: string }>(
+    '/api/admin/verified-employers',
+    { method: 'POST', body: JSON.stringify(payload) },
+    adminKey
+  )
+}

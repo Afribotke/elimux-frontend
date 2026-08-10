@@ -206,6 +206,7 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "Accreditation", href: "/admin/accreditation", icon: Award },
       { label: "Internships", href: "/admin/internships", icon: Briefcase },
       { label: "NITA Compliance", href: "/admin/nita", icon: ShieldAlert },
+      { label: "Compliance & Verification", href: "/admin/compliance", icon: Shield },
       { label: "Audit Log", href: "/admin/audit", icon: FileText },
       { label: "Settings", href: "/admin/settings", icon: Settings },
     ],
