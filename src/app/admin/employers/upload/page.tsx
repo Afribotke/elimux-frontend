@@ -1,12 +1,15 @@
 "use client"
 import { useState } from "react"
+import { useAdminKey } from "@/components/admin/AdminKeyContext"
 
 export default function EmployerBulkUploadPage() {
+  const { adminKey } = useAdminKey()
   const [csvText, setCsvText] = useState("")
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
 
   const handleUpload = async () => {
+    if (!adminKey) return
     setLoading(true)
     setResult(null)
     try {
@@ -30,7 +33,7 @@ export default function EmployerBulkUploadPage() {
 
       const res = await fetch("/api/admin/employers/bulk-upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
         body: JSON.stringify({ employers })
       })
       const data = await res.json()

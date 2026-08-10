@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
-import { createClient as createServerSupabaseClient } from "@/lib/supabase/server"
 import { randomBytes } from "crypto"
 
 function getSupabase() {
@@ -14,58 +13,17 @@ function generateToken() {
   return randomBytes(32).toString("hex")
 }
 
-// Helper: verify admin auth from the caller's Supabase session cookie.
-// Must go through the @supabase/ssr server client (anon key + cookie
-// adapter), not a hand-rolled cookie read: by default @supabase/ssr stores
-// the session as a base64url-encoded JSON blob (optionally chunked across
-// multiple cookies), not a raw JWT. Passing that raw cookie value straight
-// to getUser(token) sends GoTrue a malformed token, which always failed
-// here as "Invalid session" regardless of whether the user was logged in.
-async function verifyAdminAuth() {
-  const supabase = getSupabase()
-  const authClient = await createServerSupabaseClient()
-
-  let authResult
-  try {
-    authResult = await Promise.race([
-      authClient.auth.getUser(),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Auth service timeout")), 8000)
-      )
-    ])
-  } catch (raceErr: any) {
-    if (raceErr?.message === "Auth service timeout") {
-      return { authorized: false, error: "Authentication service temporarily unavailable. Please try again.", status: 503 }
-    }
-    throw raceErr
-  }
-  const { data: { user }, error } = authResult as any
-
-  if (error || !user) {
-    return { authorized: false, error: "Invalid session" }
-  }
-
-  const { data: userData } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", user.id)
-    .single()
-
-  const role = userData?.role || user.user_metadata?.role || "student"
-  if (role !== "admin" && role !== "super_admin") {
-    return { authorized: false, error: "Admin access required" }
-  }
-
-  return { authorized: true, userId: user.id }
-}
-
 export async function POST(request: Request) {
   const supabase = getSupabase()
 
-  // AUTH GUARD: Only admins can bulk upload employers
-  const auth = await verifyAdminAuth()
-  if (!auth.authorized) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status || 401 })
+  // AUTH GUARD: same shared admin key the rest of the admin panel uses
+  // (x-admin-key header, checked against the backend's ADMIN_KEY). This
+  // panel authenticates via that shared key, not a Supabase Auth session -
+  // the previous getUser()-based check always failed with "Invalid
+  // session" since no such session is ever established here.
+  const adminKey = request.headers.get("x-admin-key")
+  if (!adminKey || adminKey !== process.env.ADMIN_KEY) {
+    return NextResponse.json({ error: "Invalid admin key" }, { status: 401 })
   }
 
   try {
