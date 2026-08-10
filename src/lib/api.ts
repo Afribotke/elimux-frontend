@@ -440,6 +440,70 @@ export function bulkUploadStudents(
   )
 }
 
+// Admin: employers, students, internships — these use service-role backend
+// endpoints because their tables' RLS only grants access via row ownership
+// or a Supabase Auth admin session (auth.uid()), neither of which this
+// panel has: it authenticates via the shared admin key, not Supabase Auth.
+
+export interface AdminEmployerRow {
+  id: string
+  company_name: string
+  company_email: string | null
+  industry: string | null
+  location_county: string | null
+  verification_status: string
+  is_verified: boolean
+  created_at: string
+}
+
+export async function fetchAdminEmployers(adminKey: string): Promise<AdminEmployerRow[]> {
+  const res = await request<{ success: boolean; data: AdminEmployerRow[] }>('/api/admin/employers', {}, adminKey)
+  return res.data
+}
+
+export async function verifyEmployer(id: string, status: 'approved' | 'rejected' | 'pending', adminKey: string) {
+  return request<{ success: boolean; data: AdminEmployerRow }>(
+    `/api/admin/employers/${id}/verify`,
+    { method: 'PATCH', body: JSON.stringify({ status }) },
+    adminKey
+  )
+}
+
+export interface AdminStudentRow {
+  id: string
+  registration_number: string | null
+  full_name: string
+  email: string | null
+  university_name: string | null
+  course_name: string | null
+  year_of_study: number | null
+  is_university_verified: boolean
+  created_at: string
+}
+
+export async function fetchAdminStudents(adminKey: string): Promise<AdminStudentRow[]> {
+  const res = await request<{ success: boolean; data: AdminStudentRow[] }>('/api/admin/students', {}, adminKey)
+  return res.data
+}
+
+export interface AdminInternshipRow {
+  id: string
+  title: string
+  status: string
+  profession_category: string | null
+  location_county: string | null
+  total_slots: number | null
+  remaining_slots: number | null
+  created_at: string
+  employer: { company_name: string } | null
+  applications: { count: number }[] | null
+}
+
+export async function fetchAdminInternships(adminKey: string): Promise<AdminInternshipRow[]> {
+  const res = await request<{ success: boolean; data: AdminInternshipRow[] }>('/api/admin/internships', {}, adminKey)
+  return res.data
+}
+
 // AI gateway (admin)
 
 export interface AIStatus {

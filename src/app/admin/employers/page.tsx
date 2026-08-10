@@ -1,57 +1,50 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { fetchAdminEmployers, verifyEmployer, type AdminEmployerRow } from '@/lib/api'
+import { useAdminKey } from '@/components/admin/AdminKeyContext'
 import StatCard from '@/components/admin/StatCard'
 import { ArrowLeft, Building2, CheckCircle2, XCircle, Mail } from 'lucide-react'
 
-interface AdminEmployerRow {
-  id: string
-  company_name: string
-  company_email: string | null
-  industry: string | null
-  location_county: string | null
-  verification_status: string
-  is_verified: boolean
-  created_at: string
-}
-
 export default function AdminEmployersPage() {
+  const { adminKey } = useAdminKey()
   const [employers, setEmployers] = useState<AdminEmployerRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function load() {
-      const supabase = createClient()
-      const { data, error: err } = await supabase
-        .from('employers')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (err) setError(err.message)
-      else setEmployers((data || []) as AdminEmployerRow[])
+  const load = useCallback(async () => {
+    if (!adminKey) return
+    setLoading(true)
+    try {
+      const data = await fetchAdminEmployers(adminKey)
+      setEmployers(data)
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load employers')
+    } finally {
       setLoading(false)
     }
+  }, [adminKey])
+
+  useEffect(() => {
     load()
-  }, [])
+  }, [load])
 
   async function updateStatus(id: string, status: 'approved' | 'rejected') {
+    if (!adminKey) return
     setBusyId(id)
-    const supabase = createClient()
-    const { error: err } = await supabase
-      .from('employers')
-      .update({ verification_status: status, is_verified: status === 'approved' })
-      .eq('id', id)
-
-    if (!err) {
+    try {
+      await verifyEmployer(id, status, adminKey)
       setEmployers((prev) =>
         prev.map((e) => (e.id === id ? { ...e, verification_status: status, is_verified: status === 'approved' } : e))
       )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update employer')
+    } finally {
+      setBusyId(null)
     }
-    setBusyId(null)
   }
 
   const verified = employers.filter((e) => e.verification_status === 'approved').length

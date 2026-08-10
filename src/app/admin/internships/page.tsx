@@ -1,43 +1,35 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { fetchAdminInternships, type AdminInternshipRow } from '@/lib/api'
+import { useAdminKey } from '@/components/admin/AdminKeyContext'
 import StatCard from '@/components/admin/StatCard'
 import { ArrowLeft, Briefcase, CheckCircle2, PauseCircle, XCircle } from 'lucide-react'
 
-interface AdminInternshipRow {
-  id: string
-  title: string
-  status: string
-  profession_category: string | null
-  location_county: string | null
-  total_slots: number | null
-  remaining_slots: number | null
-  created_at: string
-  employer: { company_name: string } | null
-  applications: { count: number }[] | null
-}
-
 export default function AdminInternshipsPage() {
+  const { adminKey } = useAdminKey()
   const [internships, setInternships] = useState<AdminInternshipRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function load() {
-      const supabase = createClient()
-      const { data, error: err } = await supabase
-        .from('internships')
-        .select('*, employer:employers(company_name), applications:applications(count)')
-        .order('created_at', { ascending: false })
-
-      if (err) setError(err.message)
-      else setInternships((data || []) as unknown as AdminInternshipRow[])
+  const load = useCallback(async () => {
+    if (!adminKey) return
+    setLoading(true)
+    try {
+      const data = await fetchAdminInternships(adminKey)
+      setInternships(data)
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load internships')
+    } finally {
       setLoading(false)
     }
+  }, [adminKey])
+
+  useEffect(() => {
     load()
-  }, [])
+  }, [load])
 
   const active = internships.filter((i) => i.status === 'active').length
   const draft = internships.filter((i) => i.status === 'draft' || i.status === 'paused').length

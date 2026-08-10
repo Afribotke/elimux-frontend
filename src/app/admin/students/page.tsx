@@ -1,43 +1,35 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { fetchAdminStudents, type AdminStudentRow } from '@/lib/api'
+import { useAdminKey } from '@/components/admin/AdminKeyContext'
 import StatCard from '@/components/admin/StatCard'
 import { ArrowLeft, GraduationCap, CheckCircle2, XCircle } from 'lucide-react'
 
-interface AdminStudentRow {
-  id: string
-  registration_number: string | null
-  full_name: string
-  email: string | null
-  university_name: string | null
-  course_name: string | null
-  year_of_study: number | null
-  is_university_verified: boolean
-  created_at: string
-}
-
 export default function AdminStudentsPage() {
+  const { adminKey } = useAdminKey()
   const [students, setStudents] = useState<AdminStudentRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function load() {
-      const supabase = createClient()
-      const { data, error: err } = await supabase
-        .from('student_profiles')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(200)
-
-      if (err) setError(err.message)
-      else setStudents((data || []) as AdminStudentRow[])
+  const load = useCallback(async () => {
+    if (!adminKey) return
+    setLoading(true)
+    try {
+      const data = await fetchAdminStudents(adminKey)
+      setStudents(data)
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load students')
+    } finally {
       setLoading(false)
     }
+  }, [adminKey])
+
+  useEffect(() => {
     load()
-  }, [])
+  }, [load])
 
   const verified = students.filter((s) => s.is_university_verified).length
 
