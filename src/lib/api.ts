@@ -381,6 +381,65 @@ export function deleteMessage(id: string, adminKey: string) {
   return request<{ data: AdminMessage; message: string }>(`/api/admin/messages/${id}`, { method: 'DELETE' }, adminKey)
 }
 
+export interface PotentialEmployer {
+  id: string
+  company_name: string
+  company_email: string
+  company_phone: string | null
+  industry: string | null
+  website_url: string | null
+  contact_person_name: string | null
+  contact_person_email: string | null
+  contact_person_phone: string | null
+  source: string | null
+  status: 'pending' | 'contacted' | 'approved' | 'rejected'
+  admin_notes: string | null
+  created_at: string
+}
+
+export function listPotentialEmployers(adminKey: string, status = 'all') {
+  return request<{ data: PotentialEmployer[] }>(`/api/admin/potential-employers?status=${encodeURIComponent(status)}`, {}, adminKey)
+}
+
+export function updatePotentialEmployerStatus(
+  id: string,
+  status: PotentialEmployer['status'],
+  adminKey: string,
+  admin_notes?: string
+) {
+  return request<{ data: PotentialEmployer; message: string }>(
+    `/api/admin/potential-employers/${id}`,
+    { method: 'PATCH', body: JSON.stringify({ status, admin_notes }) },
+    adminKey
+  )
+}
+
+export interface BulkStudentUploadResult {
+  success: number
+  failed: number
+  errors: string[]
+}
+
+export function bulkUploadStudents(
+  students: Array<{
+    registration_number: string
+    full_name: string
+    email: string
+    phone?: string
+    university_name?: string
+    course_name?: string
+    course_category?: string
+    year_of_study?: number
+  }>,
+  adminKey: string
+) {
+  return request<BulkStudentUploadResult>(
+    '/api/admin/students/bulk-upload',
+    { method: 'POST', body: JSON.stringify({ students }) },
+    adminKey
+  )
+}
+
 // AI gateway (admin)
 
 export interface AIStatus {

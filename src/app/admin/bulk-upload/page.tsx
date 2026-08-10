@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { bulkUploadStudents, type BulkStudentUploadResult } from "@/lib/api";
+import { useAdminKey } from "@/components/admin/AdminKeyContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,12 +11,13 @@ import { toast } from "sonner";
 import { Upload, FileText, CheckCircle } from "lucide-react";
 
 export default function AdminBulkUploadPage() {
-  const supabase = createClient();
+  const { adminKey } = useAdminKey();
   const [jsonInput, setJsonInput] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [results, setResults] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
+  const [results, setResults] = useState<BulkStudentUploadResult | null>(null);
 
   const handleUpload = async () => {
+    if (!adminKey) return;
     setUploading(true);
     try {
       const students = JSON.parse(jsonInput);
@@ -24,35 +26,11 @@ export default function AdminBulkUploadPage() {
         return;
       }
 
-      let success = 0;
-      let failed = 0;
-      const errors: string[] = [];
-
-      for (const student of students) {
-        const { error } = await supabase.from("student_profiles").upsert({
-          registration_number: student.registration_number,
-          full_name: student.full_name,
-          email: student.email,
-          phone: student.phone,
-          university_name: student.university_name,
-          course_name: student.course_name,
-          course_category: student.course_category,
-          year_of_study: student.year_of_study || 1,
-          is_university_verified: true,
-        }, { onConflict: "registration_number" });
-
-        if (error) {
-          failed++;
-          errors.push(`${student.registration_number}: ${error.message}`);
-        } else {
-          success++;
-        }
-      }
-
-      setResults({ success, failed, errors });
-      toast.success(`Uploaded: ${success} success, ${failed} failed`);
+      const result = await bulkUploadStudents(students, adminKey);
+      setResults(result);
+      toast.success(`Uploaded: ${result.success} success, ${result.failed} failed`);
     } catch (err: any) {
-      toast.error("Invalid JSON: " + err.message);
+      toast.error(err.message || "Invalid JSON");
     } finally {
       setUploading(false);
     }

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useState, useEffect, useCallback } from "react";
+import { listPotentialEmployers, updatePotentialEmployerStatus, type PotentialEmployer } from "@/lib/api";
+import { useAdminKey } from "@/components/admin/AdminKeyContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,26 +10,35 @@ import { toast } from "sonner";
 import { Building2, CheckCircle, XCircle, Mail, Phone } from "lucide-react";
 
 export default function AdminPotentialEmployersPage() {
-  const supabase = createClient();
-  const [employers, setEmployers] = useState<any[]>([]);
+  const { adminKey } = useAdminKey();
+  const [employers, setEmployers] = useState<PotentialEmployer[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const fetchEmployers = useCallback(async () => {
+    if (!adminKey) return;
+    setLoading(true);
+    try {
+      const { data } = await listPotentialEmployers(adminKey);
+      setEmployers(data);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load potential employers");
+    } finally {
+      setLoading(false);
+    }
+  }, [adminKey]);
 
   useEffect(() => {
     fetchEmployers();
-  }, []);
+  }, [fetchEmployers]);
 
-  const fetchEmployers = async () => {
-    const { data } = await supabase.from("potential_employers").select("*").order("created_at", { ascending: false });
-    setEmployers(data || []);
-    setLoading(false);
-  };
-
-  const updateStatus = async (id: string, status: string, notes?: string) => {
-    const { error } = await supabase.from("potential_employers").update({ status, admin_notes: notes }).eq("id", id);
-    if (error) toast.error("Failed to update");
-    else {
+  const updateStatus = async (id: string, status: PotentialEmployer["status"], notes?: string) => {
+    if (!adminKey) return;
+    try {
+      await updatePotentialEmployerStatus(id, status, adminKey, notes);
       toast.success(`Status updated to ${status}`);
       fetchEmployers();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update");
     }
   };
 
