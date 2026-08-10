@@ -56,7 +56,7 @@ export default function EmployerDashboardPage() {
       supabase.from('internship_requisitions').select('status, department_id').eq('employer_id', employerId),
       supabase.from('employer_departments').select('id, name').eq('employer_id', employerId),
       supabase.from('employer_team_members').select('id').eq('employer_id', employerId).eq('is_active', true),
-      supabase.from('employers').select('name, logo_url, verification_status').eq('id', employerId).single(),
+      supabase.from('employers').select('company_name, logo_url, verification_status').eq('id', employerId).single(),
       supabase.from('internship_requisitions').select('*, employer_departments(name)').eq('employer_id', employerId).order('created_at', { ascending: false }).limit(5),
     ]);
 
@@ -93,7 +93,7 @@ export default function EmployerDashboardPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
             <p className="text-gray-500 mt-1">
-              {employer?.name || 'Your Organization'} — {teamMember?.role?.replace('_', ' ')?.toUpperCase()}
+              {employer?.company_name || 'Your Organization'} — {teamMember?.role?.replace('_', ' ')?.toUpperCase()}
             </p>
           </div>
           {employer?.verification_status !== 'approved' && (
