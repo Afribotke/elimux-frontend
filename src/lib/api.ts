@@ -1543,3 +1543,51 @@ export function createVerifiedEmployer(
     adminKey
   )
 }
+
+
+export interface UnassignedStudent {
+  id: string;
+  student_name?: string;
+  registration_number?: string;
+  course?: string;
+  year_of_study?: string;
+  email?: string;
+  phone?: string;
+  created_at: string;
+}
+
+export interface InstitutionOption {
+  id: string;
+  name: string;
+  country?: { name: string } | null;
+}
+
+export async function fetchUnassignedStudents(adminKey: string, offset = 0, limit = 50): Promise<{ data: UnassignedStudent[]; count: number }> {
+  const res = await fetch(`${API_URL}/api/admin/student-assignments/unassigned?offset=${offset}&limit=${limit}`, {
+    headers: { "x-admin-key": adminKey },
+  });
+  if (!res.ok) throw new Error(`Failed to load unassigned students (${res.status})`);
+  return res.json();
+}
+
+export async function fetchInstitutionOptions(adminKey: string): Promise<InstitutionOption[]> {
+  const res = await fetch(`${API_URL}/api/admin/student-assignments/institutions`, {
+    headers: { "x-admin-key": adminKey },
+  });
+  if (!res.ok) throw new Error(`Failed to load institutions (${res.status})`);
+  const json = await res.json();
+  return json.data || [];
+}
+
+export async function assignInstitution(adminKey: string, studentId: string, institutionId: string) {
+  const res = await fetch(`${API_URL}/api/admin/student-assignments/${studentId}/assign`, {
+    method: "PATCH",
+    headers: { "x-admin-key": adminKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ institution_id: institutionId }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Failed to assign (${res.status})`);
+  }
+  return res.json();
+}

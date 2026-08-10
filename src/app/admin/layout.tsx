@@ -189,6 +189,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "All Users", href: "/admin/users", icon: Users },
       { label: "Students", href: "/admin/students", icon: GraduationCap },
+        { label: "Assign Institutions", href: "/admin/student-assignments", icon: Building2 },
       { label: "Employers", href: "/admin/employers", icon: Briefcase },
       { label: "Discover Names", href: "/admin/employers/discover-names", icon: Search },
       { label: "Upload Employers", href: "/admin/employers/upload", icon: Upload },
