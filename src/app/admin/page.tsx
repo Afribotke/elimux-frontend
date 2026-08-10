@@ -24,6 +24,7 @@ import ProgramForm, { type ProgramFormData } from '@/components/ProgramForm'
 import AdminApplications from '@/components/admin/AdminApplications'
 import ProviderStatus from '@/components/admin/ProviderStatus'
 import StatCard from '@/components/admin/StatCard'
+import RecentActivity from '@/components/admin/RecentActivity'
 import LineChart from '@/components/admin/charts/LineChart'
 import { LayoutDashboard, Users, Building2, GraduationCap, MessageSquare, TrendingUp, Shield, Server, CheckCircle2, Settings2, Star, ShieldQuestion, DollarSign, Search, FileCheck2 } from 'lucide-react'
 
@@ -381,6 +382,13 @@ export default function AdminPage() {
           ))}
         </div>
       )}
+
+      <div className='mb-12'>
+        <RecentActivity
+          messages={dashboardStats?.recent.contact_messages ?? []}
+          institutions={dashboardStats?.recent.institutions ?? []}
+        />
+      </div>
 
       <div className='mb-12'>
         <AdminApplications />

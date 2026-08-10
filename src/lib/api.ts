@@ -1269,6 +1269,21 @@ export interface AdminDashboardStats {
     employers: number
     internships: number
   }
+  recent: {
+    contact_messages: Array<{
+      id: string
+      name: string
+      email: string
+      subject: string
+      created_at: string
+    }>
+    institutions: Array<{
+      id: string
+      name: string
+      country: string
+      created_at: string
+    }>
+  }
 }
 
 export function getAdminDashboardStats(adminKey: string) {
