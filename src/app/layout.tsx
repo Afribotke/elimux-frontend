@@ -10,6 +10,7 @@ import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import BackgroundSyncManager from "@/components/BackgroundSyncManager";
 import { Toaster } from "sonner";
 
+import InstallPrompt from '@/components/InstallPrompt';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -89,7 +90,8 @@ export default function RootLayout({
             <BackgroundSyncManager />
           </AuthProvider>
         </ThemeProvider>
-      </body>
+            <InstallPrompt />
+</body>
     </html>
   );
 }
