@@ -43,6 +43,7 @@ export default function EmployerOutreachPage() {
   const [appliedSearch, setAppliedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!adminKey) return;
@@ -51,6 +52,7 @@ export default function EmployerOutreachPage() {
 
   async function loadData() {
     setLoading(true);
+    setLoadError(null);
     try {
       const params: Record<string, string> = {};
       if (appliedSearch) params.search = appliedSearch;
@@ -58,6 +60,7 @@ export default function EmployerOutreachPage() {
       const res = await fetchOutreachEmployers(adminKey, params);
       setEmployers(res.data);
     } catch (err: any) {
+      setLoadError(err.message || "Failed to load data");
       toast.error(err.message || "Failed to load data");
     } finally {
       setLoading(false);
@@ -165,6 +168,13 @@ export default function EmployerOutreachPage() {
       {loading ? (
         <div className="flex h-64 items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : loadError ? (
+        <div className="flex h-64 flex-col items-center justify-center gap-2 text-sm text-red-500">
+          <p>Failed to load: {loadError}</p>
+          <button onClick={loadData} className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent">
+            Retry
+          </button>
         </div>
       ) : employers.length === 0 ? (
         <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">No employers found</div>
