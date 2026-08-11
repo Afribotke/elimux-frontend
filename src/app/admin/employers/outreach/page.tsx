@@ -203,7 +203,7 @@ export default function EmployerOutreachPage() {
             </thead>
             <tbody>
               {employers.map((emp) => {
-                const out = emp.outreach?.[0];
+                const out = emp.outreach;
                 return (
                   <tr key={emp.id} className="border-b border-border last:border-0 hover:bg-muted/30">
                     <td className="px-4 py-3">

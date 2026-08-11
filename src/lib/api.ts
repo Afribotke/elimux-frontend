@@ -1832,7 +1832,7 @@ export interface OutreachEmployer {
   id: string
   name: string
   created_at: string
-  outreach?: OutreachRecord[]
+  outreach?: OutreachRecord | null
 }
 
 export function fetchOutreachEmployers(adminKey: string, params?: Record<string, string>) {
