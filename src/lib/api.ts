@@ -486,6 +486,50 @@ export async function fetchAdminStudents(adminKey: string): Promise<AdminStudent
   return res.data
 }
 
+// Platform user accounts (auth.ts) - distinct from AdminStudentRow above and
+// from AnalyticsUserRow (device-activity analytics), neither of which is
+// real account management.
+export interface AdminUserRow {
+  id: string
+  email: string
+  full_name: string | null
+  role: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  last_sign_in_at: string | null
+  banned_until: string | null
+  admin_users: { role: string; is_active: boolean }[]
+}
+
+export function fetchAdminUsersList(adminKey: string, page = 1, limit = 25) {
+  return request<{ data: AdminUserRow[]; count: number; page: number; limit: number }>(
+    `/api/auth/users?page=${page}&limit=${limit}`,
+    {},
+    adminKey
+  )
+}
+
+export function updateAdminUserRole(id: string, role: string, adminKey: string) {
+  return request<{ success: boolean; user: AdminUserRow }>(
+    `/api/auth/users/${id}/role`,
+    { method: 'PATCH', body: JSON.stringify({ role }) },
+    adminKey
+  )
+}
+
+export function updateAdminUserStatus(id: string, is_active: boolean, adminKey: string) {
+  return request<{ success: boolean; user: AdminUserRow }>(
+    `/api/auth/users/${id}/status`,
+    { method: 'PATCH', body: JSON.stringify({ is_active }) },
+    adminKey
+  )
+}
+
+export function deleteAdminUser(id: string, adminKey: string) {
+  return request<{ success: boolean }>(`/api/auth/users/${id}`, { method: 'DELETE' }, adminKey)
+}
+
 export interface AdminInternshipRow {
   id: string
   title: string
