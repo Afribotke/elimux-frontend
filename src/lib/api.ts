@@ -1630,3 +1630,73 @@ export async function fetchCompletionCertificates(token: string): Promise<Comple
   const json = await res.json();
   return json.data || [];
 }
+
+export interface PendingEvaluation {
+  id: string;
+  student_id: string;
+  student_name?: string;
+  start_date?: string;
+  end_date?: string;
+  status: string;
+  created_at: string;
+}
+
+export interface SubmittedEvaluation {
+  id: string;
+  attachment_id: string;
+  employer_id: string;
+  punctuality_score: number;
+  teamwork_score: number;
+  communication_score: number;
+  technical_skills_score: number;
+  initiative_score: number;
+  overall_score: number;
+  strengths?: string;
+  areas_for_improvement?: string;
+  recommendation?: string;
+  created_at: string;
+  student_name?: string;
+  attachment?: { id: string; start_date?: string; end_date?: string; student_id?: string };
+}
+
+export async function fetchPendingEvaluations(token: string): Promise<PendingEvaluation[]> {
+  const res = await fetch(`${API_URL}/api/employer/evaluations/pending`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Failed to load pending evaluations (${res.status})`);
+  const json = await res.json();
+  return json.data || [];
+}
+
+export async function fetchSubmittedEvaluations(token: string): Promise<SubmittedEvaluation[]> {
+  const res = await fetch(`${API_URL}/api/employer/evaluations/submitted`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Failed to load submitted evaluations (${res.status})`);
+  const json = await res.json();
+  return json.data || [];
+}
+
+// Reuses the existing endpoint: POST /api/attachments/:id/evaluation
+export async function submitEvaluation(token: string, attachmentId: string, payload: {
+  punctuality_score: number;
+  teamwork_score: number;
+  communication_score: number;
+  technical_skills_score: number;
+  initiative_score: number;
+  overall_score: number;
+  strengths?: string;
+  areas_for_improvement?: string;
+  recommendation?: string;
+}) {
+  const res = await fetch(`${API_URL}/api/attachments/${attachmentId}/evaluation`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Failed to submit evaluation (${res.status})`);
+  }
+  return res.json();
+}

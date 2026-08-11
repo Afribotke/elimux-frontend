@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -8,6 +8,7 @@ import {
   PlusCircle,
   Users,
   Settings,
+  Star,
   Building2,
   Briefcase,
   ClipboardList,
@@ -26,6 +27,7 @@ const navItems = [
   { href: '/employer/vacancies', label: 'Post Internships', icon: Briefcase },
   { href: '/employer/applications', label: 'Applications', icon: ClipboardList },
   { href: '/employer/attachments', label: 'Attachment Students', icon: GraduationCap },
+  { href: '/employer/reviews', label: 'Reviews', icon: Star },
   { href: '/employer/settings', label: 'Settings', icon: Settings },
 ];
 
