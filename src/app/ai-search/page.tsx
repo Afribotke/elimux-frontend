@@ -64,12 +64,12 @@ function AISearchContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function handleSearch(query: string) {
+  async function handleSearch(query: string, careerGoalOverride?: string | null) {
     setLoading(true)
     setHasSearched(true)
     setError(null)
     try {
-      const result = await runAISearch(query, [], careerGoal, {
+      const result = await runAISearch(query, [], careerGoalOverride !== undefined ? careerGoalOverride : careerGoal, {
         countryId: countryId || null,
         categoryId: categoryId || null,
         level: level || null,
@@ -89,6 +89,7 @@ function AISearchContent() {
 
   function handleCareerSelect(label: string) {
     setCareerGoal(label)
+    handleSearch('', label)
   }
 
   const searchPlaceholder =
