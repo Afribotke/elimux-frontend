@@ -16,11 +16,14 @@ import {
   Phone,
   Linkedin,
   Send,
+  ChevronLeft,
   ChevronRight,
   Loader2,
   Users,
   Star,
 } from "lucide-react";
+
+const PAGE_SIZE = 50;
 
 const STATUS_COLORS: Record<string, string> = {
   not_contacted: "bg-gray-50 text-gray-600",
@@ -44,21 +47,29 @@ export default function EmployerOutreachPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     if (!adminKey) return;
-    loadData();
+    loadData(1);
   }, [adminKey, statusFilter, appliedSearch]);
 
-  async function loadData() {
+  // status/priority/assigned_to filters are applied server-side after the
+  // page's already been sliced (see admin-employer-outreach.ts), so a page
+  // can legitimately return fewer than PAGE_SIZE rows once a filter is
+  // active - totalCount/totalPages reflect the unfiltered employer count.
+  async function loadData(targetPage: number) {
     setLoading(true);
     setLoadError(null);
     try {
-      const params: Record<string, string> = {};
+      const params: Record<string, string> = { page: String(targetPage), limit: String(PAGE_SIZE) };
       if (appliedSearch) params.search = appliedSearch;
       if (statusFilter) params.status = statusFilter;
       const res = await fetchOutreachEmployers(adminKey, params);
       setEmployers(res.data);
+      setTotalCount(res.count || 0);
+      setPage(targetPage);
     } catch (err: any) {
       setLoadError(err.message || "Failed to load data");
       toast.error(err.message || "Failed to load data");
@@ -66,6 +77,8 @@ export default function EmployerOutreachPage() {
       setLoading(false);
     }
   }
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   function toggleSelect(id: string) {
     const next = new Set(selectedIds);
@@ -83,7 +96,7 @@ export default function EmployerOutreachPage() {
       const res = await bulkInvite(adminKey, Array.from(selectedIds));
       toast.success(`Sent ${res.data.sent}, skipped ${res.data.noEmail} (no research email), failed ${res.data.failed}`);
       setSelectedIds(new Set());
-      loadData();
+      loadData(page);
     } catch (err: any) {
       toast.error(err.message || "Bulk invite failed");
     }
@@ -172,7 +185,7 @@ export default function EmployerOutreachPage() {
       ) : loadError ? (
         <div className="flex h-64 flex-col items-center justify-center gap-2 text-sm text-red-500">
           <p>Failed to load: {loadError}</p>
-          <button onClick={loadData} className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent">
+          <button onClick={() => loadData(page)} className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent">
             Retry
           </button>
         </div>
@@ -258,6 +271,35 @@ export default function EmployerOutreachPage() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {!loading && !loadError && totalCount > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border">
+          <p className="text-sm text-muted-foreground">
+            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, totalCount)} of {totalCount.toLocaleString()} employers
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => loadData(Math.max(1, page - 1))}
+              disabled={page === 1 || loading}
+              className="inline-flex items-center gap-1 rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </button>
+            <span className="text-sm font-medium px-3">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => loadData(Math.min(totalPages, page + 1))}
+              disabled={page === totalPages || loading}
+              className="inline-flex items-center gap-1 rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       )}
     </div>
