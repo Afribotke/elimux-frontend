@@ -11,6 +11,15 @@ function ResetPasswordForm() {
   const router = useRouter()
   const supabase = createClient()
   const code = searchParams.get('code')
+  // token_hash/type: Supabase's cross-device-safe recovery pattern - the OTP
+  // is already verified server-side by GoTrue's own /verify endpoint before
+  // it ever reaches us, so consuming it here needs no browser-local secret
+  // (unlike the PKCE `code` above, which requires the same browser that
+  // requested the link - see git history for the bad_code_verifier issue
+  // this caused when the email was opened on a different device).
+  const tokenHash = searchParams.get('token_hash')
+  const otpType = searchParams.get('type')
+  const hasResetToken = Boolean(code || tokenHash)
 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -24,7 +33,7 @@ function ResetPasswordForm() {
     e.preventDefault()
     setError('')
 
-    if (!code) {
+    if (!hasResetToken) {
       setError('Invalid or expired password reset link. Please request a new one.')
       return
     }
@@ -56,10 +65,15 @@ function ResetPasswordForm() {
       // mount lets an email security scanner's link-prefetch silently consume
       // the single-use code before the real user clicks it, which then makes
       // a legitimate click fail with "invalid or expired".
-      const { error: exchangeError } = await withTimeout(
-        supabase.auth.exchangeCodeForSession(code),
-        20000
-      )
+      const { error: exchangeError } = tokenHash
+        ? await withTimeout(
+            supabase.auth.verifyOtp({ token_hash: tokenHash, type: (otpType as any) || 'recovery' }),
+            20000
+          )
+        : await withTimeout(
+            supabase.auth.exchangeCodeForSession(code!),
+            20000
+          )
       if (exchangeError) throw exchangeError
 
       const { error: updateError } = await withTimeout(
@@ -164,7 +178,7 @@ function ResetPasswordForm() {
 
             <button
               type="submit"
-              disabled={loading || !code}
+              disabled={loading || !hasResetToken}
               className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-elimux-dark font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50"
             >
               {loading ? 'Updating...' : 'Update password'}
