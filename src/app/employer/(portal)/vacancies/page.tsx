@@ -27,14 +27,24 @@ export default function EmployerVacanciesPage() {
   useEffect(() => {
     const fetchVacancies = async () => {
       const { data: { user } } = await getUserWithTimeout();
-      if (!user) return;
-      const { data: emp } = await supabase.from("employers").select("id").eq("user_id", user.id).single();
-      if (!emp) return;
+      if (!user) { setLoading(false); return; }
+
+      // Team-member-aware lookup, matching dashboard/applications/requisitions -
+      // the previous employers.user_id-only lookup only ever matched the
+      // original registering owner, so any invited team member hit this early
+      // return with setLoading(false) never called, spinning forever.
+      const { data: teamMember } = await supabase
+        .from("employer_team_members")
+        .select("employer_id")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .single();
+      if (!teamMember) { setLoading(false); return; }
 
       const { data } = await supabase
         .from("internships")
         .select("*, applications:applications(count)")
-        .eq("employer_id", emp.id)
+        .eq("employer_id", teamMember.employer_id)
         .order("created_at", { ascending: false });
       setVacancies(data || []);
       setLoading(false);

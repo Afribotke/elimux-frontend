@@ -60,13 +60,24 @@ export default function NewVacancyPage() {
   const handleSubmit = async () => {
     setSubmitting(true);
     const { data: { user } } = await getUserWithTimeout();
-    if (!user) { toast.error("Please log in"); return; }
+    if (!user) { toast.error("Please log in"); setSubmitting(false); return; }
 
-    const { data: emp } = await supabase.from("employers").select("id").eq("user_id", user.id).single();
-    if (!emp) { toast.error("Please register as employer first"); router.push("/employer/register"); return; }
+    // Team-member-aware lookup, matching dashboard/applications/requisitions -
+    // the previous employers.user_id-only lookup only matched the original
+    // registering owner, so a legitimate invited team member was incorrectly
+    // told to register and redirected away. Also: setSubmitting(false) was
+    // missing from both early returns, so the button got stuck on
+    // "Posting..." forever if either check failed.
+    const { data: teamMember } = await supabase
+      .from("employer_team_members")
+      .select("employer_id")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .single();
+    if (!teamMember) { toast.error("Not associated with an employer account"); setSubmitting(false); return; }
 
     const { error } = await supabase.from("internships").insert({
-      employer_id: emp.id,
+      employer_id: teamMember.employer_id,
       ...form,
       remaining_slots: form.total_slots,
       status: "active",
