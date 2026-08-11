@@ -1800,3 +1800,138 @@ export function downloadExport(adminKey: string, table: string, params?: Record<
   a.click();
   document.body.removeChild(a);
 }
+
+// Employer Outreach CRM
+// assigned_to/supervised_by/performed_by/user_id/reports_to on the backend
+// all reference admin_users (this app's staff table), not auth.users - the
+// nested `assigned`/`supervisor`/`performer`/`user`/`manager` objects below
+// are { id, email, role } from admin_users.
+
+export interface OutreachManager {
+  id: string
+  email: string
+  role: string
+}
+
+export interface OutreachRecord {
+  id: string
+  status: string
+  priority: number
+  assigned_to?: string | null
+  supervised_by?: string | null
+  notes?: string | null
+  research_data?: { website?: string; email?: string; phone?: string; linkedin?: string } | null
+  last_contact_date?: string | null
+  next_follow_up_date?: string | null
+  invitation_sent_at?: string | null
+  assigned?: OutreachManager | null
+  supervisor?: OutreachManager | null
+}
+
+export interface OutreachEmployer {
+  id: string
+  name: string
+  created_at: string
+  outreach?: OutreachRecord[]
+}
+
+export function fetchOutreachEmployers(adminKey: string, params?: Record<string, string>) {
+  const qs = params ? "?" + new URLSearchParams(params).toString() : ""
+  return request<{ data: OutreachEmployer[]; count: number }>(`/api/admin/employer-outreach${qs}`, {}, adminKey)
+}
+
+export function fetchOutreachManagers(adminKey: string) {
+  return request<{ data: OutreachManager[] }>("/api/admin/employer-outreach/managers", {}, adminKey)
+}
+
+export function fetchOutreachDetail(adminKey: string, employerNameId: string) {
+  return request<{
+    data: {
+      employer: OutreachEmployer
+      outreach: OutreachRecord | null
+      activities: Array<{ id: string; action: string; details: any; created_at: string; performer?: OutreachManager | null }>
+    }
+  }>(`/api/admin/employer-outreach/${employerNameId}`, {}, adminKey)
+}
+
+export function assignEmployer(
+  adminKey: string,
+  employerNameId: string,
+  payload: { assigned_to?: string | null; supervised_by?: string | null; notes?: string }
+) {
+  return request<{ success: boolean }>(
+    `/api/admin/employer-outreach/${employerNameId}/assign`,
+    { method: "PATCH", body: JSON.stringify(payload) },
+    adminKey
+  )
+}
+
+export function updateOutreachStatus(adminKey: string, employerNameId: string, status: string, notes?: string) {
+  return request<{ success: boolean }>(
+    `/api/admin/employer-outreach/${employerNameId}/status`,
+    { method: "PATCH", body: JSON.stringify({ status, notes }) },
+    adminKey
+  )
+}
+
+export function saveResearch(adminKey: string, employerNameId: string, research_data: any, notes?: string) {
+  return request<{ success: boolean }>(
+    `/api/admin/employer-outreach/${employerNameId}/research`,
+    { method: "PATCH", body: JSON.stringify({ research_data, notes }) },
+    adminKey
+  )
+}
+
+export function sendInvitation(adminKey: string, employerNameId: string, email: string) {
+  return request<{ success: boolean; claim_url: string }>(
+    `/api/admin/employer-outreach/${employerNameId}/invite`,
+    { method: "POST", body: JSON.stringify({ email }) },
+    adminKey
+  )
+}
+
+export function bulkInvite(adminKey: string, employerNameIds: string[]) {
+  return request<{ data: { sent: number; failed: number; noEmail: number } }>(
+    "/api/admin/employer-outreach/bulk-invite",
+    { method: "POST", body: JSON.stringify({ employerNameIds }) },
+    adminKey
+  )
+}
+
+export interface OutreachTeamMember {
+  id: string
+  user_id: string
+  role: "outreach_manager" | "supervisor" | "account_manager"
+  reports_to: string | null
+  user?: OutreachManager | null
+  manager?: OutreachManager | null
+}
+
+export function fetchOutreachTeam(adminKey: string) {
+  return request<{ data: OutreachTeamMember[] }>("/api/admin/employer-outreach/team/members", {}, adminKey)
+}
+
+export function addOutreachTeamMember(
+  adminKey: string,
+  payload: { user_id: string; role: OutreachTeamMember["role"]; reports_to?: string | null }
+) {
+  return request<{ data: OutreachTeamMember }>(
+    "/api/admin/employer-outreach/team/members",
+    { method: "POST", body: JSON.stringify(payload) },
+    adminKey
+  )
+}
+
+export function removeOutreachTeamMember(adminKey: string, id: string) {
+  return request<{ success: boolean }>(`/api/admin/employer-outreach/team/members/${id}`, { method: "DELETE" }, adminKey)
+}
+
+export interface OutreachDashboardStats {
+  total_employers: number
+  status_breakdown: Record<string, number>
+  by_manager: Record<string, { email: string; total: number; by_status: Record<string, number> }>
+}
+
+export function fetchOutreachDashboard(adminKey: string) {
+  return request<{ data: OutreachDashboardStats }>("/api/admin/employer-outreach/stats/dashboard", {}, adminKey)
+}
