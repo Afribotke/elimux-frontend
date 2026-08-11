@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { getUserWithTimeout } from '@/lib/client-auth';
 import Link from 'next/link';
@@ -13,6 +13,8 @@ export default function RequisitionsListPage() {
   const [teamMember, setTeamMember] = useState<any>(null);
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -66,6 +68,10 @@ export default function RequisitionsListPage() {
   const canCreate = teamMember && ['super_admin', 'admin', 'manager'].includes(teamMember.role);
   const canApprove = teamMember && ['super_admin', 'admin'].includes(teamMember.role);
 
+  const filteredRequisitions = statusFilter === 'all'
+    ? requisitions
+    : requisitions.filter((r) => r.status === statusFilter);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -96,7 +102,15 @@ export default function RequisitionsListPage() {
 
       <div className="flex gap-2 mb-6">
         {['all', 'pending_approval', 'approved', 'published', 'filled', 'rejected'].map((filter) => (
-          <button key={filter} className="px-3 py-1.5 text-sm rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors capitalize">
+          <button
+            key={filter}
+            onClick={() => setStatusFilter(filter)}
+            className={`px-3 py-1.5 text-sm rounded-full transition-colors capitalize ${
+              statusFilter === filter
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
             {filter.replace('_', ' ')}
           </button>
         ))}
@@ -117,50 +131,90 @@ export default function RequisitionsListPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {requisitions.map((req) => (
-                <tr key={req.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900">{req.title}</div>
-                    <div className="text-xs text-gray-400 mt-0.5">{req.location_city || 'Nairobi'} · {req.location_type}</div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{req.employer_departments?.name || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{req.number_of_slots}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{req.duration_months} months</td>
-                  <td className="px-6 py-4"><StatusBadge status={req.status} /></td>
-                  <td className="px-6 py-4 text-sm text-gray-400">{new Date(req.created_at).toLocaleDateString('en-KE')}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <button className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Eye className="w-4 h-4" /></button>
-                      {canApprove && req.status === 'pending_approval' && (
-                        <>
-                          <button
-                            onClick={() => actOnRequisition(req.id, 'approve')}
-                            disabled={actioningId === req.id}
-                            title="Approve and post as a live internship"
-                            className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
-                          >
-                            {actioningId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                          </button>
-                          <button
-                            onClick={() => actOnRequisition(req.id, 'reject')}
-                            disabled={actioningId === req.id}
-                            title="Reject"
-                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                          >
-                            <XCircle className="w-4 h-4" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+              {filteredRequisitions.map((req) => (
+                <Fragment key={req.id}>
+                  <tr className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-gray-900">{req.title}</div>
+                      <div className="text-xs text-gray-400 mt-0.5">{req.location_city || 'Nairobi'} · {req.location_type}</div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{req.employer_departments?.name || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{req.number_of_slots}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{req.duration_months} months</td>
+                    <td className="px-6 py-4"><StatusBadge status={req.status} /></td>
+                    <td className="px-6 py-4 text-sm text-gray-400">{new Date(req.created_at).toLocaleDateString('en-KE')}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setExpandedId(expandedId === req.id ? null : req.id)}
+                          title="View details"
+                          className={`p-1.5 rounded-lg transition-colors ${expandedId === req.id ? 'text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        {canApprove && req.status === 'pending_approval' && (
+                          <>
+                            <button
+                              onClick={() => actOnRequisition(req.id, 'approve')}
+                              disabled={actioningId === req.id}
+                              title="Approve and post as a live internship"
+                              className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {actioningId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                            </button>
+                            <button
+                              onClick={() => actOnRequisition(req.id, 'reject')}
+                              disabled={actioningId === req.id}
+                              title="Reject"
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                  {expandedId === req.id && (
+                    <tr key={`${req.id}-detail`} className="bg-gray-50">
+                      <td colSpan={7} className="px-6 py-4">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <p className="text-xs font-semibold uppercase text-gray-400 mb-1">Description</p>
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{req.description || 'No description provided.'}</p>
+                          </div>
+                          <div className="space-y-3">
+                            <div>
+                              <p className="text-xs font-semibold uppercase text-gray-400 mb-1">Requirements</p>
+                              {req.requirements?.length ? (
+                                <ul className="list-disc list-inside text-sm text-gray-700 space-y-0.5">
+                                  {req.requirements.map((r: string, i: number) => <li key={i}>{r}</li>)}
+                                </ul>
+                              ) : <p className="text-sm text-gray-400">None listed.</p>}
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold uppercase text-gray-400 mb-1">Skills</p>
+                              {req.skills_required?.length ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {req.skills_required.map((s: string, i: number) => (
+                                    <span key={i} className="px-2 py-0.5 bg-white border border-gray-200 rounded-full text-xs text-gray-600">{s}</span>
+                                  ))}
+                                </div>
+                              ) : <p className="text-sm text-gray-400">None listed.</p>}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
-              {requisitions.length === 0 && (
+              {filteredRequisitions.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
                     <FileText className="w-8 h-8 mx-auto mb-3 text-gray-300" />
-                    <p>No requisitions yet.</p>
-                    {canCreate && <Link href="/employer/requisitions/new" className="text-blue-600 hover:text-blue-700 text-sm font-medium mt-2 inline-block">Create your first requisition →</Link>}
+                    <p>{requisitions.length === 0 ? 'No requisitions yet.' : `No ${statusFilter.replace('_', ' ')} requisitions.`}</p>
+                    {canCreate && requisitions.length === 0 && <Link href="/employer/requisitions/new" className="text-blue-600 hover:text-blue-700 text-sm font-medium mt-2 inline-block">Create your first requisition →</Link>}
                   </td>
                 </tr>
               )}
