@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
@@ -27,6 +27,7 @@ function AISearchContent() {
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
 
   const [careerGoal, setCareerGoal] = useState<string | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const [countryId, setCountryId] = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -65,25 +66,42 @@ function AISearchContent() {
   }, [])
 
   async function handleSearch(query: string, careerGoalOverride?: string | null) {
+    // Cancel a still-in-flight previous search before starting a new one -
+    // without this, a slow first response could resolve after a faster
+    // second one and overwrite fresher results with stale ones.
+    abortControllerRef.current?.abort()
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
     setLoading(true)
     setHasSearched(true)
     setError(null)
     try {
-      const result = await runAISearch(query, [], careerGoalOverride !== undefined ? careerGoalOverride : careerGoal, {
-        countryId: countryId || null,
-        categoryId: categoryId || null,
-        level: level || null,
-        maxBudget,
-        institutionMode: SKILLS_TOGGLE_ENABLED ? institutionMode : null,
-      })
+      const result = await runAISearch(
+        query,
+        [],
+        careerGoalOverride !== undefined ? careerGoalOverride : careerGoal,
+        {
+          countryId: countryId || null,
+          categoryId: categoryId || null,
+          level: level || null,
+          maxBudget,
+          institutionMode: SKILLS_TOGGLE_ENABLED ? institutionMode : null,
+        },
+        controller.signal
+      )
       setIntent(result.intent)
       setPrograms(result.programs)
       setInstitutions(result.institutions)
       awardPoints('search').catch(() => {})
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return // superseded by a newer search
       setError(err instanceof Error ? err.message : 'AI search failed')
     } finally {
-      setLoading(false)
+      // Only this call's own controller is still current if it wasn't the
+      // one just aborted above by a newer search - otherwise clearing
+      // loading here would incorrectly stop the newer search's spinner.
+      if (abortControllerRef.current === controller) setLoading(false)
     }
   }
 

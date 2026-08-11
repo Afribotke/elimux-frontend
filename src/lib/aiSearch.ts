@@ -28,7 +28,8 @@ export async function runAISearch(
   query: string,
   interests: string[],
   careerGoal: string | null,
-  filters: AISearchFilters = {}
+  filters: AISearchFilters = {},
+  signal?: AbortSignal
 ): Promise<AISearchResult> {
   const res = await fetch(`${API_URL}/api/ai-search`, {
     method: 'POST',
@@ -43,6 +44,7 @@ export async function runAISearch(
       maxBudget: filters.maxBudget ?? null,
       institutionMode: filters.institutionMode ?? null,
     }),
+    signal,
   })
 
   const json = await res.json().catch(() => null)
