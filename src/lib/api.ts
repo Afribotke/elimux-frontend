@@ -1700,3 +1700,36 @@ export async function submitEvaluation(token: string, attachmentId: string, payl
   }
   return res.json();
 }
+
+export interface AttachmentReport {
+  data: any[];
+  count: number;
+  summary: {
+    total: number;
+    completed: number;
+    active: number;
+    terminated: number;
+    pending: number;
+    completion_rate: number;
+  };
+}
+
+export async function fetchAttachmentReport(adminKey: string, params?: Record<string, string>): Promise<AttachmentReport> {
+  const qs = params ? "?" + new URLSearchParams(params).toString() : "";
+  const res = await fetch(`${API_URL}/api/admin/reports/attachments${qs}`, {
+    headers: { "x-admin-key": adminKey },
+  });
+  if (!res.ok) throw new Error(`Failed to load report (${res.status})`);
+  return res.json();
+}
+
+export function downloadExport(adminKey: string, table: string, params?: Record<string, string>) {
+  const qs = new URLSearchParams(params).toString();
+  const url = `${API_URL}/api/admin/reports/export/${table}?${qs}`;
+  const a = document.createElement("a");
+  a.href = url;
+  a.setAttribute("download", `${table}_export.csv`);
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
