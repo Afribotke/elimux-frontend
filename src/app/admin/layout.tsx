@@ -192,6 +192,7 @@ const NAV_SECTIONS: NavSection[] = [
         { label: "Assign Institutions", href: "/admin/student-assignments", icon: Building2 },
       { label: "Employers", href: "/admin/employers", icon: Briefcase },
       { label: "Discover Names", href: "/admin/employers/discover-names", icon: Search },
+      { label: "Uploaded Names", href: "/admin/employers/names", icon: List },
       { label: "Upload Employers", href: "/admin/employers/upload", icon: Upload },
       { label: "Potential Employers", href: "/admin/potential-employers", icon: Globe },
     ],

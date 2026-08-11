@@ -530,6 +530,29 @@ export function deleteAdminUser(id: string, adminKey: string) {
   return request<{ success: boolean }>(`/api/auth/users/${id}`, { method: 'DELETE' }, adminKey)
 }
 
+export interface EmployerNameRow {
+  id: string
+  name: string
+  normalized_name: string | null
+  suggested_website_url: string | null
+  verified_website_url: string | null
+  verification_status: string | null
+  discovery_status: string | null
+  is_active: boolean
+  created_at: string
+}
+
+export function fetchAdminEmployerNames(
+  adminKey: string,
+  params: { page?: number; limit?: number; q?: string } = {}
+) {
+  return request<{ data: EmployerNameRow[]; count: number; page: number; limit: number }>(
+    `/api/admin/employer-names${buildQuery(params)}`,
+    {},
+    adminKey
+  )
+}
+
 export interface AdminInternshipRow {
   id: string
   title: string
