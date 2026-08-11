@@ -11,6 +11,7 @@ import BackgroundSyncManager from "@/components/BackgroundSyncManager";
 import { Toaster } from "sonner";
 
 import InstallPrompt from '@/components/InstallPrompt';
+import SiteVisitTracker from '@/components/SiteVisitTracker';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -88,6 +89,7 @@ export default function RootLayout({
             <CookieConsent />
             <ServiceWorkerRegister />
             <BackgroundSyncManager />
+            <SiteVisitTracker />
           </AuthProvider>
         </ThemeProvider>
             <InstallPrompt />

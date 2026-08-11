@@ -9,10 +9,24 @@ export type TrackableEventType = 'search' | 'page_view' | 'click' | 'application
 // feature (favorites, gamification) already uses, so callers never need to compute
 // or pass one. Never throws - a tracking failure must not break the calling page.
 export function trackEvent(eventType: TrackableEventType, metadata?: Record<string, unknown>): void {
+  // Auto-fills path/referrer when the caller doesn't already supply them -
+  // institutions/[id] and programs/[id] pass their own explicit `path`
+  // alongside institution_id/program_id (consumed by admin-analytics.ts's
+  // /institutions ranking endpoint), so those are left untouched; callers
+  // with no metadata at all (the site-wide page-view tracker) get it for free.
+  const enrichedMetadata =
+    typeof window !== 'undefined'
+      ? {
+          ...metadata,
+          path: (metadata?.path as string | undefined) ?? window.location.pathname,
+          referrer: (metadata?.referrer as string | undefined) ?? (document.referrer || undefined),
+        }
+      : metadata
+
   fetch(`${API_URL}/api/admin/analytics/track`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ event_type: eventType, metadata }),
+    body: JSON.stringify({ event_type: eventType, metadata: enrichedMetadata }),
   }).catch(() => {})
 }
 
