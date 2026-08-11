@@ -15,7 +15,19 @@ export function createClient() {
   if (!browserClient) {
     browserClient = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        // Default true: on any page load with a `?code=` param (e.g. the
+        // password-recovery link landing on /auth/reset-password), the SDK
+        // silently exchanges it for a session in the background the moment
+        // this client is created - before the user submits anything. That
+        // burns the single-use PKCE code, so reset-password's own deliberate
+        // submit-time exchangeCodeForSession(code) call then fails with
+        // "bad_code_verifier" a couple seconds later. No flow in this app
+        // (no OAuth/magic-link sign-in) depends on automatic detection, so
+        // it's safe to disable app-wide.
+        auth: { detectSessionInUrl: false },
+      }
     );
   }
   return browserClient;
