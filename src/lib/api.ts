@@ -1591,3 +1591,42 @@ export async function assignInstitution(adminKey: string, studentId: string, ins
   }
   return res.json();
 }
+
+export interface TradeTestEligibility {
+  student_id: string;
+  completed_attachments: number;
+  total_weeks: number;
+  attachments: any[];
+  eligible_grades: string[];
+  is_eligible: boolean;
+  next_grade: string | null;
+}
+
+export interface CompletionCertificate {
+  id: string;
+  status: string;
+  start_date?: string;
+  end_date?: string;
+  certificate_issued: boolean;
+  certificate_url?: string;
+  employer?: { company_name: string };
+  university?: { name: string };
+}
+
+export async function fetchTradeTestEligibility(token: string): Promise<TradeTestEligibility> {
+  const res = await fetch(`${API_URL}/api/student/trade-test/eligibility`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Failed to check eligibility (${res.status})`);
+  const json = await res.json();
+  return json.data;
+}
+
+export async function fetchCompletionCertificates(token: string): Promise<CompletionCertificate[]> {
+  const res = await fetch(`${API_URL}/api/student/trade-test/certificates`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Failed to load certificates (${res.status})`);
+  const json = await res.json();
+  return json.data || [];
+}
