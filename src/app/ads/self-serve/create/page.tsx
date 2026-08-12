@@ -9,8 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { AdPreview } from "@/components/ads/AdPreview";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
 import { advertiserFetch, ADVERTISER_LOGIN_PATH } from "@/lib/advertiserAuth";
+import { getUserWithTimeout } from "@/lib/client-auth";
 
 interface CampaignForm {
   name: string;
@@ -67,10 +67,11 @@ function CreateCampaignForm() {
     let cancelled = false;
     (async () => {
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
+        data: { user },
+        error: authError,
+      } = await getUserWithTimeout();
       if (cancelled) return;
-      if (!session) {
+      if (!user || authError) {
         router.push(`${ADVERTISER_LOGIN_PATH}?redirect=/ads/self-serve/create`);
         return;
       }
