@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAdminKey } from "@/components/admin/AdminKeyContext";
 
 interface AdPricingSettings {
   ad_cpc_rate: number; ad_cpm_rate: number; ad_cpa_rate: number;
@@ -13,6 +14,7 @@ interface AdPricingSettings {
 }
 
 export default function AdminAdPricing() {
+  const { adminKey } = useAdminKey();
   const [settings, setSettings] = useState<AdPricingSettings | null>(null);
   const [original, setOriginal] = useState<AdPricingSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,14 +24,13 @@ export default function AdminAdPricing() {
   const [changed, setChanged] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
-  const ADMIN_KEY = typeof window !== "undefined" ? sessionStorage.getItem("elimux-admin-key") || "" : "";
 
-  useEffect(() => { fetchSettings(); }, []);
+  useEffect(() => { fetchSettings(); }, [adminKey]);
 
   const fetchSettings = async () => {
     try {
       const res = await fetch(`${API_URL}/api/admin/settings/ad-pricing`, {
-        headers: { "X-Admin-Key": ADMIN_KEY }
+        headers: { "X-Admin-Key": adminKey }
       });
       const result = await res.json();
       if (result.success) { setSettings(result.data); setOriginal(result.data); }
@@ -54,7 +55,7 @@ export default function AdminAdPricing() {
     try {
       const res = await fetch(`${API_URL}/api/admin/settings/ad-pricing`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "X-Admin-Key": ADMIN_KEY },
+        headers: { "Content-Type": "application/json", "X-Admin-Key": adminKey },
         body: JSON.stringify(settings),
       });
       const result = await res.json();

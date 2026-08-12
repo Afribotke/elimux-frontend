@@ -13,6 +13,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, CreditCard, CheckCircle2, XCircle } from 'lucide-react'
+import { useAdminKey } from "@/components/admin/AdminKeyContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -52,8 +53,6 @@ type Overview = {
   recent_ad_payments: AdPayment[]
 }
 
-const adminKey = () => sessionStorage.getItem('elimux-admin-key') || ''
-
 const kes = (n: number) => 'KES ' + Number(n || 0).toLocaleString('en-KE', { minimumFractionDigits: 2 })
 
 const STATUS_STYLES: Record<string, string> = {
@@ -66,6 +65,7 @@ const STATUS_STYLES: Record<string, string> = {
 }
 
 export default function AdminPaymentsPage() {
+  const { adminKey } = useAdminKey();
   const [data, setData] = useState<Overview | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -75,7 +75,7 @@ export default function AdminPaymentsPage() {
     setError('')
     try {
       const res = await fetch(API_URL + '/api/admin/payments', {
-        headers: { 'X-Admin-Key': adminKey() },
+        headers: { 'X-Admin-Key': adminKey },
       })
       if (!res.ok) throw new Error('Request failed: ' + res.status)
       const json = await res.json()
@@ -85,7 +85,7 @@ export default function AdminPaymentsPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [adminKey])
 
   useEffect(() => { load() }, [load])
 

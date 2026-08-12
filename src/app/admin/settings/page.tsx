@@ -9,13 +9,11 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Settings, Check } from 'lucide-react'
+import { useAdminKey } from "@/components/admin/AdminKeyContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 type Setting = { key: string; value: string; description: string | null }
-
-// Matches src/app/admin/campaigns/page.tsx's adminKey() helper.
-const adminKey = () => sessionStorage.getItem('elimux-admin-key') || ''
 
 const isBooleanKey = (k: string) => k === 'show_public_impressions'
 
@@ -27,6 +25,7 @@ const GROUPS: { title: string; match: (k: string) => boolean }[] = [
 ]
 
 export default function AdminSettingsPage() {
+  const { adminKey } = useAdminKey();
   const [settings, setSettings] = useState<Setting[]>([])
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
@@ -39,7 +38,7 @@ export default function AdminSettingsPage() {
     setError('')
     try {
       const res = await fetch(API_URL + '/api/admin/settings', {
-        headers: { 'X-Admin-Key': adminKey() },
+        headers: { 'X-Admin-Key': adminKey },
       })
       if (!res.ok) throw new Error('Request failed: ' + res.status)
       const json = await res.json()
@@ -53,7 +52,7 @@ export default function AdminSettingsPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [adminKey])
 
   useEffect(() => { load() }, [load])
 
@@ -63,7 +62,7 @@ export default function AdminSettingsPage() {
     try {
       const res = await fetch(API_URL + '/api/admin/settings/' + encodeURIComponent(key), {
         method: 'PATCH',
-        headers: { 'X-Admin-Key': adminKey(), 'Content-Type': 'application/json' },
+        headers: { 'X-Admin-Key': adminKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({ value: drafts[key] }),
       })
       const json = await res.json()

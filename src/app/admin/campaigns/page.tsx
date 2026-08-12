@@ -8,6 +8,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Megaphone } from 'lucide-react'
+import { useAdminKey } from "@/components/admin/AdminKeyContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -18,20 +19,20 @@ type Campaign = {
   image_url: string
   target_url: string
   placement: string
-  budget: number
-  duration_days: number
+  total_budget: number
   status: string
   impressions: number
   clicks: number
-  rejection_reason: string | null
+  start_date: string | null
+  end_date: string | null
   created_at: string
   advertiser: { organization_name: string; email: string; status: string } | null
 }
 
-const TABS = ['pending_review', 'active', 'paused', 'rejected', 'draft', 'all']
+const TABS = ['pending', 'active', 'paused', 'rejected', 'draft', 'all']
 
 const STATUS_STYLES: Record<string, string> = {
-  pending_review: 'bg-primary-500/10 text-primary-400',
+  pending: 'bg-primary-500/10 text-primary-400',
   active: 'bg-elimux-success/10 text-elimux-success',
   paused: 'bg-elimux-warning/10 text-elimux-warning',
   rejected: 'bg-elimux-danger/10 text-elimux-danger',
@@ -41,22 +42,20 @@ const STATUS_STYLES: Record<string, string> = {
 const kes = (n: number) => 'KES ' + Number(n).toLocaleString('en-KE', { minimumFractionDigits: 2 })
 
 export default function AdminCampaignsPage() {
+  const { adminKey } = useAdminKey();
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
-  const [tab, setTab] = useState('pending_review')
+  const [tab, setTab] = useState('pending')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [rejecting, setRejecting] = useState<Campaign | null>(null)
-  const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
-
-  const adminKey = () => sessionStorage.getItem('elimux-admin-key') || ''
 
   const load = useCallback(async (status: string) => {
     setLoading(true)
     setError('')
     try {
       const res = await fetch(API_URL + '/api/admin/campaigns?status=' + status, {
-        headers: { 'X-Admin-Key': adminKey() },
+        headers: { 'X-Admin-Key': adminKey },
       })
       if (!res.ok) throw new Error('Request failed: ' + res.status)
       const json = await res.json()
@@ -66,7 +65,7 @@ export default function AdminCampaignsPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [adminKey])
 
   useEffect(() => { load(tab) }, [tab, load])
 
@@ -75,7 +74,7 @@ export default function AdminCampaignsPage() {
     try {
       const res = await fetch(API_URL + path, {
         method,
-        headers: { 'X-Admin-Key': adminKey(), 'Content-Type': 'application/json' },
+        headers: { 'X-Admin-Key': adminKey, 'Content-Type': 'application/json' },
         body: body ? JSON.stringify(body) : undefined,
       })
       const json = await res.json()
@@ -91,9 +90,9 @@ export default function AdminCampaignsPage() {
   }
 
   const confirmReject = async () => {
-    if (!rejecting || !reason.trim()) return
-    const ok = await post('/api/admin/campaigns/' + rejecting.id + '/reject', { rejection_reason: reason.trim() })
-    if (ok) { setRejecting(null); setReason('') }
+    if (!rejecting) return
+    const ok = await post('/api/admin/campaigns/' + rejecting.id + '/reject', { status: 'rejected' })
+    if (ok) { setRejecting(null) }
   }
 
   return (
@@ -163,20 +162,21 @@ export default function AdminCampaignsPage() {
                   {c.headline && <p className="text-sm text-muted truncate">{c.headline}</p>}
                   <p className="text-xs text-muted mt-1 truncate">→ {c.target_url}</p>
                   <p className="text-xs text-muted mt-1">
-                    {c.advertiser?.organization_name || 'Unknown advertiser'} · {c.advertiser?.email || ''} · placement: {c.placement} · {kes(c.budget)} / {c.duration_days} days
+                    {c.advertiser?.organization_name || 'Unknown advertiser'} · {c.advertiser?.email || ''} · placement: {c.placement} · {kes(c.total_budget)} / {c.start_date && c.end_date
+                      ? Math.ceil((new Date(c.end_date).getTime() - new Date(c.start_date).getTime()) / 86400000) + ' days'
+                      : 'N/A'}
                   </p>
                   <p className="text-xs text-muted mt-0.5">
                     {c.impressions} impressions · {c.clicks} clicks · created {new Date(c.created_at).toLocaleDateString()}
                   </p>
-                  {c.rejection_reason && <p className="text-xs text-elimux-danger mt-1">Reason: {c.rejection_reason}</p>}
                 </div>
               </div>
 
               <div className="flex gap-2 shrink-0">
-                {c.status === 'pending_review' && (
+                {c.status === 'pending' && (
                   <>
                     <button disabled={busy} onClick={() => post('/api/admin/campaigns/' + c.id + '/approve')} className="px-4 py-2 rounded-lg bg-elimux-success/20 text-elimux-success hover:bg-elimux-success/30 text-sm font-medium transition-colors disabled:opacity-50">Approve</button>
-                    <button disabled={busy} onClick={() => { setRejecting(c); setReason('') }} className="px-4 py-2 rounded-lg bg-elimux-danger/20 text-elimux-danger hover:bg-elimux-danger/30 text-sm font-medium transition-colors disabled:opacity-50">Reject</button>
+                    <button disabled={busy} onClick={() => setRejecting(c)} className="px-4 py-2 rounded-lg bg-elimux-danger/20 text-elimux-danger hover:bg-elimux-danger/30 text-sm font-medium transition-colors disabled:opacity-50">Reject</button>
                   </>
                 )}
                 {c.status === 'active' && (
@@ -195,16 +195,10 @@ export default function AdminCampaignsPage() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
           <div className="rounded-xl border border-border bg-elimux-card p-6 w-full max-w-md">
             <h3 className="font-semibold text-foreground mb-2">Reject &quot;{rejecting.title}&quot;</h3>
-            <p className="text-sm text-muted mb-4">{kes(rejecting.budget)} will be refunded to {rejecting.advertiser?.organization_name || 'the advertiser'}.</p>
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Reason for rejection (required — the advertiser sees this)"
-              className="w-full h-24 rounded-lg bg-elimux-dark border border-border text-foreground p-3 text-sm mb-4 focus:outline-none focus:border-primary-500"
-            />
+            <p className="text-sm text-muted mb-4">{kes(rejecting.total_budget)} will be refunded to {rejecting.advertiser?.organization_name || 'the advertiser'}.</p>
             <div className="flex gap-2 justify-end">
               <button onClick={() => setRejecting(null)} className="px-4 py-2 rounded-lg border border-border text-muted hover:text-foreground text-sm font-medium transition-colors">Cancel</button>
-              <button disabled={busy || !reason.trim()} onClick={confirmReject} className="px-4 py-2 rounded-lg bg-elimux-danger/20 text-elimux-danger hover:bg-elimux-danger/30 text-sm font-medium transition-colors disabled:opacity-50">Reject &amp; Refund</button>
+              <button disabled={busy} onClick={confirmReject} className="px-4 py-2 rounded-lg bg-elimux-danger/20 text-elimux-danger hover:bg-elimux-danger/30 text-sm font-medium transition-colors disabled:opacity-50">Reject &amp; Refund</button>
             </div>
           </div>
         </div>
