@@ -7,25 +7,35 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { getUserWithTimeout } from "@/lib/client-auth";
+import { advertiserFetch } from "@/lib/advertiserAuth";
 import { toast } from "sonner";
 
-interface Campaign {
+type CampaignStatus = "pending_review" | "active" | "rejected" | "completed" | "paused";
+
+interface AdCampaign {
   id: string;
-  name: string;
-  status: "draft" | "pending_payment" | "active" | "paused" | "completed" | "rejected";
-  total_cost: number;
-  duration_days: number;
+  title: string;
+  status: CampaignStatus;
+  total_budget: number;
+  total_spend: number;
+  actual_impressions: number;
+  clicks: number;
   start_date: string | null;
   end_date: string | null;
-  impressions: number;
-  clicks: number;
-  ctr: number;
   created_at: string;
 }
 
+const STATUS_INFO: Record<CampaignStatus, { color: string; label: string }> = {
+  pending_review: { color: "bg-amber-100 text-amber-700", label: "Pending Review" },
+  active: { color: "bg-emerald-100 text-emerald-700", label: "Active" },
+  rejected: { color: "bg-red-100 text-red-700", label: "Rejected" },
+  completed: { color: "bg-blue-100 text-blue-700", label: "Completed" },
+  paused: { color: "bg-orange-100 text-orange-700", label: "Paused" },
+};
+
 export default function AdDashboardPage() {
   const router = useRouter();
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [campaigns, setCampaigns] = useState<AdCampaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -40,11 +50,11 @@ export default function AdDashboardPage() {
         return;
       }
 
-      const response = await fetch(`/api/self-serve-ads/campaigns?advertiser_id=${user.id}`);
+      const response = await advertiserFetch('/api/campaigns');
       if (!response.ok) throw new Error("Failed to fetch campaigns");
 
-      const data = await response.json();
-      setCampaigns(data);
+      const result = await response.json();
+      setCampaigns(result.data || []);
     } catch (error) {
       toast.error("Failed to load campaigns");
     } finally {
@@ -52,20 +62,10 @@ export default function AdDashboardPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      active: "bg-emerald-100 text-emerald-700",
-      pending_payment: "bg-yellow-100 text-yellow-700",
-      paused: "bg-muted text-foreground",
-      completed: "bg-blue-100 text-blue-700",
-      rejected: "bg-red-100 text-red-700",
-      draft: "bg-muted text-foreground",
-    };
-    return colors[status] || "bg-muted text-foreground";
-  };
+  const getStatusInfo = (status: string) => STATUS_INFO[status as CampaignStatus] || { color: "bg-muted text-foreground", label: status };
 
-  const totalSpent = campaigns.reduce((sum, c) => sum + (c.status === "active" || c.status === "completed" ? c.total_cost : 0), 0);
-  const totalImpressions = campaigns.reduce((sum, c) => sum + c.impressions, 0);
+  const totalSpent = campaigns.reduce((sum, c) => sum + (c.status === "active" || c.status === "completed" ? c.total_spend : 0), 0);
+  const totalImpressions = campaigns.reduce((sum, c) => sum + c.actual_impressions, 0);
   const totalClicks = campaigns.reduce((sum, c) => sum + c.clicks, 0);
   const avgCtr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : "0";
 
@@ -131,26 +131,32 @@ export default function AdDashboardPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {campaigns.map((campaign) => (
-                  <div key={campaign.id} className="flex items-center justify-between p-4 bg-background rounded-lg border">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{campaign.name}</p>
-                        <Badge className={getStatusColor(campaign.status)}>
-                          {campaign.status.replace("_", " ")}
-                        </Badge>
+                {campaigns.map((campaign) => {
+                  const statusInfo = getStatusInfo(campaign.status);
+                  return (
+                    <div key={campaign.id} className="flex items-center justify-between p-4 bg-background rounded-lg border">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{campaign.title}</p>
+                          <Badge className={statusInfo.color}>
+                            {statusInfo.label}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          KES {campaign.total_budget.toLocaleString()} budget
+                          {campaign.start_date && campaign.end_date ? ` | ${campaign.start_date} - ${campaign.end_date}` : ""}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {campaign.duration_days} days | KES {campaign.total_cost.toLocaleString()}
-                      </p>
+                      <div className="text-right">
+                        <p className="text-sm">{campaign.actual_impressions.toLocaleString()} impressions</p>
+                        <p className="text-sm">{campaign.clicks.toLocaleString()} clicks</p>
+                        <p className="text-sm font-medium">
+                          {campaign.actual_impressions > 0 ? ((campaign.clicks / campaign.actual_impressions) * 100).toFixed(2) : "0"}% CTR
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm">{campaign.impressions.toLocaleString()} impressions</p>
-                      <p className="text-sm">{campaign.clicks.toLocaleString()} clicks</p>
-                      <p className="text-sm font-medium">{campaign.ctr}% CTR</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
@@ -159,4 +165,3 @@ export default function AdDashboardPage() {
     </div>
   );
 }
-
