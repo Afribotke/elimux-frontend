@@ -1,15 +1,16 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { AdPricingCalculator } from "@/components/ads/AdPricingCalculator";
 import { AdPreview } from "@/components/ads/AdPreview";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { advertiserFetch, ADVERTISER_LOGIN_PATH } from "@/lib/advertiserAuth";
 
 interface CampaignForm {
   name: string;
@@ -22,14 +23,14 @@ interface CampaignForm {
   target_audience: string[];
   budget: number;
   duration_days: number;
-  placement: string[];
+  placement: string;
 }
 
 const PLACEMENT_OPTIONS = [
-  { id: "homepage_banner", name: "Homepage Banner", basePrice: 5000 },
-  { id: "search_sidebar", name: "Search Sidebar", basePrice: 3000 },
-  { id: "program_highlight", name: "Program Highlight", basePrice: 2000 },
-  { id: "mobile_sticky", name: "Mobile Sticky", basePrice: 4000 },
+  { id: "homepage_banner", name: "Homepage Banner" },
+  { id: "search_sidebar", name: "Search Sidebar" },
+  { id: "program_highlight", name: "Program Highlight" },
+  { id: "mobile_sticky", name: "Mobile Sticky" },
 ];
 
 export default function CreateCampaignPage() {
@@ -45,6 +46,7 @@ function CreateCampaignForm() {
   const searchParams = useSearchParams();
   const preselectedTier = searchParams.get("tier");
 
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState<CampaignForm>({
@@ -58,52 +60,68 @@ function CreateCampaignForm() {
     target_audience: [],
     budget: preselectedTier === "growth" ? 15000 : preselectedTier === "premium" ? 35000 : 5000,
     duration_days: 7,
-    placement: [],
+    placement: "",
   });
 
-  const handlePlacementToggle = (placementId: string) => {
-    setForm((prev) => ({
-      ...prev,
-      placement: prev.placement.includes(placementId)
-        ? prev.placement.filter((p) => p !== placementId)
-        : [...prev.placement, placementId],
-    }));
-  };
-
-  const calculateTotal = () => {
-    let total = 0;
-    form.placement.forEach((p) => {
-      const option = PLACEMENT_OPTIONS.find((o) => o.id === p);
-      if (option) total += option.basePrice * (form.duration_days / 7);
-    });
-    // Apply duration discount
-    if (form.duration_days >= 30) total *= 0.85;
-    else if (form.duration_days >= 14) total *= 0.9;
-    return Math.round(total);
-  };
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (cancelled) return;
+      if (!session) {
+        router.push(`${ADVERTISER_LOGIN_PATH}?redirect=/ads/self-serve/create`);
+        return;
+      }
+      setCheckingAuth(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/self-serve-ads/campaigns", {
+      const response = await advertiserFetch("/api/campaigns", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
-          total_cost: calculateTotal(),
+          title: form.name,
+          description: form.description,
+          budget: form.budget,
+          duration_days: form.duration_days,
+          placement: form.placement,
+          image_url: form.image_url,
+          target_url: form.cta_url,
+          start_date: new Date().toISOString(),
+          end_date: new Date(Date.now() + form.duration_days * 24 * 60 * 60 * 1000).toISOString(),
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to create campaign");
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Failed to submit campaign");
+      }
 
-      toast.success("Campaign created! Proceed to payment.");
+      toast.success(
+        "Campaign submitted for admin review. You will be notified once approved. Per-click billing applies — no upfront charge."
+      );
       router.push("/ads/self-serve/dashboard");
     } catch (error) {
-      toast.error("Failed to create campaign");
+      toast.error(error instanceof Error ? error.message : "Failed to submit campaign");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-muted py-8">
@@ -178,23 +196,20 @@ function CreateCampaignForm() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Select Placements</Label>
-                <div className="grid grid-cols-2 gap-3">
+                <Label htmlFor="placement-select">Placement</Label>
+                <select
+                  id="placement-select"
+                  value={form.placement}
+                  onChange={(e) => setForm({ ...form, placement: e.target.value })}
+                  className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-background"
+                >
+                  <option value="">Select a placement...</option>
                   {PLACEMENT_OPTIONS.map((option) => (
-                    <button
-                      key={option.id}
-                      onClick={() => handlePlacementToggle(option.id)}
-                      className={`p-4 rounded-lg border text-left transition-colors ${
-                        form.placement.includes(option.id)
-                          ? "border-emerald-500 bg-emerald-50"
-                          : "border-border hover:border-border"
-                      }`}
-                    >
-                      <p className="font-medium">{option.name}</p>
-                      <p className="text-sm text-muted-foreground">KES {option.basePrice.toLocaleString()}/week</p>
-                    </button>
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
                   ))}
-                </div>
+                </select>
               </div>
               <div className="space-y-2">
                 <Label>Duration (days)</Label>
@@ -205,18 +220,16 @@ function CreateCampaignForm() {
                   value={form.duration_days}
                   onChange={(e) => setForm({ ...form, duration_days: parseInt(e.target.value) })}
                 />
-                <p className="text-xs text-muted-foreground">
-                  14+ days: 10% discount | 30+ days: 15% discount
-                </p>
               </div>
-              <AdPricingCalculator 
-                placements={form.placement} 
-                durationDays={form.duration_days}
-                total={calculateTotal()}
-              />
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Back</Button>
-                <Button onClick={() => setStep(3)} className="flex-1">Continue</Button>
+                <Button
+                  onClick={() => setStep(3)}
+                  disabled={!form.placement}
+                  className="flex-1"
+                >
+                  Continue
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -225,21 +238,15 @@ function CreateCampaignForm() {
         {step === 3 && (
           <Card>
             <CardHeader>
-              <CardTitle>Step 3: Preview & Pay</CardTitle>
-              <CardDescription>Review your campaign before payment</CardDescription>
+              <CardTitle>Step 3: Preview & Submit</CardTitle>
+              <CardDescription>Review your campaign before submitting</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <AdPreview campaign={form} />
-              <div className="p-4 bg-muted rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-medium">Total Cost</span>
-                  <span className="text-2xl font-bold text-emerald-600">KES {calculateTotal().toLocaleString()}</span>
-                </div>
-              </div>
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setStep(2)} className="flex-1">Back</Button>
                 <Button onClick={handleSubmit} disabled={isSubmitting} className="flex-1">
-                  {isSubmitting ? "Creating..." : "Pay & Launch Campaign"}
+                  {isSubmitting ? "Submitting..." : "Submit Campaign for Review"}
                 </Button>
               </div>
             </CardContent>
@@ -249,4 +256,3 @@ function CreateCampaignForm() {
     </div>
   );
 }
-
