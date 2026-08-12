@@ -5,15 +5,29 @@
 // /advertiser/login
 // ============================================
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, LogIn } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { advertiserFetch, takePendingAdvertiserRegistration } from '@/lib/advertiserAuth'
 
 export default function AdvertiserLoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/advertiser/dashboard";
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -46,7 +60,7 @@ export default function AdvertiserLoginPage() {
       }
     }
 
-    router.push('/advertiser/dashboard')
+    router.push(redirectTo)
   }
 
   return (
