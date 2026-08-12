@@ -21,7 +21,7 @@ type Campaign = {
   placement: string
   total_budget: number
   status: string
-  impressions: number
+  actual_impressions: number
   clicks: number
   start_date: string | null
   end_date: string | null
@@ -167,7 +167,7 @@ export default function AdminCampaignsPage() {
                       : 'N/A'}
                   </p>
                   <p className="text-xs text-muted mt-0.5">
-                    {c.impressions} impressions · {c.clicks} clicks · created {new Date(c.created_at).toLocaleDateString()}
+                    {c.actual_impressions} impressions · {c.clicks} clicks · created {new Date(c.created_at).toLocaleDateString()}
                   </p>
                 </div>
               </div>
