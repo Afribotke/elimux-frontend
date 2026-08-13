@@ -251,7 +251,9 @@ export default function AdminScholarshipsPage() {
                   <td className="px-4 py-3 text-muted">{s.amount || '—'}</td>
                   <td className="px-4 py-3 text-muted">{s.application_deadline ? new Date(s.application_deadline).toLocaleDateString() : '—'}</td>
                   <td className="px-4 py-3">
-                    <span className={getAppStatusClass(s.application_status)}>{s.application_status || '—'}</span>
+                    <span className={getAppStatusClass(s.application_status || (s.status === 'active' ? 'open' : 'closed'))}>
+                      {s.application_status || (s.status === 'active' ? 'open' : 'closed')}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
