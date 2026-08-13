@@ -164,6 +164,8 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "Institutions", href: "/admin/institutions", icon: Building2 },
       { label: "Institution Claims", href: "/admin/institution-claims", icon: Shield },
       { label: "Programs", href: "/admin/programs", icon: GraduationCap },
+      { label: "Scholarships", href: "/admin/scholarships", icon: Award },
+      { label: "Scholarship Sponsors", href: "/admin/scholarships/sponsors", icon: Sparkles },
       { label: "Reviews", href: "/admin/reviews", icon: Star, badge: 12 },
       { label: "Messages", href: "/admin/messages", icon: MessageSquare, badge: 3 },
       { label: "Bulk Upload", href: "/admin/bulk-upload", icon: Upload },

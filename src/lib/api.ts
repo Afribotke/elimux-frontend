@@ -1,4 +1,10 @@
 import type { Tables } from './supabase'
+import type {
+  Scholarship,
+  ScholarshipFormData,
+  ScholarshipSponsor,
+  ScholarshipSponsorFormData,
+} from '@/types/scholarships'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -1164,6 +1170,70 @@ export function createScholarshipAlert(data: CreateScholarshipAlertInput) {
     method: 'POST',
     body: JSON.stringify(data),
   })
+}
+
+// Scholarships (admin)
+
+export interface AdminScholarshipListParams {
+  page?: number
+  limit?: number
+  status?: string
+  application_status?: string
+  search?: string
+}
+
+export function listAdminScholarships(params: AdminScholarshipListParams, adminKey: string) {
+  return request<ApiListResponse<Scholarship>>(
+    `/api/admin/scholarships${buildQuery(params)}`,
+    {},
+    adminKey
+  )
+}
+
+export function getAdminScholarship(id: string, adminKey: string) {
+  return request<{ data: Scholarship }>(`/api/admin/scholarships/${id}`, {}, adminKey)
+}
+
+export function createScholarship(data: ScholarshipFormData, adminKey: string) {
+  return request<{ data: Scholarship; message: string }>(
+    '/api/admin/scholarships',
+    { method: 'POST', body: JSON.stringify(data) },
+    adminKey
+  )
+}
+
+export function updateScholarship(id: string, data: ScholarshipFormData, adminKey: string) {
+  return request<{ data: Scholarship; message: string }>(
+    `/api/admin/scholarships/${id}`,
+    { method: 'PUT', body: JSON.stringify(data) },
+    adminKey
+  )
+}
+
+export function deleteScholarship(id: string, adminKey: string) {
+  return request<{ message: string }>(`/api/admin/scholarships/${id}`, { method: 'DELETE' }, adminKey)
+}
+
+export interface AdminScholarshipSponsorListParams {
+  type?: string
+  country?: string
+  search?: string
+}
+
+export function listScholarshipSponsors(params: AdminScholarshipSponsorListParams, adminKey: string) {
+  return request<{ data: ScholarshipSponsor[]; meta: { total: number } }>(
+    `/api/admin/scholarship-sponsors${buildQuery(params)}`,
+    {},
+    adminKey
+  )
+}
+
+export function createScholarshipSponsor(data: ScholarshipSponsorFormData, adminKey: string) {
+  return request<{ data: ScholarshipSponsor; message: string }>(
+    '/api/admin/scholarship-sponsors',
+    { method: 'POST', body: JSON.stringify(data) },
+    adminKey
+  )
 }
 
 // Accreditation bodies
