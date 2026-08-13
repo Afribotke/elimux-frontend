@@ -2005,3 +2005,78 @@ export interface OutreachDashboardStats {
 export function fetchOutreachDashboard(adminKey: string) {
   return request<{ data: OutreachDashboardStats }>("/api/admin/employer-outreach/stats/dashboard", {}, adminKey)
 }
+
+// Scholarship scraper (admin)
+
+export interface ScraperScholarshipSource {
+  name: string
+  url: string
+  type: 'website'
+}
+
+export interface ScholarshipChangeRow {
+  id: string
+  source_url: string
+  scraped_at: string
+  status: 'pending' | 'approved' | 'rejected'
+  title: string | null
+  provider: string | null
+  description: string | null
+  eligibility: string | null
+  benefits: string | null
+  amount: string | null
+  currency: string | null
+  coverage_type: string | null
+  application_deadline: string | null
+  application_url: string | null
+  required_documents: string[] | null
+  funding_amount: number | null
+  duration: number | null
+  duration_unit: string | null
+  confidence_score: number | null
+  reviewed_by: string | null
+  reviewed_at: string | null
+  review_notes: string | null
+  created_at: string
+}
+
+export function runScholarshipScraper(payload: { url?: string; sourceName?: string }, adminKey: string) {
+  return request<{ success: boolean; extracted: number; staged: number; confidence: number; changes: ScholarshipChangeRow[] }>(
+    '/api/admin/scraper/scholarships/run',
+    { method: 'POST', body: JSON.stringify(payload) },
+    adminKey
+  )
+}
+
+export function fetchScholarshipChanges(adminKey: string, status = 'pending', page = 1, limit = 20) {
+  const query = new URLSearchParams({ status, page: String(page), limit: String(limit) })
+  return request<{ data: ScholarshipChangeRow[]; meta: { page: number; limit: number; total: number } }>(
+    `/api/admin/scraper/scholarships/changes?${query}`,
+    {},
+    adminKey
+  )
+}
+
+export function approveScholarshipChange(id: string, adminKey: string, notes?: string) {
+  return request<{ success: boolean; scholarship: ScholarshipRow }>(
+    `/api/admin/scraper/scholarships/changes/${id}/approve`,
+    { method: 'POST', body: JSON.stringify({ notes }) },
+    adminKey
+  )
+}
+
+export function rejectScholarshipChange(id: string, adminKey: string, notes?: string) {
+  return request<{ success: boolean }>(
+    `/api/admin/scraper/scholarships/changes/${id}/reject`,
+    { method: 'POST', body: JSON.stringify({ notes }) },
+    adminKey
+  )
+}
+
+export function fetchScraperSources(adminKey: string) {
+  return request<{ data: ScraperScholarshipSource[] }>(
+    '/api/admin/scraper/scholarships/sources',
+    {},
+    adminKey
+  )
+}

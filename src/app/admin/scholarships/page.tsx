@@ -9,11 +9,18 @@ import {
   updateScholarship,
   deleteScholarship,
   listScholarshipSponsors,
+  runScholarshipScraper,
+  fetchScholarshipChanges,
+  approveScholarshipChange,
+  rejectScholarshipChange,
+  fetchScraperSources,
+  type ScholarshipChangeRow,
+  type ScraperScholarshipSource,
 } from '@/lib/api'
 import { useAdminKey } from '@/components/admin/AdminKeyContext'
 import AddScholarshipForm, { type ScholarshipFormInitialData } from '@/components/admin/AddScholarshipForm'
 import type { Scholarship, ScholarshipFormData, ScholarshipSponsor } from '@/types/scholarships'
-import { ArrowLeft, Award, Pencil, Trash2, Plus, Search, Landmark } from 'lucide-react'
+import { ArrowLeft, Award, Pencil, Trash2, Plus, Search, Landmark, Bot } from 'lucide-react'
 
 function getAppStatusClass(status?: string | null) {
   switch (status) {
@@ -39,6 +46,14 @@ export default function AdminScholarshipsPage() {
   const [sponsors, setSponsors] = useState<ScholarshipSponsor[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<ScholarshipFormInitialData | null>(null)
+
+  const [showScraper, setShowScraper] = useState(false)
+  const [scraperUrl, setScraperUrl] = useState('')
+  const [scraperSource, setScraperSource] = useState('')
+  const [scraperSources, setScraperSources] = useState<ScraperScholarshipSource[]>([])
+  const [scraperChanges, setScraperChanges] = useState<ScholarshipChangeRow[]>([])
+  const [scraping, setScraping] = useState(false)
+  const [scrapeResult, setScrapeResult] = useState<{ extracted: number; staged: number; confidence: number } | null>(null)
 
   useEffect(() => {
     if (!adminKey) return
@@ -147,6 +162,52 @@ export default function AdminScholarshipsPage() {
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load scholarship')
+    }
+  }
+
+  const loadScraperSources = async () => {
+    if (!adminKey) return
+    const json = await fetchScraperSources(adminKey)
+    setScraperSources(json.data)
+  }
+
+  const handleScrape = async () => {
+    if (!adminKey) return
+    try {
+      setScraping(true)
+      const result = await runScholarshipScraper(
+        { url: scraperUrl || undefined, sourceName: scraperSource || undefined },
+        adminKey
+      )
+      setScrapeResult({ extracted: result.extracted, staged: result.staged, confidence: result.confidence })
+      const changesJson = await fetchScholarshipChanges(adminKey, 'pending', 1, 20)
+      setScraperChanges(changesJson.data)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Scraper failed')
+    } finally {
+      setScraping(false)
+    }
+  }
+
+  const handleApproveChange = async (id: string) => {
+    if (!adminKey) return
+    try {
+      await approveScholarshipChange(id, adminKey)
+      setScraperChanges((prev) => prev.filter((c) => c.id !== id))
+      flashSuccess('Scholarship approved and published.')
+      await loadScholarships()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Approve failed')
+    }
+  }
+
+  const handleRejectChange = async (id: string) => {
+    if (!adminKey) return
+    try {
+      await rejectScholarshipChange(id, adminKey)
+      setScraperChanges((prev) => prev.filter((c) => c.id !== id))
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Reject failed')
     }
   }
 
@@ -298,6 +359,119 @@ export default function AdminScholarshipsPage() {
       {editing && (
         <AddScholarshipForm sponsors={sponsors} initialData={editing} onSubmit={handleUpdate} onClose={() => setEditing(null)} />
       )}
+
+      <div className="mt-12 bg-elimux-card border border-border rounded-xl p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-3">
+            <Bot className="w-6 h-6 text-primary-400" />
+            Scholarship Scraper
+          </h2>
+          <button
+            onClick={() => { setShowScraper(!showScraper); if (!showScraper) loadScraperSources() }}
+            className="text-sm text-primary-400 hover:text-primary-300 font-medium"
+          >
+            {showScraper ? 'Hide' : 'Show Scraper'}
+          </button>
+        </div>
+
+        {showScraper && (
+          <div className="space-y-6">
+            <div className="border border-border rounded-lg p-4">
+              <h3 className="font-semibold text-foreground mb-3">Run Scraper</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-muted mb-1">Pre-configured Source</label>
+                  <select
+                    value={scraperSource}
+                    onChange={(e) => { setScraperSource(e.target.value); setScraperUrl('') }}
+                    className="w-full px-3 py-2 text-sm rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                  >
+                    <option value="">-- Select source --</option>
+                    {scraperSources.map((s) => (
+                      <option key={s.name} value={s.name}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted mb-1">Or Custom URL</label>
+                  <input
+                    type="text"
+                    value={scraperUrl}
+                    onChange={(e) => { setScraperUrl(e.target.value); setScraperSource('') }}
+                    placeholder="https://example.com/scholarships"
+                    className="w-full px-3 py-2 text-sm rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={handleScrape}
+                disabled={scraping || (!scraperUrl && !scraperSource) || !adminKey}
+                className="mt-4 px-6 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors disabled:opacity-40"
+              >
+                {scraping ? 'Scraping...' : 'Run Scraper'}
+              </button>
+
+              {scrapeResult && (
+                <div className="mt-4 bg-elimux-dark rounded-lg p-4">
+                  <p className="text-elimux-success font-medium text-sm">Extracted {scrapeResult.extracted} scholarships</p>
+                  <p className="text-muted text-sm">Staged: {scrapeResult.staged} · Confidence: {scrapeResult.confidence}%</p>
+                </div>
+              )}
+            </div>
+
+            <div className="border border-border rounded-lg p-4">
+              <h3 className="font-semibold text-foreground mb-3">Pending Review ({scraperChanges.length})</h3>
+              {scraperChanges.length === 0 ? (
+                <p className="text-muted text-sm">No pending changes. Run the scraper above.</p>
+              ) : (
+                <div className="space-y-3">
+                  {scraperChanges.map((c) => (
+                    <div key={c.id} className="border border-border rounded-lg p-4 hover:bg-muted/5">
+                      <div className="flex justify-between items-start gap-4">
+                        <div>
+                          <h4 className="font-semibold text-foreground">{c.title}</h4>
+                          <p className="text-sm text-muted">{c.provider} · {c.amount || '—'}</p>
+                          <p className="text-sm text-muted mt-1">Deadline: {c.application_deadline || '—'}</p>
+                          {c.confidence_score !== null && (
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mt-2 ${
+                                c.confidence_score > 80
+                                  ? 'bg-elimux-success/10 text-elimux-success'
+                                  : c.confidence_score > 50
+                                  ? 'bg-amber-400/10 text-amber-400'
+                                  : 'bg-elimux-danger/10 text-elimux-danger'
+                              }`}
+                            >
+                              Confidence: {c.confidence_score}%
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <button
+                            onClick={() => handleApproveChange(c.id)}
+                            className="px-3 py-1 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-colors"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleRejectChange(c.id)}
+                            className="px-3 py-1 rounded-lg bg-elimux-danger/10 hover:bg-elimux-danger/20 text-elimux-danger text-sm font-medium transition-colors"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                      {c.description && (
+                        <p className="text-sm text-muted mt-2 line-clamp-2">{c.description}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </main>
   )
 }
