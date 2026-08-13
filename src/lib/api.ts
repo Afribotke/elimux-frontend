@@ -2057,10 +2057,10 @@ export function fetchScholarshipChanges(adminKey: string, status = 'pending', pa
   )
 }
 
-export function approveScholarshipChange(id: string, adminKey: string, notes?: string) {
+export function approveScholarshipChange(id: string, adminKey: string, notes?: string, application_deadline?: string) {
   return request<{ success: boolean; scholarship: ScholarshipRow }>(
     `/api/admin/scraper/scholarships/changes/${id}/approve`,
-    { method: 'POST', body: JSON.stringify({ notes }) },
+    { method: 'POST', body: JSON.stringify({ notes, application_deadline }) },
     adminKey
   )
 }

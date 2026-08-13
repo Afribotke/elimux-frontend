@@ -52,6 +52,7 @@ export default function AdminScholarshipsPage() {
   const [scraperSource, setScraperSource] = useState('')
   const [scraperSources, setScraperSources] = useState<ScraperScholarshipSource[]>([])
   const [scraperChanges, setScraperChanges] = useState<ScholarshipChangeRow[]>([])
+  const [deadlineOverrides, setDeadlineOverrides] = useState<Record<string, string>>({})
   const [scraping, setScraping] = useState(false)
   const [scrapeResult, setScrapeResult] = useState<{ extracted: number; staged: number; confidence: number } | null>(null)
 
@@ -192,8 +193,13 @@ export default function AdminScholarshipsPage() {
   const handleApproveChange = async (id: string) => {
     if (!adminKey) return
     try {
-      await approveScholarshipChange(id, adminKey)
+      await approveScholarshipChange(id, adminKey, undefined, deadlineOverrides[id] || undefined)
       setScraperChanges((prev) => prev.filter((c) => c.id !== id))
+      setDeadlineOverrides((prev) => {
+        const next = { ...prev }
+        delete next[id]
+        return next
+      })
       flashSuccess('Scholarship approved and published.')
       await loadScholarships()
     } catch (err) {
@@ -445,6 +451,18 @@ export default function AdminScholarshipsPage() {
                               Confidence: {c.confidence_score}%
                             </span>
                           )}
+                          <div className="mt-2">
+                            <label className="block text-xs font-medium text-muted mb-1">Deadline (required)</label>
+                            <input
+                              type="date"
+                              value={deadlineOverrides[c.id] || ''}
+                              onChange={(e) => setDeadlineOverrides({ ...deadlineOverrides, [c.id]: e.target.value })}
+                              className="px-2 py-1 text-sm rounded bg-elimux-dark border border-border text-foreground w-40 focus:outline-none focus:border-primary-500"
+                            />
+                            {c.application_deadline && (
+                              <span className="text-xs text-muted ml-2">AI detected: {c.application_deadline}</span>
+                            )}
+                          </div>
                         </div>
                         <div className="flex gap-2 shrink-0">
                           <button
