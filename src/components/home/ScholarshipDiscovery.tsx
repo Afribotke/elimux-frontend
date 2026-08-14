@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { listScholarships, type ScholarshipRow } from '@/lib/api';
+import { listScholarships, matchScholarships, type ScholarshipRow, type ScholarshipMatchResult } from '@/lib/api';
 
 function getDeadlineStatus(deadline: string | null) {
   if (!deadline) return { text: 'Rolling', color: 'bg-blue-100 text-blue-700' };
@@ -59,6 +59,38 @@ export default function ScholarshipDiscovery() {
     deadline_after: '',
   });
 
+  const [showMatcher, setShowMatcher] = useState(false);
+  const [matchProfile, setMatchProfile] = useState({
+    gpa: '',
+    course_field: '',
+    county: '',
+    financial_need: false,
+    gender: '',
+  });
+  const [matchResults, setMatchResults] = useState<ScholarshipMatchResult[]>([]);
+  const [matching, setMatching] = useState(false);
+  const [matchError, setMatchError] = useState('');
+
+  const handleMatch = async () => {
+    try {
+      setMatching(true);
+      setMatchError('');
+      const result = await matchScholarships({
+        gpa: matchProfile.gpa ? parseFloat(matchProfile.gpa) : undefined,
+        course_field: matchProfile.course_field || undefined,
+        county: matchProfile.county || undefined,
+        financial_need: matchProfile.financial_need,
+        gender: matchProfile.gender || undefined,
+      });
+      setMatchResults(result.data);
+      setShowMatcher(false);
+    } catch (err) {
+      setMatchError(err instanceof Error ? err.message : 'Matching failed');
+    } finally {
+      setMatching(false);
+    }
+  };
+
   useEffect(() => {
     listScholarships({ limit: 3, offset: 0 })
       .then((res) => setFeatured(res.data.filter((s) => s.is_featured).slice(0, 3)))
@@ -94,6 +126,130 @@ export default function ScholarshipDiscovery() {
 
   return (
     <div className="space-y-8">
+      {/* Match Results */}
+      {matchResults.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-gray-900">🎯 Your Top Matches</h3>
+            <button onClick={() => setMatchResults([])} className="text-gray-500 hover:text-gray-900 text-sm">
+              Clear
+            </button>
+          </div>
+          <div className="space-y-3">
+            {matchResults.slice(0, 5).map((r) => (
+              <div key={r.scholarship_id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between gap-4">
+                <div>
+                  <h4 className="font-semibold text-gray-900">{r.title}</h4>
+                  <p className="text-sm text-gray-600">{r.provider}</p>
+                  {r.matched_criteria.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {r.matched_criteria.slice(0, 3).map((c) => (
+                        <span key={c} className="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">{c}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="text-right shrink-0 space-y-1">
+                  <div
+                    className={`text-2xl font-bold ${
+                      r.match_score >= 80 ? 'text-green-600' : r.match_score >= 50 ? 'text-yellow-600' : 'text-red-600'
+                    }`}
+                  >
+                    {r.match_score}%
+                  </div>
+                  <ApplyLink applicationUrl={r.application_url} sourceUrl={r.source_url} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Match Me */}
+      <div className="flex flex-col items-center gap-4">
+        <button
+          onClick={() => setShowMatcher(!showMatcher)}
+          className="bg-gray-900 text-white px-8 py-3 rounded-full font-bold hover:bg-gray-700 transition-colors"
+        >
+          {showMatcher ? 'Cancel' : '🎯 Match Me to Scholarships'}
+        </button>
+
+        {showMatcher && (
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 w-full max-w-2xl">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Tell us about yourself</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">GPA (0.0 - 4.0)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  max="4"
+                  min="0"
+                  value={matchProfile.gpa}
+                  onChange={(e) => setMatchProfile({ ...matchProfile, gpa: e.target.value })}
+                  className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-800 outline-none focus:border-gray-400"
+                  placeholder="3.5"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Course / Field</label>
+                <input
+                  type="text"
+                  value={matchProfile.course_field}
+                  onChange={(e) => setMatchProfile({ ...matchProfile, course_field: e.target.value })}
+                  className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-800 outline-none focus:border-gray-400"
+                  placeholder="Computer Science"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">County</label>
+                <input
+                  type="text"
+                  value={matchProfile.county}
+                  onChange={(e) => setMatchProfile({ ...matchProfile, county: e.target.value })}
+                  className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-800 outline-none focus:border-gray-400"
+                  placeholder="Nairobi"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                <select
+                  value={matchProfile.gender}
+                  onChange={(e) => setMatchProfile({ ...matchProfile, gender: e.target.value })}
+                  className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 outline-none focus:border-gray-400"
+                >
+                  <option value="">Prefer not to say</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="flex items-center gap-3 text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={matchProfile.financial_need}
+                    onChange={(e) => setMatchProfile({ ...matchProfile, financial_need: e.target.checked })}
+                    className="w-4 h-4 rounded"
+                  />
+                  I require financial assistance
+                </label>
+              </div>
+            </div>
+
+            {matchError && <p className="text-red-600 text-sm mt-4">{matchError}</p>}
+
+            <button
+              onClick={handleMatch}
+              disabled={matching}
+              className="mt-6 w-full bg-gray-900 text-white py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:opacity-50"
+            >
+              {matching ? 'Matching...' : 'Find My Scholarships'}
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Featured Strip */}
       {featured.length > 0 && (
         <div className="space-y-4">

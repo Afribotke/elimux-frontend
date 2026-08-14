@@ -1172,6 +1172,50 @@ export function createScholarshipAlert(data: CreateScholarshipAlertInput) {
   })
 }
 
+export interface ScholarshipMatchParams {
+  gpa?: number
+  course_field?: string
+  study_level?: string
+  county?: string
+  country_code?: string
+  gender?: string
+  age?: number
+  financial_need?: boolean
+  orphan_status?: boolean
+  disability?: boolean
+  work_experience_years?: number
+  career_goals?: string
+  extracurriculars?: string[]
+  languages?: string[]
+}
+
+export interface ScholarshipMatchResult {
+  scholarship_id: string
+  title: string
+  provider: string
+  amount: string | null
+  application_deadline: string | null
+  application_url: string | null
+  source_url: string | null
+  match_score: number
+  matched_criteria: string[]
+  missing_criteria: string[]
+  is_eligible: boolean
+}
+
+export function matchScholarships(profile: ScholarshipMatchParams, limit: number = 20) {
+  return request<{ data: ScholarshipMatchResult[]; meta: { total: number } }>('/api/scholarships/match', {
+    method: 'POST',
+    body: JSON.stringify({ profile, limit }),
+  })
+}
+
+export function matchScholarshipsForMe(token: string) {
+  return request<{ data: ScholarshipMatchResult[]; meta: { total: number } }>('/api/scholarships/match/me', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
 // Scholarships (admin)
 
 export interface AdminScholarshipListParams {
