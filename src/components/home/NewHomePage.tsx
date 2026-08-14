@@ -4,6 +4,7 @@ import { useState } from 'react';
 import CategoryPills from './CategoryPills';
 import CareerSearchDropdown from './CareerSearchDropdown';
 import GradeMatcher from './GradeMatcher';
+import ScholarshipDiscovery from './ScholarshipDiscovery';
 import AdPortalSection from './AdPortalSection';
 import PopularPrograms from './PopularPrograms';
 import SponsorBanner from './SponsorBanner';
@@ -57,6 +58,17 @@ export default function NewHomePage() {
             <span>🔧</span>
             Skills & Trades
           </button>
+          <button
+            onClick={() => setActiveTab('scholarships')}
+            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-medium transition-all ${
+              activeTab === 'scholarships'
+                ? 'bg-gray-900 text-white border-gray-900'
+                : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+            }`}
+          >
+            <span>💰</span>
+            Scholarships
+          </button>
         </div>
 
         {/* AI Search Bar */}
@@ -87,6 +99,7 @@ export default function NewHomePage() {
             <GradeMatcher />
           </div>
         )}
+        {activeTab === 'scholarships' && <ScholarshipDiscovery />}
       </div>
 
       {/* Homepage Sections — visible on both tabs */}

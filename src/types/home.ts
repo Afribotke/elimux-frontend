@@ -20,4 +20,4 @@ export interface Program {
   };
 }
 
-export type TabType = 'uni' | 'skills';
+export type TabType = 'uni' | 'skills' | 'scholarships';
