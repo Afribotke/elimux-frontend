@@ -1355,6 +1355,47 @@ export function createScholarshipSponsor(data: ScholarshipSponsorFormData, admin
   )
 }
 
+export interface AdminApplicationReview {
+  id: string
+  student_id: string
+  scholarship_id: string
+  status: string
+  documents_uploaded: { name: string; path: string; uploaded_at: string }[]
+  missing_documents: string[]
+  ai_match_score: number | null
+  ai_guidance: string | null
+  notes: string | null
+  review_score: number | null
+  review_notes: string | null
+  reviewed_at: string | null
+  created_at: string
+  updated_at: string
+  scholarship: ScholarshipRow
+}
+
+export function listAdminScholarshipApplications(
+  params: { status?: string; page?: number; limit?: number },
+  adminKey: string
+) {
+  return request<{ data: AdminApplicationReview[]; total: number }>(
+    `/api/admin/scholarship-applications${buildQuery(params)}`,
+    {},
+    adminKey
+  )
+}
+
+export function reviewScholarshipApplication(
+  id: string,
+  data: { status: string; review_score?: number; review_notes?: string },
+  adminKey: string
+) {
+  return request<{ data: AdminApplicationReview }>(
+    `/api/admin/scholarship-applications/${id}/review`,
+    { method: 'POST', body: JSON.stringify(data) },
+    adminKey
+  )
+}
+
 // Accreditation bodies
 
 export interface AccreditationBodyRow {
