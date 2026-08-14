@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { listScholarships, matchScholarships, type ScholarshipRow, type ScholarshipMatchResult } from '@/lib/api';
+import { createClient } from '@/lib/supabase/client';
+import { listScholarships, matchScholarships, startScholarshipApplication, type ScholarshipRow, type ScholarshipMatchResult } from '@/lib/api';
+
+const supabase = createClient();
 
 function getDeadlineStatus(deadline: string | null) {
   if (!deadline) return { text: 'Rolling', color: 'bg-blue-100 text-blue-700' };
@@ -44,6 +47,56 @@ function ApplyLink({ applicationUrl, sourceUrl }: { applicationUrl: string | nul
     >
       Apply
     </Link>
+  );
+}
+
+function TrackButton({ scholarshipId }: { scholarshipId: string }) {
+  const [state, setState] = useState<'idle' | 'loading' | 'tracked' | 'exists' | 'error'>('idle');
+  const [error, setError] = useState('');
+
+  const handleTrack = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setState('error');
+      setError('Log in to track this application');
+      return;
+    }
+
+    setState('loading');
+    setError('');
+    try {
+      await startScholarshipApplication(scholarshipId, session.access_token);
+      setState('tracked');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to start tracking';
+      if (message.includes('already exists')) {
+        setState('exists');
+      } else {
+        setState('error');
+        setError(message);
+      }
+    }
+  };
+
+  if (state === 'tracked' || state === 'exists') {
+    return (
+      <span className="text-sm text-green-700 font-medium">
+        {state === 'tracked' ? 'Tracking started' : 'Already tracking'}
+      </span>
+    );
+  }
+
+  return (
+    <div className="text-right">
+      <button
+        onClick={handleTrack}
+        disabled={state === 'loading'}
+        className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:border-gray-400 transition-colors disabled:opacity-50"
+      >
+        {state === 'loading' ? 'Starting...' : 'Track'}
+      </button>
+      {state === 'error' && <p className="text-red-600 text-xs mt-1">{error}</p>}
+    </div>
   );
 }
 
@@ -158,6 +211,7 @@ export default function ScholarshipDiscovery() {
                     {r.match_score}%
                   </div>
                   <ApplyLink applicationUrl={r.application_url} sourceUrl={r.source_url} />
+                  <TrackButton scholarshipId={r.scholarship_id} />
                 </div>
               </div>
             ))}
@@ -273,6 +327,9 @@ export default function ScholarshipDiscovery() {
                   </span>
                   <ApplyLink applicationUrl={s.application_url} sourceUrl={s.source_url} />
                 </div>
+                <div className="mt-2 flex justify-end">
+                  <TrackButton scholarshipId={s.id} />
+                </div>
               </div>
             ))}
           </div>
@@ -370,6 +427,9 @@ export default function ScholarshipDiscovery() {
                     </span>
                   </div>
                   <ApplyLink applicationUrl={s.application_url} sourceUrl={s.source_url} />
+                </div>
+                <div className="mt-2 flex justify-end">
+                  <TrackButton scholarshipId={s.id} />
                 </div>
               </div>
             );

@@ -1216,6 +1216,81 @@ export function matchScholarshipsForMe(token: string) {
   })
 }
 
+// Scholarship application tracker. Routes live under
+// /api/scholarship-applications, not /api/applications - that path is
+// already the internship-applications feature.
+
+export interface ScholarshipApplication {
+  id: string
+  student_id: string
+  scholarship_id: string
+  status: 'draft' | 'submitted' | 'under_review' | 'awarded' | 'rejected' | 'withdrawn'
+  documents_uploaded: { name: string; path: string; uploaded_at: string }[]
+  missing_documents: string[]
+  ai_match_score: number | null
+  ai_guidance: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+  scholarship?: ScholarshipRow
+}
+
+export function startScholarshipApplication(scholarshipId: string, token: string) {
+  return request<{ data: ScholarshipApplication }>('/api/scholarship-applications/start', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ scholarship_id: scholarshipId }),
+  })
+}
+
+export function fetchMyScholarshipApplications(token: string) {
+  return request<{ data: ScholarshipApplication[] }>('/api/scholarship-applications', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export function fetchScholarshipApplication(applicationId: string, token: string) {
+  return request<{ data: ScholarshipApplication }>(`/api/scholarship-applications/${applicationId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export async function uploadApplicationDocument(applicationId: string, file: File, documentName: string, token: string) {
+  const base64 = await fileToBase64(file)
+  return request<{ data: ScholarshipApplication; upload: { path: string; url: string; filename: string; size: number } }>(
+    `/api/scholarship-applications/${applicationId}/upload`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ file: base64, document_name: documentName, mime_type: file.type }),
+    }
+  )
+}
+
+export function submitScholarshipApplication(applicationId: string, token: string) {
+  return request<{ data: ScholarshipApplication }>(`/api/scholarship-applications/${applicationId}/submit`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export function getApplicationGuidance(applicationId: string, token: string, force = false) {
+  return request<{ data: { guidance: string; cached: boolean } }>(`/api/scholarship-applications/${applicationId}/guidance`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ force }),
+  })
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = () => resolve((reader.result as string).split(',')[1])
+    reader.onerror = reject
+  })
+}
+
 // Scholarships (admin)
 
 export interface AdminScholarshipListParams {
