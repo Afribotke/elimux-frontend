@@ -137,8 +137,8 @@ export default function ScholarshipDiscovery() {
             className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 outline-none focus:border-gray-400"
           >
             <option value="">All Levels</option>
-            <option value="undergraduate">Undergraduate</option>
-            <option value="masters">Masters</option>
+            <option value="bachelor">Undergraduate</option>
+            <option value="master">Masters</option>
             <option value="phd">PhD</option>
             <option value="diploma">Diploma</option>
           </select>
