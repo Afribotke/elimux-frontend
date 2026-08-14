@@ -167,7 +167,11 @@ export default function ApplicationsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {applications.map(app => {
+            {[...applications].sort((a, b) => {
+              const da = a.scholarship?.application_deadline ? new Date(a.scholarship.application_deadline).getTime() : Infinity;
+              const db = b.scholarship?.application_deadline ? new Date(b.scholarship.application_deadline).getTime() : Infinity;
+              return da - db;
+            }).map(app => {
               const progress = getProgress(app);
               const deadline = getDeadlineStatus(app.scholarship?.application_deadline);
               const isExpanded = expandedApp === app.id;
@@ -216,7 +220,7 @@ export default function ApplicationsPage() {
                         onClick={() => setExpandedApp(isExpanded ? null : app.id)}
                         className="text-gray-700 hover:text-gray-900 font-medium text-sm"
                       >
-                        {isExpanded ? 'Hide Details' : 'Manage Documents'}
+                        {isExpanded ? 'Hide Details' : app.status === 'draft' ? 'Continue Application' : 'Manage Documents'}
                       </button>
                       {app.status === 'draft' && (
                         <button
