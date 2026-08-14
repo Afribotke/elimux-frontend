@@ -25,7 +25,8 @@ function getCoverageLabel(type: string | null) {
   }
 }
 
-function ApplyLink({ url }: { url: string | null }) {
+function ApplyLink({ applicationUrl, sourceUrl }: { applicationUrl: string | null; sourceUrl: string | null }) {
+  const url = applicationUrl || sourceUrl
   if (!url) {
     return (
       <span className="text-sm text-gray-300 font-medium cursor-not-allowed" title="No application link available">
@@ -39,6 +40,7 @@ function ApplyLink({ url }: { url: string | null }) {
       target="_blank"
       rel="noopener"
       className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors"
+      title={applicationUrl ? undefined : 'No direct application link — opens the source page instead'}
     >
       Apply
     </Link>
@@ -113,7 +115,7 @@ export default function ScholarshipDiscovery() {
                   <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getDeadlineStatus(s.application_deadline).color}`}>
                     {getDeadlineStatus(s.application_deadline).text}
                   </span>
-                  <ApplyLink url={s.application_url} />
+                  <ApplyLink applicationUrl={s.application_url} sourceUrl={s.source_url} />
                 </div>
               </div>
             ))}
@@ -211,7 +213,7 @@ export default function ScholarshipDiscovery() {
                       {deadline.text}
                     </span>
                   </div>
-                  <ApplyLink url={s.application_url} />
+                  <ApplyLink applicationUrl={s.application_url} sourceUrl={s.source_url} />
                 </div>
               </div>
             );
