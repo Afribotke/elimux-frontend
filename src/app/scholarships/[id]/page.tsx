@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import ScholarshipFavoriteButton from '@/components/scholarships/ScholarshipFavoriteButton'
+import ScholarshipApplyButton from '@/components/scholarships/ScholarshipApplyButton'
 import ScholarshipCard from '@/components/scholarships/ScholarshipCard'
 import ScholarshipAlertForm from '@/components/scholarships/ScholarshipAlertForm'
 import BackButton from '@/components/BackButton'
@@ -125,17 +126,21 @@ export default async function ScholarshipDetailPage({ params }: { params: Promis
             </div>
           )}
 
-          {scholarship.application_url && (
-            <a
-              href={scholarship.application_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-semibold transition-colors"
-            >
-              Apply Now
-              <ExternalLink className="w-4 h-4" />
-            </a>
-          )}
+          <div className="flex flex-wrap items-center gap-4">
+            <ScholarshipApplyButton scholarshipId={scholarship.id} />
+
+            {scholarship.application_url && (
+              <a
+                href={scholarship.application_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors"
+              >
+                Visit Provider Website
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            )}
+          </div>
         </div>
 
         <div className="mt-8 bg-elimux-card rounded-2xl p-6 md:p-8 border border-border">
