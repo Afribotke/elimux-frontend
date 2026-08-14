@@ -137,6 +137,13 @@ export default function DesktopNav() {
                     >
                       Profile
                     </Link>
+                    <Link
+                      href="/applications"
+                      onClick={() => setProfileOpen(false)}
+                      className="block px-4 py-2 text-foreground text-sm hover:bg-muted"
+                    >
+                      📝 My Applications
+                    </Link>
                     {isAdmin && (
                       <Link
                         href="/admin"

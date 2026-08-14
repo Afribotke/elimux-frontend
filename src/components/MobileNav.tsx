@@ -18,6 +18,7 @@ import {
   X,
   User,
   LogOut,
+  FileText,
 } from "lucide-react";
 
 const navLinks = [
@@ -143,6 +144,14 @@ export default function MobileNav() {
                 >
                   <User className="h-5 w-5" />
                   My Profile
+                </Link>
+                <Link
+                  href="/applications"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted"
+                >
+                  <FileText className="h-5 w-5" />
+                  My Applications
                 </Link>
                 <button
                   onClick={() => {
