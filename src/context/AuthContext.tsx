@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { User } from '@/types';
+import type { Session } from '@supabase/supabase-js';
 
 // Must share the same client every other auth-aware page uses
 // (src/lib/supabase/client.ts is a memoized singleton). This provider wraps
@@ -16,6 +17,7 @@ const supabase = createClient();
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   loading: boolean;
   isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -28,6 +30,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (userId: string) => {
@@ -54,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        if (mounted) setSession(session);
         if (session?.user && mounted) {
           const profile = await fetchProfile(session.user.id);
           if (mounted) setUser(profile);
@@ -69,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (mounted) setSession(session);
         if (session?.user && mounted) {
           const profile = await fetchProfile(session.user.id);
           if (mounted) setUser(profile);
@@ -109,6 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setSession(null);
   };
 
   const refreshUser = async () => {
@@ -122,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        session,
         loading,
         isAuthenticated: !!user,
         signIn,
