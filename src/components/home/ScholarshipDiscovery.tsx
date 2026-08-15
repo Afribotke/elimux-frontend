@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
-import { listScholarships, matchScholarships, startScholarshipApplication, type ScholarshipRow, type ScholarshipMatchResult } from '@/lib/api';
-
-const supabase = createClient();
+import { listScholarships, matchScholarships, type ScholarshipRow, type ScholarshipMatchResult } from '@/lib/api';
 
 function getDeadlineStatus(deadline: string | null) {
   if (!deadline) return { text: 'Rolling', color: 'bg-blue-100 text-blue-700' };
@@ -26,78 +23,6 @@ function getCoverageLabel(type: string | null) {
     case 'variable': return 'Variable';
     default: return 'See Details';
   }
-}
-
-function ApplyLink({ applicationUrl, sourceUrl }: { applicationUrl: string | null; sourceUrl: string | null }) {
-  const url = applicationUrl || sourceUrl
-  if (!url) {
-    return (
-      <span className="text-sm text-gray-300 font-medium cursor-not-allowed" title="No application link available">
-        Apply
-      </span>
-    );
-  }
-  return (
-    <Link
-      href={url}
-      target="_blank"
-      rel="noopener"
-      className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors"
-      title={applicationUrl ? undefined : 'No direct application link — opens the source page instead'}
-    >
-      Apply
-    </Link>
-  );
-}
-
-function TrackButton({ scholarshipId }: { scholarshipId: string }) {
-  const [state, setState] = useState<'idle' | 'loading' | 'tracked' | 'exists' | 'error'>('idle');
-  const [error, setError] = useState('');
-
-  const handleTrack = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      setState('error');
-      setError('Log in to track this application');
-      return;
-    }
-
-    setState('loading');
-    setError('');
-    try {
-      await startScholarshipApplication(scholarshipId, session.access_token);
-      setState('tracked');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to start tracking';
-      if (message.includes('already exists')) {
-        setState('exists');
-      } else {
-        setState('error');
-        setError(message);
-      }
-    }
-  };
-
-  if (state === 'tracked' || state === 'exists') {
-    return (
-      <span className="text-sm text-green-700 font-medium">
-        {state === 'tracked' ? 'Tracking started' : 'Already tracking'}
-      </span>
-    );
-  }
-
-  return (
-    <div className="text-right">
-      <button
-        onClick={handleTrack}
-        disabled={state === 'loading'}
-        className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:border-gray-400 transition-colors disabled:opacity-50"
-      >
-        {state === 'loading' ? 'Starting...' : 'Track'}
-      </button>
-      {state === 'error' && <p className="text-red-600 text-xs mt-1">{error}</p>}
-    </div>
-  );
 }
 
 export default function ScholarshipDiscovery() {
@@ -210,8 +135,9 @@ export default function ScholarshipDiscovery() {
                   >
                     {r.match_score}%
                   </div>
-                  <ApplyLink applicationUrl={r.application_url} sourceUrl={r.source_url} />
-                  <TrackButton scholarshipId={r.scholarship_id} />
+                  <Link href={`/scholarships/${r.scholarship_id}/`} className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
+                    View Details
+                  </Link>
                 </div>
               </div>
             ))}
@@ -325,10 +251,9 @@ export default function ScholarshipDiscovery() {
                   <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getDeadlineStatus(s.application_deadline).color}`}>
                     {getDeadlineStatus(s.application_deadline).text}
                   </span>
-                  <ApplyLink applicationUrl={s.application_url} sourceUrl={s.source_url} />
-                </div>
-                <div className="mt-2 flex justify-end">
-                  <TrackButton scholarshipId={s.id} />
+                  <Link href={`/scholarships/${s.id}/`} className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
+                    View Details
+                  </Link>
                 </div>
               </div>
             ))}
@@ -426,10 +351,9 @@ export default function ScholarshipDiscovery() {
                       {deadline.text}
                     </span>
                   </div>
-                  <ApplyLink applicationUrl={s.application_url} sourceUrl={s.source_url} />
-                </div>
-                <div className="mt-2 flex justify-end">
-                  <TrackButton scholarshipId={s.id} />
+                  <Link href={`/scholarships/${s.id}/`} className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
+                    View Details
+                  </Link>
                 </div>
               </div>
             );
