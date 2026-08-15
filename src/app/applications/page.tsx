@@ -5,9 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import {
   fetchMyScholarshipApplications,
-  uploadApplicationDocument,
   submitScholarshipApplication,
-  getApplicationGuidance,
   type ScholarshipApplication,
 } from '@/lib/api';
 
@@ -46,10 +44,6 @@ export default function ApplicationsPage() {
   const [applications, setApplications] = useState<ScholarshipApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [uploading, setUploading] = useState<Record<string, boolean>>({});
-  const [uploadError, setUploadError] = useState<Record<string, string>>({});
-  const [guidanceLoading, setGuidanceLoading] = useState<Record<string, boolean>>({});
-  const [expandedApp, setExpandedApp] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -77,20 +71,6 @@ export default function ApplicationsPage() {
     if (token !== undefined) load();
   }, [token, load]);
 
-  const handleFileUpload = async (appId: string, docName: string, file: File) => {
-    if (!token) return;
-    try {
-      setUploading(prev => ({ ...prev, [appId]: true }));
-      setUploadError(prev => ({ ...prev, [appId]: '' }));
-      await uploadApplicationDocument(appId, file, docName, token);
-      await load();
-    } catch (err) {
-      setUploadError(prev => ({ ...prev, [appId]: err instanceof Error ? err.message : 'Upload failed' }));
-    } finally {
-      setUploading(prev => ({ ...prev, [appId]: false }));
-    }
-  };
-
   const handleSubmit = async (appId: string) => {
     if (!token) return;
     if (!confirm('Submit this application? Make sure all required documents are uploaded.')) return;
@@ -99,19 +79,6 @@ export default function ApplicationsPage() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Submit failed');
-    }
-  };
-
-  const handleGuidance = async (appId: string) => {
-    if (!token) return;
-    try {
-      setGuidanceLoading(prev => ({ ...prev, [appId]: true }));
-      await getApplicationGuidance(appId, token);
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to get guidance');
-    } finally {
-      setGuidanceLoading(prev => ({ ...prev, [appId]: false }));
     }
   };
 
@@ -174,7 +141,6 @@ export default function ApplicationsPage() {
             }).map(app => {
               const progress = getProgress(app);
               const deadline = getDeadlineStatus(app.scholarship?.application_deadline);
-              const isExpanded = expandedApp === app.id;
               const applyUrl = app.scholarship?.application_url || app.scholarship?.source_url;
 
               return (
@@ -221,12 +187,12 @@ export default function ApplicationsPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-4 items-center">
-                      <button
-                        onClick={() => setExpandedApp(isExpanded ? null : app.id)}
+                      <Link
+                        href={`/applications/${app.id}`}
                         className="text-gray-700 hover:text-gray-900 font-medium text-sm"
                       >
-                        {isExpanded ? 'Hide Details' : app.status === 'draft' ? 'Continue Application' : 'Manage Documents'}
-                      </button>
+                        {app.status === 'draft' ? 'Continue Application' : 'View Details'}
+                      </Link>
                       {app.status === 'draft' && (
                         <button
                           onClick={() => handleSubmit(app.id)}
@@ -244,94 +210,6 @@ export default function ApplicationsPage() {
                       )}
                     </div>
                   </div>
-
-                  {isExpanded && (
-                    <div className="border-t border-gray-200 p-6 bg-gray-50">
-                      {app.missing_documents?.length > 0 && (
-                        <div className="mb-6">
-                          <h4 className="font-semibold text-gray-900 mb-3">Required Documents</h4>
-                          <div className="space-y-3">
-                            {app.missing_documents.map((docName) => (
-                              <div key={docName} className="bg-white border border-gray-200 rounded-lg p-4">
-                                <div className="flex justify-between items-center gap-3">
-                                  <div className="flex items-center gap-3">
-                                    <span className="text-red-500">●</span>
-                                    <span className="font-medium text-gray-900">{docName}</span>
-                                    <span className="text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded">Missing</span>
-                                  </div>
-                                  <label className="cursor-pointer shrink-0">
-                                    <input
-                                      type="file"
-                                      accept=".pdf,.jpg,.jpeg,.png"
-                                      className="hidden"
-                                      onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) handleFileUpload(app.id, docName, file);
-                                      }}
-                                    />
-                                    <span className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors inline-block">
-                                      {uploading[app.id] ? 'Uploading...' : 'Upload'}
-                                    </span>
-                                  </label>
-                                </div>
-                                <p className="text-xs text-gray-500 mt-2">Max 5MB. PDF, JPEG, or PNG.</p>
-                              </div>
-                            ))}
-                          </div>
-                          {uploadError[app.id] && <p className="text-red-600 text-sm mt-2">{uploadError[app.id]}</p>}
-                        </div>
-                      )}
-
-                      {app.documents_uploaded?.length > 0 && (
-                        <div className="mb-6">
-                          <h4 className="font-semibold text-gray-900 mb-3">Uploaded Documents</h4>
-                          <div className="space-y-2">
-                            {app.documents_uploaded.map((doc, i) => (
-                              <div key={i} className="bg-white border border-gray-200 rounded-lg p-3 flex items-center gap-3">
-                                <span className="text-green-500">✓</span>
-                                <span className="text-gray-900">{doc.name}</span>
-                                <span className="text-xs text-gray-500">{new Date(doc.uploaded_at).toLocaleDateString()}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <h4 className="font-semibold text-blue-900">🤖 AI Guidance</h4>
-                          <button
-                            onClick={() => handleGuidance(app.id)}
-                            disabled={guidanceLoading[app.id]}
-                            className="text-xs font-medium text-blue-700 hover:text-blue-900 disabled:opacity-50"
-                          >
-                            {guidanceLoading[app.id] ? 'Generating...' : app.ai_guidance ? 'Regenerate' : 'Get guidance'}
-                          </button>
-                        </div>
-                        {app.ai_guidance ? (
-                          <p className="text-blue-800 text-sm whitespace-pre-wrap">{app.ai_guidance}</p>
-                        ) : (
-                          <p className="text-blue-700 text-sm">No guidance generated yet.</p>
-                        )}
-                      </div>
-
-                      {app.status !== 'draft' && (app.review_score !== null || app.review_notes) && (
-                        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                          <h4 className="font-semibold text-yellow-900 mb-2">📋 Review Feedback</h4>
-                          {app.review_score !== null && (
-                            <p className="text-yellow-800 text-sm mb-1">Score: {app.review_score}/100</p>
-                          )}
-                          {app.review_notes && (
-                            <p className="text-yellow-800 text-sm whitespace-pre-wrap">{app.review_notes}</p>
-                          )}
-                        </div>
-                      )}
-
-                      {!app.missing_documents?.length && !app.documents_uploaded?.length && (
-                        <p className="text-gray-500 text-center py-4">No documents required for this scholarship</p>
-                      )}
-                    </div>
-                  )}
                 </div>
               );
             })}
