@@ -188,6 +188,11 @@ export default function ApplicationsPage() {
                       <span className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(app.status)}`}>
                         {app.status.replace('_', ' ')}
                       </span>
+                      {app.status !== 'draft' && app.review_score !== null && app.review_score !== undefined && (
+                        <span className="shrink-0 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          Score: {app.review_score}/100
+                        </span>
+                      )}
                     </div>
 
                     <div className="mb-4">
@@ -309,6 +314,18 @@ export default function ApplicationsPage() {
                           <p className="text-blue-700 text-sm">No guidance generated yet.</p>
                         )}
                       </div>
+
+                      {app.status !== 'draft' && (app.review_score !== null || app.review_notes) && (
+                        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                          <h4 className="font-semibold text-yellow-900 mb-2">📋 Review Feedback</h4>
+                          {app.review_score !== null && (
+                            <p className="text-yellow-800 text-sm mb-1">Score: {app.review_score}/100</p>
+                          )}
+                          {app.review_notes && (
+                            <p className="text-yellow-800 text-sm whitespace-pre-wrap">{app.review_notes}</p>
+                          )}
+                        </div>
+                      )}
 
                       {!app.missing_documents?.length && !app.documents_uploaded?.length && (
                         <p className="text-gray-500 text-center py-4">No documents required for this scholarship</p>

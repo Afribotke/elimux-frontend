@@ -1230,6 +1230,9 @@ export interface ScholarshipApplication {
   ai_match_score: number | null
   ai_guidance: string | null
   notes: string | null
+  review_score: number | null
+  review_notes: string | null
+  reviewed_at: string | null
   created_at: string
   updated_at: string
   scholarship?: ScholarshipRow
@@ -1371,6 +1374,13 @@ export interface AdminApplicationReview {
   created_at: string
   updated_at: string
   scholarship: ScholarshipRow
+  student: {
+    full_name: string | null
+    email: string | null
+    university_name: string | null
+    course_name: string | null
+    year_of_study: number | null
+  } | null
 }
 
 export function listAdminScholarshipApplications(
@@ -1392,6 +1402,14 @@ export function reviewScholarshipApplication(
   return request<{ data: AdminApplicationReview }>(
     `/api/admin/scholarship-applications/${id}/review`,
     { method: 'POST', body: JSON.stringify(data) },
+    adminKey
+  )
+}
+
+export function getAdminDocumentUrl(appId: string, docName: string, adminKey: string) {
+  return request<{ url: string }>(
+    `/api/admin/scholarship-applications/${appId}/document/${encodeURIComponent(docName)}`,
+    {},
     adminKey
   )
 }

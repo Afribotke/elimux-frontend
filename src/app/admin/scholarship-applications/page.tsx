@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAdminKey } from '@/components/admin/AdminKeyContext'
-import { listAdminScholarshipApplications, reviewScholarshipApplication } from '@/lib/api'
+import { listAdminScholarshipApplications, reviewScholarshipApplication, getAdminDocumentUrl } from '@/lib/api'
 import type { AdminApplicationReview } from '@/lib/api'
 
 export default function AdminScholarshipApplicationsPage() {
@@ -15,6 +15,7 @@ export default function AdminScholarshipApplicationsPage() {
   const [reviewing, setReviewing] = useState<Record<string, boolean>>({})
   const [reviewScore, setReviewScore] = useState<Record<string, string>>({})
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({})
+  const [docUrls, setDocUrls] = useState<Record<string, string>>({})
 
   const load = useCallback(async () => {
     if (!adminKey) return
@@ -51,6 +52,17 @@ export default function AdminScholarshipApplicationsPage() {
       setError(err.message || 'Review failed')
     } finally {
       setReviewing(prev => ({ ...prev, [id]: false }))
+    }
+  }
+
+  const handleDocClick = async (appId: string, docName: string) => {
+    if (!adminKey) return
+    try {
+      const { url } = await getAdminDocumentUrl(appId, docName, adminKey)
+      setDocUrls(prev => ({ ...prev, [`${appId}-${docName}`]: url }))
+      window.open(url, '_blank')
+    } catch (err: any) {
+      setError(err.message || 'Failed to get document URL')
     }
   }
 
@@ -114,6 +126,7 @@ export default function AdminScholarshipApplicationsPage() {
               const deadline = app.scholarship?.application_deadline
                 ? new Date(app.scholarship.application_deadline).toLocaleDateString()
                 : 'Rolling'
+              const student = app.student
 
               return (
                 <div key={app.id} className="bg-elimux-card rounded-xl border border-gray-800 overflow-hidden">
@@ -129,7 +142,12 @@ export default function AdminScholarshipApplicationsPage() {
                           </span>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-gray-400 flex-wrap">
-                          <span>Student: {app.student_id.slice(0, 8)}…</span>
+                          <span className="text-white font-medium">
+                            {student?.full_name || 'Unknown Student'}
+                          </span>
+                          <span>{student?.email || 'No email'}</span>
+                          <span>{student?.university_name || 'No university'}</span>
+                          <span>{student?.course_name}{student?.year_of_study ? `, Year ${student.year_of_study}` : ''}</span>
                           <span>{app.scholarship?.provider || 'Unknown provider'}</span>
                           <span>{app.scholarship?.amount ? `${app.scholarship.currency} ${app.scholarship.amount}` : 'Amount not specified'}</span>
                           <span>Deadline: {deadline}</span>
@@ -165,10 +183,18 @@ export default function AdminScholarshipApplicationsPage() {
                           <h4 className="font-semibold text-white mb-3">Uploaded Documents</h4>
                           <div className="space-y-2">
                             {app.documents_uploaded.map((doc, i) => (
-                              <div key={i} className="bg-gray-800 rounded-lg p-3 flex items-center gap-3">
-                                <span className="text-green-400">✓</span>
-                                <span className="text-gray-300">{doc.name}</span>
-                                <span className="text-xs text-gray-500">{new Date(doc.uploaded_at).toLocaleDateString()}</span>
+                              <div key={i} className="bg-gray-800 rounded-lg p-3 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-green-400">✓</span>
+                                  <span className="text-gray-300">{doc.name}</span>
+                                  <span className="text-xs text-gray-500">{new Date(doc.uploaded_at).toLocaleDateString()}</span>
+                                </div>
+                                <button
+                                  onClick={() => handleDocClick(app.id, doc.name)}
+                                  className="text-xs font-medium text-blue-400 hover:text-blue-300"
+                                >
+                                  {docUrls[`${app.id}-${doc.name}`] ? 'Open Again' : 'View Document'}
+                                </button>
                               </div>
                             ))}
                           </div>
