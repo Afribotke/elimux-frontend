@@ -1119,6 +1119,53 @@ export interface ScholarshipRow {
   updated_at: string
   institution?: { name: string } | null
   country?: { name: string } | null
+  // Aliased scholarship_provider, not provider - that name is already taken
+  // by the legacy free-text provider column above.
+  scholarship_provider?: ScholarshipProvider | null
+}
+
+export interface ScholarshipProvider {
+  id: string
+  name: string
+  slug: string
+  logo_url: string | null
+  website: string | null
+  description: string | null
+  email: string | null
+  phone: string | null
+  verified: boolean
+  status: string
+  is_partner: boolean
+  claimed_by: string | null
+  claimed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export function claimScholarshipProvider(id: string, token: string) {
+  return request<{ data: ScholarshipProvider }>(`/api/scholarship-providers/${id}/claim`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export function approveProviderPartnership(id: string, adminKey: string) {
+  return request<{ data: ScholarshipProvider }>(
+    `/api/scholarship-providers/${id}/approve-partnership`,
+    { method: 'POST' },
+    adminKey
+  )
+}
+
+export function listScholarshipProviders(
+  params: { claimed_only?: boolean; partner_only?: boolean } = {},
+  adminKey?: string
+) {
+  return request<{ data: ScholarshipProvider[] }>(
+    `/api/scholarship-providers${buildQuery(params)}`,
+    {},
+    adminKey
+  )
 }
 
 export interface ScholarshipListParams {

@@ -17,7 +17,7 @@ export default async function ScholarshipDetailPage({ params }: { params: Promis
 
   const { data: scholarship } = await supabase
     .from('scholarships')
-    .select('*, institution:institutions(id, name, city, logo_url), country:countries(id, name, flag_emoji)')
+    .select('*, institution:institutions(id, name, city, logo_url), country:countries(id, name, flag_emoji), scholarship_provider:scholarship_providers(id, name, slug, logo_url, website, is_partner)')
     .eq('id', id)
     .eq('status', 'active')
     .single()
@@ -67,7 +67,17 @@ export default async function ScholarshipDetailPage({ params }: { params: Promis
           </div>
 
           <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{scholarship.title}</h1>
-          <p className="text-primary-400 font-medium mb-6">{scholarship.provider}</p>
+          <p className="text-primary-400 font-medium mb-4">{scholarship.provider}</p>
+
+          {!scholarship.scholarship_provider?.is_partner && (
+            <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 mb-6">
+              <p className="text-warning text-sm">
+                ElimuX is an independent discovery platform and is not affiliated with{' '}
+                {scholarship.scholarship_provider?.name || scholarship.provider}. Always verify deadlines and
+                requirements on the official provider website before applying.
+              </p>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-3 text-sm mb-6">
             {(scholarship.institution?.name || scholarship.country?.name) && (
@@ -126,8 +136,16 @@ export default async function ScholarshipDetailPage({ params }: { params: Promis
             </div>
           )}
 
+          {!scholarship.scholarship_provider?.is_partner && (
+            <p className="text-sm text-muted mb-4">
+              This scholarship is listed for discovery only. Apply directly through the official provider.
+            </p>
+          )}
+
           <div className="flex flex-wrap items-center gap-4">
-            <ScholarshipApplyButton scholarshipId={scholarship.id} />
+            {scholarship.scholarship_provider?.is_partner && (
+              <ScholarshipApplyButton scholarshipId={scholarship.id} />
+            )}
 
             {scholarship.application_url && (
               <a

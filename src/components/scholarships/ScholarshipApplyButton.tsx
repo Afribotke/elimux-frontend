@@ -54,7 +54,7 @@ export default function ScholarshipApplyButton({ scholarshipId }: Props) {
         disabled={loading || authLoading}
         className="inline-flex items-center gap-2 px-5 py-3 min-h-[44px] rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-semibold transition-colors disabled:opacity-50"
       >
-        {loading ? 'Starting…' : 'Apply on ElimuX'}
+        {loading ? 'Starting…' : 'Apply Through ElimuX'}
       </button>
       {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
     </div>
