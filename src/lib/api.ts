@@ -59,7 +59,7 @@ export type InstitutionRow = Tables['institutions'] & {
   }[]
 }
 
-type ProgramRow = Tables['programs'] & {
+export type ProgramRow = Tables['programs'] & {
   institution?: { name: string; city?: string | null } | null
   category?: { name: string; color?: string | null } | null
 }
