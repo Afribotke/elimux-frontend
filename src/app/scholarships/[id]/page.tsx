@@ -17,7 +17,7 @@ export default async function ScholarshipDetailPage({ params }: { params: Promis
 
   const { data: scholarship } = await supabase
     .from('scholarships')
-    .select('*, institution:institutions(id, name, city, logo_url), country:countries(id, name, flag_emoji), scholarship_provider:scholarship_providers(id, name, slug, logo_url, website, is_partner)')
+    .select('*, institution:institutions(id, name, city, logo_url), country:countries(id, name, flag_emoji), scholarship_provider:scholarship_providers!scholarships_provider_id_fkey(id, name, slug, logo_url, website, is_partner)')
     .eq('id', id)
     .eq('status', 'active')
     .single()
