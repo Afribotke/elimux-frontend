@@ -2,14 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
+import { useAuthContext } from '@/context/AuthContext';
 import {
   fetchMyScholarshipApplications,
   submitScholarshipApplication,
   type ScholarshipApplication,
 } from '@/lib/api';
-
-const supabase = createClient();
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -40,16 +38,17 @@ function getDeadlineStatus(deadline: string | null | undefined) {
 }
 
 export default function ApplicationsPage() {
-  const [token, setToken] = useState<string | null | undefined>(undefined); // undefined = not checked yet
+  // Read the session AuthContext already resolved on mount instead of
+  // calling supabase.auth.getSession() again here - a second concurrent
+  // call on the shared singleton client (src/lib/supabase/client.ts) while
+  // AuthContext's own getSession() is still in flight leaves this page
+  // stuck on the loading spinner forever (same bug ScholarshipApplyButton
+  // hit and fixed the same way).
+  const { session, loading: authLoading } = useAuthContext();
+  const token = session?.access_token ?? null;
   const [applications, setApplications] = useState<ScholarshipApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setToken(session?.access_token ?? null);
-    });
-  }, []);
 
   const load = useCallback(async () => {
     if (!token) {
@@ -68,8 +67,8 @@ export default function ApplicationsPage() {
   }, [token]);
 
   useEffect(() => {
-    if (token !== undefined) load();
-  }, [token, load]);
+    if (!authLoading) load();
+  }, [authLoading, load]);
 
   const handleSubmit = async (appId: string) => {
     if (!token) return;
@@ -82,7 +81,7 @@ export default function ApplicationsPage() {
     }
   };
 
-  if (token === undefined || (loading && token)) {
+  if (authLoading || (loading && token)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full" />

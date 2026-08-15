@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
+import { useAuthContext } from '@/context/AuthContext';
 import {
   fetchScholarshipApplication,
   uploadApplicationDocument,
@@ -11,8 +11,6 @@ import {
   getApplicationGuidance,
   type ScholarshipApplication,
 } from '@/lib/api';
-
-const supabase = createClient();
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -37,7 +35,14 @@ export default function ApplicationDetailPage() {
   const router = useRouter();
   const id = params.id as string;
 
-  const [token, setToken] = useState<string | null | undefined>(undefined); // undefined = not checked yet
+  // Read the session AuthContext already resolved on mount instead of
+  // calling supabase.auth.getSession() again here - a second concurrent
+  // call on the shared singleton client (src/lib/supabase/client.ts) while
+  // AuthContext's own getSession() is still in flight leaves this page
+  // stuck on the loading spinner forever (same bug ScholarshipApplyButton
+  // hit and fixed the same way).
+  const { session, loading: authLoading } = useAuthContext();
+  const token = session?.access_token ?? null;
   const [app, setApp] = useState<ScholarshipApplication | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -46,14 +51,8 @@ export default function ApplicationDetailPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setToken(session?.access_token ?? null);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (token === null) router.push(`/login?redirect=/applications/${id}`);
-  }, [token, id, router]);
+    if (!authLoading && !token) router.push(`/login?redirect=/applications/${id}`);
+  }, [authLoading, token, id, router]);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -116,7 +115,7 @@ export default function ApplicationDetailPage() {
     }
   }
 
-  if (token === undefined || (loading && token)) {
+  if (authLoading || (loading && token)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full" />
