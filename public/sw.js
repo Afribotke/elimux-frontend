@@ -11,6 +11,8 @@ const STATIC_ASSETS = [
   '/pricing/',
   '/about/',
   '/contact/',
+  '/scholarships/',
+  '/applications/',
   '/manifest.json',
   '/icon-192x192.png',
   '/icon-512x512.png',
@@ -99,13 +101,45 @@ async function navigationHandler(request) {
   }
 }
 
+// StaleWhileRevalidate: scholarship browse/detail endpoints only (not
+// scholarship-applications - that's a student's own status/review data,
+// where showing a stale "under_review" before a background refresh quietly
+// updates it to "awarded" is actively misleading, unlike a scholarship
+// listing that's fine to browse a few hours stale). Serves the cached
+// response immediately if present, then refreshes the cache in the
+// background for next time.
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(API_CACHE);
+  const cached = await cache.match(request);
+
+  const fetchPromise = fetch(request).then((response) => {
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  }).catch((err) => {
+    // Background refresh failed - if we already returned `cached` below,
+    // swallow it (nothing awaits this promise in that case, so an
+    // unhandled rejection would otherwise surface for no reason). Only
+    // propagate when there was nothing cached to fall back to.
+    if (cached) return cached;
+    throw err;
+  });
+
+  return cached || fetchPromise;
+}
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
 
   if (url.origin === API_ORIGIN) {
-    event.respondWith(networkFirst(event.request));
+    if (url.pathname.startsWith('/api/scholarships')) {
+      event.respondWith(staleWhileRevalidate(event.request));
+    } else {
+      event.respondWith(networkFirst(event.request));
+    }
   } else if (url.origin === self.location.origin) {
     if (event.request.destination === 'document') {
       event.respondWith(navigationHandler(event.request));

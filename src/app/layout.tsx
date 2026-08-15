@@ -8,6 +8,7 @@ import MobileNav from "@/components/MobileNav";
 import { CookieConsent } from "@/components/legal/CookieConsent";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import BackgroundSyncManager from "@/components/BackgroundSyncManager";
+import OfflineIndicator from "@/components/OfflineIndicator";
 import { Toaster } from "sonner";
 
 import InstallPrompt from '@/components/InstallPrompt';
@@ -89,6 +90,7 @@ export default function RootLayout({
             <CookieConsent />
             <ServiceWorkerRegister />
             <BackgroundSyncManager />
+            <OfflineIndicator />
             <SiteVisitTracker />
           </AuthProvider>
         </ThemeProvider>
