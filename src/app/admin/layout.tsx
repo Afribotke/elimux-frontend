@@ -198,6 +198,8 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "Discover Names", href: "/admin/employers/discover-names", icon: Search },
       { label: "Uploaded Names", href: "/admin/employers/names", icon: List },
       { label: "Outreach CRM", href: "/admin/employers/outreach", icon: Megaphone },
+      { label: "Outreach Dashboard", href: "/admin/employers/outreach/dashboard", icon: BarChart3 },
+      { label: "Outreach Team", href: "/admin/employers/outreach/team", icon: Users },
       { label: "Upload Employers", href: "/admin/employers/upload", icon: Upload },
       { label: "Potential Employers", href: "/admin/potential-employers", icon: Globe },
     ],
