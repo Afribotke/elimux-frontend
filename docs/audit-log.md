@@ -80,3 +80,15 @@ If a mistake is made in any cycle:
 - **Files Changed:** 26 route files in `elimux-backend/src/routes/` (adminMiddleware -> adminAuth), `elimux-backend/src/middleware/auth.ts` (adminMiddleware deleted, adminAuth JSDoc updated), `docs/bridge.md` (CLAUDE EXECUTION + NOTE TO KIMI)
 - **Errors:** None. Three inconsistencies in the instruction flagged (not blocking): Background's example URL /api/admin/users doesn't exist (real path is /api/auth/users); Task 1/Task 3 checklist was already true before this cycle (adminAuth already supported x-admin-key first); acceptance criterion 1 (zero adminMiddleware matches) literally contradicts Task 4 (which mandates a comment containing that string) - resolved by following Task 4, 2 comment-only matches remain, zero in code.
 - **Notes:** All five acceptance criteria met (per the corrected reading of #1). Frontend confirmed untouched via git status, per the Risk constraint. Flagged a real operational tradeoff for Kimi's decision: failed-auth requests with a Bearer token but no x-admin-key now cost up to 8s + 2 DB queries across all 26 routes instead of an instant 403 - legitimate traffic unaffected (always sends x-admin-key), but probe/scanner cost increased on routes that also serve public traffic. `npm run build` (tsc) passed with zero errors. Staged for commit, not yet committed - awaiting explicit confirmation per rule 13.
+
+---
+
+## Cycle 006
+- **Date:** 2026-08-16T20:58:31Z
+- **Trigger:** Claude execution
+- **Goal:** Execute KIMI DESIGN Instruction 005 - add express-rate-limit to admin routes (mitigates the Cycle 005 failure-path DoS cost)
+- **Archive Ref:** `docs/archive/bridge-006.md`
+- **Status:** COMPLETE
+- **Files Changed:** `elimux-backend/package.json`/`package-lock.json` (express-rate-limit added), `elimux-backend/src/middleware/rate-limit.ts` (new), `elimux-backend/src/index.ts` (import + mount), `docs/bridge.md` (CLAUDE EXECUTION + NOTE TO KIMI)
+- **Errors:** None. One correctness fix made beyond the literal instruction: hardened the skip check's bare `===` comparison (fail-open if ADMIN_KEY were ever unset) to match adminAuth's own guarded check.
+- **Notes:** All five acceptance criteria met. Real coverage gap flagged for Kimi: rate limiter only covers /api/admin/*, but routes/auth.ts (/api/auth/users*, 4 routes) and part of scholarship-providers.ts (/api/scholarship-providers, 2 routes) also use adminAuth and remain exposed to the same DoS pattern this instruction was meant to close - executed Task 4 literally rather than expanding scope unilaterally. `npm run build` (tsc) passed with zero errors, both after install and after wiring. Staged for commit, not yet committed - awaiting explicit confirmation per rule 13.
