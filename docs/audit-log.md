@@ -44,3 +44,15 @@ If a mistake is made in any cycle:
 - **Files Changed:** `elimux-sql/43_drop_dangling_scholarship_provider_id.sql` (created), live Supabase schema (`scholarships.scholarship_provider_id` dropped, project `ohlgjvenwekpbpkykutz`), `docs/bridge.md` (CLAUDE EXECUTION section)
 - **Errors:** None. Two instruction corrections made and flagged before executing: `elimux-sql/migrations/` doesn't exist (used the real flat-numbered convention, file 43); archive target `bridge-001.md` was already taken by Cycle 001's snapshot, used `bridge-002.md` instead per the increment-from-last-cycle rule
 - **Notes:** All four acceptance criteria met. Live API spot-checked post-drop (`GET /api/scholarships/:id` still 200s with correct data). Staged for commit, not yet committed - awaiting explicit confirmation per rule 13.
+
+---
+
+## Cycle 003
+- **Date:** 2026-08-16T19:40:07Z
+- **Trigger:** Claude execution
+- **Goal:** Execute KIMI DESIGN Instruction 002 - remove the dead POST / handler from elimux-backend/src/routes/admin-scholarships.ts (unreachable, shadowed by admin.ts's POST /scholarships)
+- **Archive Ref:** `docs/archive/bridge-003.md`
+- **Status:** COMPLETE
+- **Files Changed:** `elimux-backend/src/routes/admin-scholarships.ts` (dead POST / removed, explanatory comment added), `docs/bridge.md` (CLAUDE EXECUTION + NOTE TO KIMI sections)
+- **Errors:** None. No deviations - instruction matched the real repo structure exactly.
+- **Notes:** All five acceptance criteria met. GET/PUT/DELETE routes confirmed intact via grep, zero remaining references to the removed handler, `npm run build` (tsc) passed with zero errors. admin.ts untouched, per the Risk constraint. Staged for commit, not yet committed - awaiting explicit confirmation per rule 13.

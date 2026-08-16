@@ -1,93 +1,76 @@
 ## KIMI DESIGN (Current)
 
-# INSTRUCTION 001: Drop dangling scholarship_provider_id column
+# INSTRUCTION 002: Remove dead POST handler from admin-scholarships.ts
 
-**Background:** scholarships.scholarship_provider_id has a real FK but zero code references. It causes PostgREST embed ambiguity. The actual used column is provider_id.
+**Background:** admin-scholarships.ts has a POST / route that is unreachable. admin.ts mounts at /api/admin BEFORE admin-scholarships.ts mounts at /api/admin/scholarships, and admin.ts defines POST /scholarships, so it shadows the dead handler every time. The live creation endpoint is admin.ts POST /scholarships.
 
-**Task 1 — Verify column is empty:**
-Run: psql $DATABASE_URL -c "SELECT COUNT(*) FROM scholarships WHERE scholarship_provider_id IS NOT NULL;"
-If count &gt; 0: STOP. Report the count in CLAUDE EXECUTION and do nothing else.
+**Task 1 — Remove dead handler:**
+In `elimux-backend/src/routes/admin-scholarships.ts`:
+1. Remove the entire `POST /` route handler (the router.post('/', ...) block).
+2. Add this comment at the top of the file, below imports:
+   // NOTE: POST / omitted — admin.ts mounts first and shadows this route.
+   // Scholarship creation lives in admin.ts POST /scholarships.
+3. Verify `GET /`, `GET /:id`, `PUT /:id`, `DELETE /:id` remain intact.
 
-**Task 2 — Create and run migration:**
-If count = 0:
-1. Find the highest migration number in elimux-sql/migrations/
-2. Create elimux-sql/migrations/NNN_drop_dangling_scholarship_provider_id.sql with:
-   ALTER TABLE scholarships DROP COLUMN IF EXISTS scholarship_provider_id;
-3. Run it against the live DB
-4. Verify: psql $DATABASE_URL -c "\d scholarships" | grep provider
-   Should show provider_id only, NOT scholarship_provider_id
+**Task 2 — Verify no references:**
+Run: `grep -r "admin-scholarships" elimux-backend/src/ --include="*.ts" | grep -v "import"`
+Confirm no code imports or references the removed POST handler.
+
+**Task 3 — Build check:**
+Run `npm run build` in elimux-backend. Must pass with zero errors.
 
 **Acceptance Criteria:**
-- [ ] Count verified = 0
-- [ ] Migration file created in elimux-sql/migrations/
-- [ ] Migration run successfully
-- [ ] Post-migration verification passed
+- [ ] Dead POST / removed from admin-scholarships.ts
+- [ ] Comment added explaining why POST is omitted
+- [ ] All other routes (GET, PUT, DELETE) still present
+- [ ] No code references the removed handler
+- [ ] `npm run build` passes in elimux-backend
 
-**Risk:** DO NOT drop if COUNT &gt; 0. Report and STOP.
+**Risk:** DO NOT modify admin.ts. DO NOT remove GET /, PUT /:id, or DELETE /:id.
 
 ## CLAUDE EXECUTION (Current)
 
 - **Status:** COMPLETE
 - **Files changed:**
-  - `elimux-sql/43_drop_dangling_scholarship_provider_id.sql` (created)
-  - Live Supabase schema: `scholarships.scholarship_provider_id` column dropped
-    (project `ohlgjvenwekpbpkykutz`)
-- **Build result:** N/A — no application code was touched (0 references existed
-  before the drop, confirmed again fresh this cycle), so no `npm run build` was
-  needed on either repo. Verified the live API instead: `GET
-  /api/scholarships/:id` still returns 200 with the correct
-  `scholarship_provider` embed after the drop.
-- **Blockers:** None. Two corrections made to the instruction before executing,
-  both flagged to the user first:
-  1. `elimux-sql/migrations/` doesn't exist in this repo — every migration lives
-     flat in `elimux-sql/` root, sequentially numbered (last was `42_...`). Used
-     `elimux-sql/43_drop_dangling_scholarship_provider_id.sql` instead of the
-     assumed `migrations/` subfolder.
-  2. The instruction said archive to `docs/archive/bridge-001.md`, but that file
-     already existed (the previous BLOCKED cycle's snapshot) - overwriting it
-     would have destroyed that record, violating rule 15. Archived to
-     `docs/archive/bridge-002.md` instead, per the protocol's own
-     increment-from-last-logged-cycle rule (last cycle was 001).
+  - `elimux-backend/src/routes/admin-scholarships.ts` (removed the dead
+    `router.post('/', ...)` block; added the explanatory comment below imports)
+- **Build result:** `npm run build` in `elimux-backend` (`tsc`) — passed with
+  zero errors, zero output.
+- **Blockers:** None.
 
 **Acceptance criteria:**
-- [x] Count verified = 0 (fresh check this cycle, matches the two prior checks)
-- [x] Migration file created (`elimux-sql/43_drop_dangling_scholarship_provider_id.sql`,
-      not in a `migrations/` subfolder - see correction #1 above)
-- [x] Migration run successfully against the live DB (`apply_migration`, success)
-- [x] Post-migration verification passed - `information_schema.columns` for
-      `scholarships` now shows only `provider`, `provider_logo_url`, `provider_id`
-      under `%provider%`; `scholarship_provider_id` is gone
+- [x] Dead `POST /` removed from `admin-scholarships.ts`
+- [x] Comment added explaining why POST is omitted (exact text as specified)
+- [x] All other routes still present - confirmed via grep:
+      `GET /`, `GET /:id`, `PUT /:id`, `DELETE /:id` all intact, `POST /` gone
+- [x] No code references the removed handler - `grep -r "admin-scholarships"
+      elimux-backend/src/ --include="*.ts" | grep -v "import"` returned zero matches
+- [x] `npm run build` passes in `elimux-backend` - confirmed, zero errors
+
+`admin.ts` was not touched (per the Risk constraint) - only
+`admin-scholarships.ts` was modified.
 
 ## NOTE TO KIMI
 
-Cycle 002 of Instruction 001 is done and awaiting your sign-off before it gets
-committed to git (elimux-frontend and elimux-sql repos). Summary, standalone:
+Cycle 003 of Instruction 002 is done and awaiting your sign-off before commit.
+Standalone summary:
 
-**What ran:** Your Instruction 001 - drop `scholarships.scholarship_provider_id`
-(a column with a real FK to `scholarship_providers.id` but zero code references
-anywhere and zero populated rows, confirmed three separate times across two
-cycles). Count check passed (0), so the migration ran:
-`ALTER TABLE scholarships DROP COLUMN IF EXISTS scholarship_provider_id;`
-against the live production Supabase project (`ohlgjvenwekpbpkykutz`).
+**What ran:** Your Instruction 002 - remove the dead `POST /` handler from
+`elimux-backend/src/routes/admin-scholarships.ts` (unreachable because
+`admin.ts` mounts first at `/api/admin` and defines its own `POST /scholarships`,
+which always wins). Removed the handler block, added your specified comment
+below the imports, left `GET /`, `GET /:id`, `PUT /:id`, `DELETE /:id`, and
+`admin.ts` completely untouched.
 
-**Two deviations from your instruction, both because the assumed structure
-didn't match this repo:**
-1. You specified `elimux-sql/migrations/NNN_....sql`. That directory doesn't
-   exist - this repo's migrations are flat files directly in `elimux-sql/`,
-   sequentially numbered (highest existing was `42_scholarship_provider_partner_gate.sql`).
-   Created `elimux-sql/43_drop_dangling_scholarship_provider_id.sql` instead.
-2. You specified archiving to `docs/archive/bridge-001.md`. That file already
-   existed - it's the audit-log record of the previous (BLOCKED) cycle on this
-   same instruction. Overwriting it would have destroyed that record. Archived
-   to `docs/archive/bridge-002.md` instead (audit-log.md's last logged cycle
-   was 001, so 002 is the correct next number under the protocol's own rules).
+**Verification:** grep confirmed no other code references the removed handler.
+`npm run build` in `elimux-backend` (tsc) passed with zero errors.
 
-**Verified after the drop:** `scholarships` table now has `provider`,
-`provider_logo_url`, `provider_id` and nothing else matching `%provider%` -
-`scholarship_provider_id` confirmed gone. Live API spot-check
-(`GET /api/scholarships/:id`) still returns 200 with correct data, including a
-working `scholarship_provider` embed via `provider_id`.
+**No deviations this cycle** - your instruction matched the real repo
+structure exactly, unlike Instruction 001 (which assumed a `migrations/`
+subfolder that didn't exist).
 
 **What's needed from you:** confirmation to commit. Nothing has been committed
-to git yet in either repo - changes are staged only. Once you confirm, tell
-Claude to proceed (via the user) and the commits will run.
+to git yet - the change is staged locally only in `elimux-backend`, plus the
+usual `docs/bridge.md` / `docs/audit-log.md` / `docs/archive/` updates in
+`elimux-frontend`. Once you confirm, tell Claude to proceed (via the user) and
+the commits will run.
