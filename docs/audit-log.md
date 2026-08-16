@@ -56,3 +56,27 @@ If a mistake is made in any cycle:
 - **Files Changed:** `elimux-backend/src/routes/admin-scholarships.ts` (dead POST / removed, explanatory comment added), `docs/bridge.md` (CLAUDE EXECUTION + NOTE TO KIMI sections)
 - **Errors:** None. No deviations - instruction matched the real repo structure exactly.
 - **Notes:** All five acceptance criteria met. GET/PUT/DELETE routes confirmed intact via grep, zero remaining references to the removed handler, `npm run build` (tsc) passed with zero errors. admin.ts untouched, per the Risk constraint. Staged for commit, not yet committed - awaiting explicit confirmation per rule 13.
+
+---
+
+## Cycle 004
+- **Date:** 2026-08-16T19:59:44Z
+- **Trigger:** Claude execution
+- **Goal:** Execute KIMI DESIGN Instruction 003 - document adminAuth vs adminMiddleware in elimux-backend/src/middleware/auth.ts (JSDoc + SECURITY NOTE)
+- **Archive Ref:** `docs/archive/bridge-004.md`
+- **Status:** COMPLETE
+- **Files Changed:** `elimux-backend/src/middleware/auth.ts` (JSDoc + SECURITY NOTE added, comments only), `docs/bridge.md` (CLAUDE EXECUTION + NOTE TO KIMI sections)
+- **Errors:** None. No deviations - only comments added, `git diff` confirmed zero non-comment lines changed.
+- **Notes:** All four acceptance criteria met. Real finding surfaced (not just documentation): adminMiddleware (26 route files) has no Bearer-JWT path at all, only accepts the shared x-admin-key; adminAuth (routes/auth.ts only) accepts the shared key or a DB-flagged admin's Supabase JWT. Currently invisible in traffic since admin_users/user_roles are both empty, but will diverge in practice once either is populated - flagged as an open question for Kimi in the NOTE TO KIMI section. `npm run build` (tsc) passed with zero errors. Staged for commit, not yet committed - awaiting explicit confirmation per rule 13.
+
+---
+
+## Cycle 005
+- **Date:** 2026-08-16T20:12:42Z
+- **Trigger:** Claude execution
+- **Goal:** Execute KIMI DESIGN Instruction 004 - unify all 26 admin route files onto adminAuth, delete adminMiddleware from elimux-backend/src/middleware/auth.ts
+- **Archive Ref:** `docs/archive/bridge-005.md`
+- **Status:** COMPLETE
+- **Files Changed:** 26 route files in `elimux-backend/src/routes/` (adminMiddleware -> adminAuth), `elimux-backend/src/middleware/auth.ts` (adminMiddleware deleted, adminAuth JSDoc updated), `docs/bridge.md` (CLAUDE EXECUTION + NOTE TO KIMI)
+- **Errors:** None. Three inconsistencies in the instruction flagged (not blocking): Background's example URL /api/admin/users doesn't exist (real path is /api/auth/users); Task 1/Task 3 checklist was already true before this cycle (adminAuth already supported x-admin-key first); acceptance criterion 1 (zero adminMiddleware matches) literally contradicts Task 4 (which mandates a comment containing that string) - resolved by following Task 4, 2 comment-only matches remain, zero in code.
+- **Notes:** All five acceptance criteria met (per the corrected reading of #1). Frontend confirmed untouched via git status, per the Risk constraint. Flagged a real operational tradeoff for Kimi's decision: failed-auth requests with a Bearer token but no x-admin-key now cost up to 8s + 2 DB queries across all 26 routes instead of an instant 403 - legitimate traffic unaffected (always sends x-admin-key), but probe/scanner cost increased on routes that also serve public traffic. `npm run build` (tsc) passed with zero errors. Staged for commit, not yet committed - awaiting explicit confirmation per rule 13.
