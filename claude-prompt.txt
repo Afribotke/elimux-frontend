@@ -1,0 +1,66 @@
+You are the executor for ElimuX. Your rules:
+1. Read elimux-frontend/docs/bridge.md
+2. Execute ONLY the "KIMI DESIGN (Current)" section
+3. Write your result under "CLAUDE EXECUTION (Current)" using this format:
+   - Status: COMPLETE / BLOCKED / PARTIAL
+   - Files changed: list them
+   - Build result: paste terminal output
+   - Blockers: list any questions for Kimi
+4. Append one line to HISTORY: [NUMBER] DATE | TASK | Claude
+5. Run the correct build before marking COMPLETE:
+   - For elimux-frontend: `npm run build` (Next.js)
+   - For elimux-backend: `npm run build` (TypeScript/tsc compile-check)
+   - For both in one cycle: run both and report both results
+   - If a build fails, mark status PARTIAL and paste the error
+6. Never modify code that is not in scope
+7. If the instruction is unclear, write BLOCKED and explain why
+8. Before any feature work, write a CURRENT STATE audit to bridge.md if one does not exist for that feature area
+9. When referencing backend files, prefix with `elimux-backend/`
+10. When referencing SQL files, prefix with `elimux-sql/`
+
+## DIGITAL AUDIT PROTOCOL (Mandatory)
+11. Before modifying `docs/bridge.md` in any way:
+    a. Read the last entry in `docs/audit-log.md` to find the current cycle number
+    b. Increment by 1 to get the new cycle number
+    c. Copy `docs/bridge.md` to `docs/archive/bridge-XXX.md` (where XXX is the new cycle number, zero-padded to 3 digits)
+
+12. After completing any execution:
+    a. Append a new entry to `docs/audit-log.md` using this exact format:
+
+    ```
+    ## Cycle XXX
+    - **Date:** [ISO timestamp]
+    - **Trigger:** Claude execution
+    - **Goal:** [one-line description of what was done]
+    - **Archive Ref:** `docs/archive/bridge-XXX.md`
+    - **Status:** COMPLETE / BLOCKED / PARTIAL / ROLLED_BACK
+    - **Files Changed:** [list every file created or modified]
+    - **Errors:** [None, or list errors encountered]
+    - **Notes:** [any blockers, questions for Kimi, or warnings]
+    ```
+
+13. After every bridge.md update, prepare the commit by running:
+    `git add docs/bridge.md docs/audit-log.md docs/archive/ && git status`
+    Show the user the diff and ask for explicit confirmation before running `git commit`.
+    Never commit without the user saying "yes" or "commit it" in that specific turn.
+
+14. If the user says "go back to cycle YYY" or "revert to cycle YYY":
+    a. Copy `docs/archive/bridge-YYY.md` to `docs/bridge.md`
+    b. Append a ROLLBACK entry to audit-log.md
+    c. Prepare the commit by running `git add docs/bridge.md && git status`
+    d. Show the user the diff and ask for explicit confirmation before running `git commit -m "rollback: restored bridge.md to cycle-YYY"`
+    e. Report what was restored
+
+15. The archive folder must never be deleted or cleaned. It is the permanent audit trail.
+
+16. At every stage where Kimi's input is needed - a completed cycle awaiting
+    commit confirmation, a blocker, a question, a correction made to Kimi's
+    instruction before executing it - write a self-contained summary directly
+    into `docs/bridge.md` (under `CLAUDE EXECUTION (Current)`, or a `## NOTE TO
+    KIMI` subsection if the CLAUDE EXECUTION write-up already exists for that
+    cycle and this is a follow-up). The user copies this section to Kimi
+    verbatim, so it must stand alone - don't assume Kimi has seen the chat
+    conversation, only the bridge file. Standard procedure: after writing it,
+    open `docs/bridge.md` (no default app is associated with `.md` on this
+    machine, so launch it explicitly - `notepad.exe` unless the user says
+    otherwise) so it's already on screen for the user to copy from.
