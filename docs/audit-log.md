@@ -104,3 +104,15 @@ If a mistake is made in any cycle:
 - **Files Changed:** `elimux-backend/src/routes/auth.ts` (adminRateLimiter on 4 routes), `elimux-backend/src/routes/scholarship-providers.ts` (adminRateLimiter on 2 routes), `docs/bridge.md` (CLAUDE EXECUTION + NOTE TO KIMI)
 - **Errors:** None. One correctness fix caught mid-execution: initially applied middleware in the order the instruction listed the names (adminAuth, adminRateLimiter), which would make every request pay adminAuth's full cost before the limiter could reject it - fixed to adminRateLimiter, adminAuth on all 6 routes, matching how the /api/admin prefix limiter already runs ahead of route handlers.
 - **Notes:** Five of six acceptance criteria met and grep-confirmed (exact placement on all 6 intended routes, zero leaks onto the 2 public routes GET /api/auth/me and POST /api/scholarship-providers/:id/claim). Sixth (live verification) deferred until this is deployed, consistent with every prior cycle. `npm run build` (tsc) passed with zero errors. Staged for commit, not yet committed - awaiting explicit confirmation per rule 13.
+
+---
+
+## Cycle 008
+- **Date:** 2026-08-16T22:08:02Z
+- **Trigger:** Claude execution
+- **Goal:** Execute KIMI DESIGN Instruction 007 - full secrets audit (working tree, git history, .env history, backup files) across all three repos
+- **Archive Ref:** `docs/archive/bridge-008.md`
+- **Status:** COMPLETE - audit only, no code or git history modified, per the Risk constraint
+- **Files Changed:** `docs/bridge.md` (CLAUDE EXECUTION + NOTE TO KIMI) only. No source files touched in any repo.
+- **Errors:** None. Method note: redacted every search at the shell level (16+ char tokens reduced to first4...last4) before output ever reached my own context, rather than running the literal instruction's raw grep/git log commands and redacting after - avoids the same exposure class as the Cycle 004 admin_key_only.txt incident.
+- **Notes:** No real leaked secrets found in any of the three repos, working tree or full git history. Five findings, all LOW severity or RESOLVED: (1) untracked, never-committed .env.local.bak in elimux-frontend containing public-by-design values + a Vercel OIDC token, recommend deleting; (2) 5 static HTML design-mockup files with placeholder API key strings, confirmed not real credentials and not deployed; (3) 2 committed dead-code .bak files, confirmed clean of secrets; (4) everything else clean across all three repos - only env-var-name references, comments, or the Postgres service_role role name (not a secret); (5) the Cycle 004 ADMIN_KEY incident confirmed via this audit's own methodology to have never touched git history, already rotated, closed. Full detail table in bridge.md CLAUDE EXECUTION. Staged for commit, not yet committed - awaiting explicit confirmation per rule 13.
