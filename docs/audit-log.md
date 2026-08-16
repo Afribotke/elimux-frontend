@@ -92,3 +92,15 @@ If a mistake is made in any cycle:
 - **Files Changed:** `elimux-backend/package.json`/`package-lock.json` (express-rate-limit added), `elimux-backend/src/middleware/rate-limit.ts` (new), `elimux-backend/src/index.ts` (import + mount), `docs/bridge.md` (CLAUDE EXECUTION + NOTE TO KIMI)
 - **Errors:** None. One correctness fix made beyond the literal instruction: hardened the skip check's bare `===` comparison (fail-open if ADMIN_KEY were ever unset) to match adminAuth's own guarded check.
 - **Notes:** All five acceptance criteria met. Real coverage gap flagged for Kimi: rate limiter only covers /api/admin/*, but routes/auth.ts (/api/auth/users*, 4 routes) and part of scholarship-providers.ts (/api/scholarship-providers, 2 routes) also use adminAuth and remain exposed to the same DoS pattern this instruction was meant to close - executed Task 4 literally rather than expanding scope unilaterally. `npm run build` (tsc) passed with zero errors, both after install and after wiring. Staged for commit, not yet committed - awaiting explicit confirmation per rule 13.
+
+---
+
+## Cycle 007
+- **Date:** 2026-08-16T21:26:29Z
+- **Trigger:** Claude execution
+- **Goal:** Execute KIMI DESIGN Instruction 006 - close the Cycle 006 rate-limiting coverage gap (auth.ts's 4 user-management routes, scholarship-providers.ts's 2 admin routes)
+- **Archive Ref:** `docs/archive/bridge-007.md`
+- **Status:** COMPLETE (build-verified; live-verification pending deploy)
+- **Files Changed:** `elimux-backend/src/routes/auth.ts` (adminRateLimiter on 4 routes), `elimux-backend/src/routes/scholarship-providers.ts` (adminRateLimiter on 2 routes), `docs/bridge.md` (CLAUDE EXECUTION + NOTE TO KIMI)
+- **Errors:** None. One correctness fix caught mid-execution: initially applied middleware in the order the instruction listed the names (adminAuth, adminRateLimiter), which would make every request pay adminAuth's full cost before the limiter could reject it - fixed to adminRateLimiter, adminAuth on all 6 routes, matching how the /api/admin prefix limiter already runs ahead of route handlers.
+- **Notes:** Five of six acceptance criteria met and grep-confirmed (exact placement on all 6 intended routes, zero leaks onto the 2 public routes GET /api/auth/me and POST /api/scholarship-providers/:id/claim). Sixth (live verification) deferred until this is deployed, consistent with every prior cycle. `npm run build` (tsc) passed with zero errors. Staged for commit, not yet committed - awaiting explicit confirmation per rule 13.
