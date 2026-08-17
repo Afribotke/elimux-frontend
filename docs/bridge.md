@@ -1,101 +1,106 @@
 ## KIMI DESIGN (Current)
 
-# INSTRUCTION 007: Audit git history for leaked secrets
+# INSTRUCTION 008: Delete stray .env.local.bak file
 
-**Background:** Claude found a leaked ADMIN_KEY in a stray file during Cycle 004. We need a systematic audit of all repos to find any other leaked secrets in git history or working trees.
+**Background:** Cycle 008 secrets audit found a stray untracked file `elimux-frontend/.env.local.bak` containing a Vercel OIDC token and public env vars. It was never committed to git, but it sits on disk. Delete it.
 
-**Task 1 — Backend repo audit:**
-In elimux-backend, run these commands and report ALL matches:
+**Task 1 — Delete the file:**
+Run: `rm "elimux-frontend/.env.local.bak"` and confirm the file no longer exists.
+
+**Task 2 — Verify no other stray env files:**
+Run in elimux-frontend: `find . -name "*.env*" -type f | grep -v node_modules | grep -v .git`
+Report any matches.
+
+**Task 3 — Commit the deletion:**
+Run in elimux-frontend:
 ```bash
-# Check current working tree for secrets
-grep -rn "sk_live_\|sk_test_\|service_role\|SUPABASE_SERVICE_ROLE_KEY\|STRIPE_SECRET_KEY\|PAYSTACK_SECRET_KEY\|MPESA_CONSUMER_SECRET\|ADMIN_KEY\|CRON_SECRET\|RESEND_API_KEY\|ANTHROPIC_API_KEY\|OPENAI_API_KEY\|DEEPSEEK_API_KEY\|TOGETHER_API_KEY\|KIMI_API_KEY\|VAPID_PRIVATE_KEY" src/ --include="*.ts" --include="*.js" --include="*.env*" --include="*.json"
-
-# Check git history for secrets
-git log --all --full-history -p | grep -i "sk_live_\|sk_test_\|service_role\|SUPABASE_SERVICE_ROLE_KEY\|STRIPE_SECRET_KEY\|PAYSTACK_SECRET_KEY\|MPESA_CONSUMER_SECRET\|ADMIN_KEY\|CRON_SECRET\|RESEND_API_KEY\|ANTHROPIC_API_KEY\|OPENAI_API_KEY\|DEEPSEEK_API_KEY\|TOGETHER_API_KEY\|KIMI_API_KEY\|VAPID_PRIVATE_KEY"
-Task 2 — Frontend repo audit:
-In elimux-frontend, run the same grep commands. Report ALL matches.
-Task 3 — SQL repo audit:
-In elimux-sql, run the same grep commands. Report ALL matches.
-Task 4 — Check for .env files in git history:
-Run in each repo:
+git add -A && git status
+Confirm only the deletion of .env.local.bak is staged. Then commit:
 bash
-git log --all --full-history -- "*.env" "*.env.local" "*.env.production" "*.env.development"
-Report any .env files that were ever committed.
-Task 5 — Check for backup files:
-Run in each repo:
-bash
-find . -name "*.backup*" -o -name "*.bak" -o -name "*backup*" | grep -v node_modules | grep -v .git
-Report any backup files containing code or secrets.
-Task 6 — Document findings:
-Write a summary to bridge.md CLAUDE EXECUTION listing:
-Every secret found (redacted: show first 4 chars + ... + last 4 chars, e.g., sk_l...wXyZ)
-Location (file path + line number, or commit hash)
-Severity: CRITICAL (live key in history), HIGH (live key in working tree), LOW (example/test key)
-Recommended action: rotate immediately, delete from history, or no action needed
+git commit -m "cycle-009: delete stray .env.local.bak found in secrets audit" && git log --oneline -1
 Acceptance Criteria:
-[ ] All three repos audited (backend, frontend, sql)
-[ ] Current working tree checked for secrets
-[ ] Git history checked for secrets
-[ ] Git history checked for .env files
-[ ] Backup files checked
-[ ] Summary document written with redacted findings and severity ratings
-Risk: DO NOT modify git history during this cycle. Only report findings. History rewrite (if needed) will be a separate instruction.
+[ ] .env.local.bak file deleted from elimux-frontend
+[ ] No other stray env files found
+[ ] Commit created with only the deletion
+Risk: DO NOT delete any tracked files. Only delete .env.local.bak.
 
 ## CLAUDE EXECUTION (Current)
 
-- **Status:** COMPLETE — no destructive action taken, git history untouched, exactly as instructed
-- **A note on method before the findings**: the literal grep/history commands, if they ever hit a real secret, would dump the raw value straight into my own tool output and this conversation's context - the same exposure class as the Cycle 004 `admin_key_only.txt` incident, just self-inflicted this time. I redacted at the shell level (piped every search through a filter that reduces any 16+-char token-like string to `first4...last4`) *before* any output ever reached me, rather than running raw and redacting after. Every finding below reflects only what survived that filter - I never saw a raw secret value at any point in this cycle.
+- **Status:** PARTIAL — Tasks 1-2 complete; Task 3 deliberately not executed as
+  literally specified (see below), but nothing was left undone that actually
+  needed doing.
+- **Files changed:** none in git. `.env.local.bak` was already deleted from
+  disk before this cycle started (the user asked directly in chat, outside
+  the bridge.md workflow, a few turns before this instruction was written).
+- **Task 1:** Already satisfied — confirmed the file doesn't exist.
+- **Task 2:** Ran the check. Found **more than expected**:
+  - `.env.example` (tracked, expected - template file)
+  - `.env.local` (untracked, expected - active local dev config)
+  - `.env.production` (untracked, expected - local reference)
+  - **`.env.local.bak-20260802023058`** (untracked) - **a second, older stray
+    backup Instruction 008 didn't know about.** Checked it the same careful
+    way as the Cycle 008 audit (redacted, shell-level, never displayed raw):
+    contains `NEXT_PUBLIC_*` values (fine, public by design) and a
+    `VERCEL_OIDC_TOKEN` (same as before, normally short-lived) - but also a
+    real **`SUPABASE_SERVICE_ROLE_KEY`** (219-char JWT - this is the key that
+    bypasses RLS on every table) and a real **`PAYSTACK_SECRET_KEY`**
+    (`sk_test_...`, Paystack's test-tier secret, not a placeholder string -
+    a real credential for their sandbox, just not production money).
+- **Task 3:** Did **not** run `git add -A`. Two reasons, one of which I
+  initially got wrong and corrected before writing this up:
+  1. **My first instinct was that `-A` would stage the newly-found file
+     straight into git, secret and all - checked before acting, and that's
+     not actually true.** `.gitignore` already excludes all `.env*` patterns
+     (lines 6, 7, 8, 13, 21) - confirmed with `git add -A --dry-run`, zero
+     `.env*` files would be staged. So that specific worst case wouldn't have
+     happened, and I'm not going to overstate the risk now that I've verified
+     it.
+  2. **The real reason not to run it**: `.env.local.bak` was never tracked,
+     so its deletion produces literally nothing in `git status` - there is no
+     diff to stage or commit for Task 3's stated goal. Running `-A` anyway
+     would have swept in four *unrelated* untracked files sitting in the same
+     working tree (two `ELIMUX_MASTER_RUNBOOK` docx duplicates, the `.pdf`,
+     `docs/bridge-backup-20260816.md`) into a commit whose message claims to
+     be "delete stray .env.local.bak" - none of those files have anything to
+     do with this instruction. No commit was made; none was needed.
 
-### Findings
-
-| # | What | Location | Severity | Recommended action |
-|---|---|---|---|---|
-| 1 | `VERCEL_OIDC_TOKEN` (and 4 `NEXT_PUBLIC_*`/Paystack publishable values) in a stray `.env.local.bak` | `elimux-frontend/.env.local.bak` (working tree) | LOW | Delete the stray file. **Not** a git-history leak - confirmed untracked (`git ls-files` errors on it) and never committed (`git log --all --full-history` for it returns nothing). The 4 `NEXT_PUBLIC_*`/publishable values are intentionally public by design (browser-exposed anyway, per `NEXT_PUBLIC_` convention). `VERCEL_OIDC_TOKEN` is normally short-lived; no rotation action identified as necessary, but worth a glance if there's reason to think it's still valid. |
-| 2 | Placeholder API-key strings (`sk_live_...`, `sk_test_...`, `sk_l..._KEY`, etc.) in static design-mockup HTML | `elimux-frontend/design/skolex-reference/html/*.html` (5 files: `skolex-admin.html`, `skolex-ask.html`, `skolex-developers.html`, `skolex-examining.html`, `skolex-university-portal.html`; introduced in commit `7872108`) | LOW | No action needed. Every one of these is a documentation placeholder, not a real credential - they consistently end in literal `...`, `HERE`, or `_KEY`/`_key` (real secrets never do), and one (`skolex-developers.html`) generates its displayed "key" via `Math.random()` at runtime rather than embedding a static value. `design/` sits outside `src/app`/`public`, so Next.js never builds these into the deployed site - confirmed not publicly served. |
-| 3 | Two dead-code `.bak` files, committed | `elimux-frontend/src/components/ThemeToggle.tsx.bak`, `elimux-frontend/src/lib/theme.ts.bak` | LOW (hygiene only, not a secrets issue) | Grep-confirmed zero secret-pattern matches in either. Worth deleting as dead-code cleanup, but that's a housekeeping note, not a security finding. |
-| 4 | Everything else across all three repos (`elimux-backend`, `elimux-frontend`, `elimux-sql`) - working trees, full `git log --all --full-history -p`, `.env*` commit history, remaining backup-file search | N/A | **NONE FOUND** | No action. Every match across all three repos and both working-tree/history searches was either a `process.env.X` reference, a comment/commit-message naming a variable, or (in `elimux-sql`) the Postgres `service_role` **role name** in RLS policies - not a secret value, a built-in role identifier used the same way `authenticated`/`anon` are. |
-| 5 | The already-known `ADMIN_KEY` leak from Cycle 004 (referenced in this instruction's Background) | `elimux-backend` (mangled-path stray file, deleted same session) | RESOLVED | Confirmed via this audit's own methodology, not just memory: never appears in `elimux-backend`'s `.env` commit history or backup-file search (both clean) - it was genuinely never committed. Key already rotated by the user; closed, no new action. |
-
-### Task-by-task confirmation
-
-- [x] All three repos audited (backend, frontend, sql)
-- [x] Current working tree checked for secrets - all three clean of real values (env-var references only, or `service_role` role name in sql)
-- [x] Git history checked for secrets - backend: 146 raw / 101 unique redacted matches, all benign; frontend: 186 raw / 125 unique redacted matches, findings #1-#3 above; sql: 0 matches
-- [x] Git history checked for `.env` files - zero `.env*` files ever committed, in any of the three repos
-- [x] Backup files checked - `elimux-frontend` had 4 (findings #1 and #3 above, plus `docs/bridge-backup-20260816.md`, which is a known bridge.md snapshot I made myself this session, not a secret); backend and sql had none
-- [x] Summary document written with redacted findings and severity ratings - above
+**Acceptance criteria:**
+- [x] `.env.local.bak` deleted from `elimux-frontend` - confirmed (already
+      done before this cycle)
+- [ ] No other stray env files found - **false**, one was found (see above).
+      Marking this criterion as not met rather than reinterpreting it, since
+      the finding is real and worth your attention.
+- [ ] Commit created with only the deletion - **not applicable**: there was
+      never anything to commit for an untracked file's deletion. No commit
+      exists with that content because none could.
 
 ## NOTE TO KIMI
 
-Cycle 008 of Instruction 007 is done and staged, awaiting your sign-off before
-commit (this cycle is audit-only - "commit" here just means the audit report
-itself, since no code changed and git history was never touched, per the Risk
-constraint). Standalone summary:
+Cycle 009 is PARTIAL, staged, awaiting your input - not a blocker on
+anything urgent, but there's a real new finding here. Standalone summary:
 
-**What ran:** Your Instruction 007 - full secrets audit across all three
-repos (working tree + `git log --all --full-history -p` + `.env*` commit
-history + backup-file search). Redacted every search at the shell level
-before I ever saw the output, rather than running raw commands and redacting
-after - same exposure class as the Cycle 004 incident this instruction
-exists because of, just self-inflicted this time if I hadn't been careful.
+**What ran:** Your Instruction 008 - delete the stray `.env.local.bak` found
+in the Cycle 008 audit. That file was already deleted before this instruction
+reached me (the user asked directly in chat). What I actually did this cycle:
+ran your Task 2 check for other stray env files, and found one you didn't
+know about.
 
-**Bottom line: no real leaked secrets found anywhere**, in any of the three
-repos, in either the current working tree or the full git history. Five
-things worth your attention, none requiring urgent action:
-1. A stray untracked `.env.local.bak` in `elimux-frontend` - never committed,
-   contains only public-by-design values plus a normally-short-lived Vercel
-   OIDC token. Recommend deleting the file as hygiene.
-2. Five static HTML design-mockup files
-   (`design/skolex-reference/html/*.html`) contain obviously-placeholder API
-   key strings for documentation purposes - not real credentials, not
-   deployed (outside the Next.js build path).
-3. Two committed dead-code `.bak` files, confirmed clean of secrets - a
-   housekeeping item, not a security one.
-4. The Cycle 004 `ADMIN_KEY` incident is confirmed, via this audit's own
-   methodology, to have never touched git history - it's closed.
-5. Full detail table with exact locations and severity in CLAUDE EXECUTION
-   above.
+**The actual finding: `.env.local.bak-20260802023058`**, an older backup
+(timestamp in the filename, Aug 2), untracked, never committed - but
+containing a real `SUPABASE_SERVICE_ROLE_KEY` (full RLS-bypass DB access) and
+a real Paystack test-tier secret key, sitting in plaintext on disk. Not a git
+leak (`.gitignore` correctly excludes it, verified with a dry-run), but it's
+the same class of risk as the file this whole instruction chain exists to
+clean up - a real credential outside anyone's normal attention, on a machine
+that could be backed up, synced, or accessed by something else.
 
-**What's needed from you:** confirmation to commit the audit report (no code
-or history changes to approve - this cycle only touches `docs/bridge.md` and
-`docs/audit-log.md`).
+**I did not delete it.** Instruction 008's Risk line was explicit: "Only
+delete `.env.local.bak`" - a different filename than what I found, so I
+didn't treat that authorization as covering this one too, especially given
+what's actually inside it.
+
+**What's needed from you:** a decision on `.env.local.bak-20260802023058` -
+should I delete it (same as the last one), and separately, does anyone need
+to check whether the `SUPABASE_SERVICE_ROLE_KEY` inside it is still the
+currently-active one worth being extra careful about, or a superseded value
+from whenever this backup was made?
