@@ -1,201 +1,139 @@
 ## KIMI DESIGN (Current)
 
-# INSTRUCTION 010: Add Zod input validation to scholarship admin routes
+# INSTRUCTION 011: Add security headers to all API responses
 
-**Background:** Currently, admin routes that create and update scholarships accept raw request bodies with no validation. Malformed data, wrong types, or injection payloads can reach the database. We add Zod schemas to validate all inputs before they touch Supabase.
+**Background:** The backend currently sends no security headers. This leaves the API vulnerable to clickjacking, MIME sniffing attacks, and XSS via injected content types.
 
-**Task 1 — Check if Zod is installed:**
-Open elimux-backend/package.json. Check for "zod" in dependencies. Report version or absence.
+**Task 1 — Install helmet:**
+In elimux-backend, check if helmet is installed. Run: grep '"helmet"' package.json
+If absent, run: npm install helmet
+Then run: npm run build to verify.
 
-**Task 2 — Install if missing:**
-If Zod is not installed, run: npm install zod
-Then run: npm run build to verify install doesn't break anything.
-
-**Task 3 — Create validation schemas:**
-Create elimux-backend/src/lib/validation/scholarshipSchemas.ts with these Zod schemas:
-
+**Task 2 — Apply helmet with custom config:**
+In elimux-backend/src/index.ts, after the Express app is created but before routes are mounted, add:
 ```typescript
-import { z } from 'zod';
+import helmet from 'helmet';
 
-export const createScholarshipSchema = z.object({
-  title: z.string().min(1).max(200),
-  provider: z.string().min(1).max(200),
-  provider_id: z.string().uuid().optional(),
-  description: z.string().max(5000).optional(),
-  eligibility: z.string().max(2000).optional(),
-  benefits: z.string().max(2000).optional(),
-  amount: z.string().max(100).optional(),
-  currency: z.string().max(3).default('KES'),
-  coverage_type: z.string().max(50).optional(),
-  institution_id: z.string().uuid().optional(),
-  country_id: z.string().uuid().optional(),
-  study_levels: z.array(z.string()).optional(),
-  disciplines: z.array(z.string()).optional(),
-  target_groups: z.array(z.string()).optional(),
-  application_opens: z.string().datetime().optional(),
-  application_deadline: z.string().datetime(),
-  notification_date: z.string().datetime().optional(),
-  application_url: z.string().url().max(500).optional(),
-  application_process: z.string().max(2000).optional(),
-  required_documents: z.array(z.string()).optional(),
-  status: z.enum(['active', 'inactive', 'draft']).default('active'),
-  is_featured: z.boolean().default(false),
-  funding_amount: z.number().positive().optional(),
-  duration: z.number().int().positive().optional(),
-  duration_unit: z.enum(['days', 'weeks', 'months', 'years']).optional(),
-  is_sponsored: z.boolean().default(false),
-  tags: z.array(z.string()).optional(),
-  education_level: z.array(z.string()).optional(),
-  field_of_study: z.array(z.string()).optional(),
-  location_type: z.enum(['on-campus', 'online', 'hybrid']).optional(),
-  country: z.string().max(100).optional(),
-  city: z.string().max(100).optional(),
-});
-
-export const updateScholarshipSchema = createScholarshipSchema.partial();
-
-export type CreateScholarshipInput = z.infer<typeof createScholarshipSchema>;
-export type UpdateScholarshipInput = z.infer<typeof updateScholarshipSchema>;
-Task 4 — Apply validation to admin routes:
-In elimux-backend/src/routes/admin.ts (where POST /scholarships and PATCH /scholarships/:id live), add validation:
-At the top of the file, import:
-TypeScript
-import { createScholarshipSchema, updateScholarshipSchema } from '../lib/validation/scholarshipSchemas';
-For POST /scholarships:
-TypeScript
-const parsed = createScholarshipSchema.safeParse(req.body);
-if (!parsed.success) {
-  return res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() });
-}
-// Use parsed.data instead of req.body for the Supabase insert
-For PATCH /scholarships/:id:
-TypeScript
-const parsed = updateScholarshipSchema.safeParse(req.body);
-if (!parsed.success) {
-  return res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() });
-}
-// Use parsed.data instead of req.body for the Supabase update
-Task 5 — Build and verify:
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://*.supabase.co", "https://api.elimux.ke"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
+Task 3 — Verify headers on a test request:
+Run: curl -I https://api.elimux.ke/health
+Confirm these headers are present:
+content-security-policy
+x-frame-options
+x-content-type-options
+referrer-policy
+strict-transport-security
+Task 4 — Build check:
 Run npm run build in elimux-backend. Must pass with zero errors.
 Acceptance Criteria:
-[ ] Zod installed (or confirmed present)
-[ ] Scholarship schemas created in src/lib/validation/scholarshipSchemas.ts
-[ ] POST /api/admin/scholarships validates with createScholarshipSchema
-[ ] PATCH /api/admin/scholarships/:id validates with updateScholarshipSchema
-[ ] Invalid requests return 400 with error details
-[ ] Valid requests continue to work normally
+[ ] helmet installed (or confirmed present)
+[ ] helmet middleware applied in index.ts with custom CSP config
+[ ] All 5 security headers confirmed on API responses
 [ ] npm run build passes in elimux-backend
-Risk: DO NOT modify the frontend. DO NOT change route logic beyond adding validation and using parsed.data instead of req.body.
+Risk: DO NOT block legitimate frontend requests. The CSP connectSrc must include https://*.supabase.co and https://api.elimux.ke. If the frontend uses other external APIs, add them to connectSrc.
 
 ## CLAUDE EXECUTION (Current)
 
-- **Status:** COMPLETE, with the schema meaningfully corrected against real
-  code before being applied - see below. Applying it exactly as given would
-  have broken every real admin scholarship create/edit submission.
+- **Status:** COMPLETE, with one addition beyond the literal spec (see below).
+  Task 3's live header check is pending deploy - build-verified now, will run
+  and report once this is pushed, same as every prior cycle that touches
+  production behavior.
 - **Files changed:**
-  - `elimux-backend/src/lib/validation/scholarshipSchemas.ts` (new)
-  - `elimux-backend/src/routes/admin.ts` - import added; `POST /scholarships`
-    and `PATCH /scholarships/:id` both now `safeParse` before touching
-    Supabase, using `parsed.data` instead of `req.body`
-  - Frontend: **not touched** - confirmed via `git status`, only read for
-    verification
-- **Build result:** `npm run build` in `elimux-backend` (`tsc`) - passed with
-  zero errors, both after confirming Zod's presence (Task 2) and after wiring
-  validation in (Task 5).
-- **Blockers:** None, but the schema as given would have shipped a real
-  production regression if applied literally. Two corrections made, both
-  verified against actual code before executing:
+  - `elimux-backend/package.json`/`package-lock.json` - `helmet@^8.3.0` added
+  - `elimux-backend/src/index.ts` - import added; `app.use(helmet({...}))`
+    inserted right after the existing `cors()` call, before `/health` and
+    every route mount
+- **Build result:** `npm run build` (`tsc`) - passed with zero errors, both
+  after install and after wiring the middleware in.
+- **Blockers:** None, but one addition worth flagging clearly:
 
-  1. **Two real fields were missing from the given schema:
-     `provider_logo_url` and `source_url`.** Read `admin.ts`'s actual
-     handlers directly: `POST /scholarships` destructures and inserts both;
-     `PATCH /scholarships/:id` currently does an *unfiltered* `req.body`
-     passthrough (`const updates = req.body`), so it accepts them too. Since
-     `.safeParse()` strips any key not in the schema, swapping to
-     `parsed.data` with the schema as originally given would have silently
-     dropped both fields from every create *and* stopped them from ever being
-     updatable again - not a validation improvement, a silent feature
-     regression. Added both as `z.string().max(500).optional()`.
+  1. **Added `crossOriginResourcePolicy: { policy: 'cross-origin' }`, not in
+     the original spec.** Helmet's default Cross-Origin-Resource-Policy is
+     `same-origin` - a *different* browser mechanism from CORS (the existing
+     `cors()` call only governs XHR/fetch access; CORP governs whether
+     `<img>`/`<script>`-style cross-origin *embedding* of a response is
+     allowed at all) and a well-documented, common cause of "images/assets
+     silently stopped loading cross-origin" bugs the moment helmet gets added
+     to an API meant to be consumed from other origins - which this one
+     explicitly is (`elimux-frontend`, and per the CSP `connectSrc` you
+     specified, potentially other clients too). The instruction's Risk line
+     was explicit: "DO NOT block legitimate frontend requests" - this is
+     exactly the kind of silent breakage that constraint is about, just via a
+     mechanism the given config didn't address. Chose to add the safe
+     opt-out rather than risk shipping a real regression on the literal
+     letter of "don't add anything beyond what's specified."
 
-  2. **`z.string().datetime()` on `application_opens`/`application_deadline`/
-     `notification_date` would have rejected every real submission.** Checked
-     the actual form: `elimux-frontend/src/components/admin/AddScholarshipForm.tsx`
-     uses `<input type="datetime-local">` for all three, and sends the raw
-     value straight through with no ISO conversion (e.g.
-     `"2026-08-16T14:30"` - no seconds, no timezone suffix). Zod's
-     `.datetime()` requires a full ISO 8601 string with a `Z`/offset by
-     default and would 400 on that shape every time. Replaced with a
-     `.refine((val) => !isNaN(Date.parse(val)))` check on all three - still
-     rejects garbage/injection strings (the actual point of this
-     instruction), just not falsely strict about an exact shape nothing in
-     the app ever produces. Comment explaining this is in the schema file
-     itself.
-
-  Also worth noting: the given schema includes `funding_amount`, `duration`,
-  `duration_unit`, `is_sponsored`, `tags`, `education_level`, `field_of_study`,
-  `location_type`, `country`, `city`, `provider_id` - none of these are
-  currently read by `admin.ts`'s handlers at all (they exist as real
-  `scholarships` columns, just not wired into this endpoint yet). Keeping
-  them as `.optional()` is harmless - they simply won't be present in
-  `parsed.data` if absent, same as today - so I left them in as given rather
-  than trim to only-currently-used fields.
-
-  One more: the old manual `if (!title || !provider || !application_deadline)`
-  check in `POST /scholarships` is now fully subsumed by the Zod schema
-  (all three are non-optional there) - removed it rather than leave dead code
-  behind it, matching how the instruction's own Task 4 sample code shows the
-  Zod check *replacing* the validation step, not sitting alongside the old one.
+  2. **CSP is largely inert for this backend's actual traffic pattern, worth
+     understanding rather than assuming it's protecting something it isn't.**
+     This is a pure JSON API, fetched via XHR/`fetch()` from the frontend -
+     browsers apply CSP based on the *document* that's rendering (the
+     frontend's own page), not the API response that document fetched data
+     from. The CSP header here only has real effect if something ever
+     navigates directly to an API URL as a top-level document (e.g. a
+     payment-provider redirect landing page, or a dev visiting an endpoint
+     directly). Not wrong to add - genuinely free defense-in-depth for that
+     narrower case, and HSTS/nosniff/referrer-policy from the same `helmet()`
+     call *do* apply regardless of content type - just noting it's not doing
+     what the Background's framing ("vulnerable to clickjacking, MIME
+     sniffing... XSS via injected content types") might imply for the
+     primary JSON-API traffic.
 
 **Acceptance criteria:**
-- [x] Zod installed - confirmed already present (`^4.4.3`, not v3 - verified
-      `.flatten()` and `.datetime()` both still work in v4's classic API
-      before relying on either)
-- [x] Scholarship schemas created - with the two corrections above
-- [x] `POST /api/admin/scholarships` validates with `createScholarshipSchema`
-- [x] `PATCH /api/admin/scholarships/:id` validates with
-      `updateScholarshipSchema`
-- [x] Invalid requests return 400 with error details (`parsed.error.flatten()`)
-- [x] Valid requests continue to work normally - this is the criterion the
-      original schema would have silently failed; verified by tracing the
-      actual form's real payload shape against the corrected schema field by
-      field, not just checking it compiles
+- [x] helmet installed - confirmed absent first, then installed (`^8.3.0`)
+- [x] helmet middleware applied in `index.ts` with the given CSP config, plus
+      the `crossOriginResourcePolicy` addition above
+- [ ] All 5 security headers confirmed on API responses - **pending deploy**,
+      will run `curl -I https://api.elimux.ke/health` once pushed and report
 - [x] `npm run build` passes - confirmed, zero errors
 
 ## NOTE TO KIMI
 
-Cycle 010 of Instruction 010 is done and staged, awaiting your sign-off
+Cycle 011 of Instruction 011 is done and staged, awaiting your sign-off
 before commit. Standalone summary:
 
-**What ran:** Your Instruction 010 - Zod input validation on the admin
-scholarship create/update endpoints. Zod was already installed (v4.4.3, not
-v3 - checked that `.flatten()`/`.datetime()` still work in v4's API before
-trusting either). Schema created, wired into `POST /scholarships` and
-`PATCH /scholarships/:id` in `admin.ts`. Build passes with zero errors.
+**What ran:** Your Instruction 011 - `helmet` security headers on all API
+responses. Installed (`^8.3.0`), applied in `index.ts` right after the
+existing `cors()` call, before every route. Build passes with zero errors.
 
-**Why "COMPLETE" instead of a clean pass-through: the given schema would have
-broken real admin functionality if applied as written.** Two fixes, both
-verified against actual code, not assumed:
-1. `provider_logo_url` and `source_url` were missing from the schema, but
-   both are real fields `admin.ts` currently accepts (PATCH even passes
-   through unfiltered today). Adding validation without including them would
-   have silently made both un-settable going forward - a regression dressed
-   up as a security improvement.
-2. `z.string().datetime()` requires full ISO 8601 with a timezone suffix, but
-   the actual admin form (`AddScholarshipForm.tsx`) sends
-   `datetime-local` input values with no timezone (`"2026-08-16T14:30"`)
-   straight through, unconverted. As given, this would have 400'd every
-   single scholarship create/edit in production. Replaced with a
-   parseable-date check that still rejects garbage, just not the exact shape
-   nothing in the app ever sends.
+**One addition beyond the literal spec:** added
+`crossOriginResourcePolicy: { policy: 'cross-origin' }`. Helmet's default
+there is `same-origin` - a different mechanism from CORS, and a common
+source of silent cross-origin asset-loading breakage the moment helmet is
+added to an API meant to be consumed from other origins (which this one is).
+Your own Risk line said "DO NOT block legitimate frontend requests" - this
+closes a gap the given config left open under exactly that risk, via a
+mechanism the spec didn't mention.
 
-**Also removed** the now-redundant manual required-field check in `POST
-/scholarships` (Zod already enforces `title`/`provider`/`application_deadline`
-as non-optional) - dead code otherwise, and your own Task 4 sample shows the
-Zod check replacing that step, not sitting next to it.
+**Worth knowing, not a problem:** CSP headers on a pure JSON API are mostly
+inert for the normal fetch()-from-frontend traffic pattern - browsers apply
+CSP based on the document doing the fetching, not the API response itself.
+HSTS/nosniff/referrer-policy from the same helmet() call apply regardless of
+content type and are the parts doing real work here for typical traffic; CSP
+mainly matters if something ever navigates directly to an API URL as a
+top-level page.
 
-**What's needed from you:** confirmation to commit. Separately, worth
-flagging: this schema doesn't cover `funding_amount`, `duration`,
-`location_type`, and several other real columns that `admin.ts` doesn't
-currently read from the request body at all - if wiring those up to the
-create/edit endpoint is planned, that's a real logic change (not just
-validation) and would need its own instruction.
+**Verification:** build passes. Live header check (`curl -I .../health`)
+needs this deployed first - will run and report once pushed, same as every
+prior cycle.
+
+**What's needed from you:** confirmation to commit.
