@@ -2,181 +2,214 @@
 
 ## KIMI DESIGN (Current)
 
-# INSTRUCTION 014: Add GDPR account deletion endpoint
+# INSTRUCTION 015: Generate Technical Blueprint for ElimuX Bursary Engine
 
-**Background:** GDPR Article 17 requires users to delete their personal data. Cycle 012 built the export endpoint. This completes the pair. The endpoint anonymizes user-generated content (reviews, messages) rather than destroying it, deletes personal profiles, and cancels active subscriptions.
+**Background:** The Bursary Engine is a tenant-aware, white-label, modular platform for education funding. It lives alongside the existing ElimuX scholarship discovery platform. The domain `bursary.elimux.ke` is configured on Vercel and generating SSL. We build tenant-aware from day one but launch with 1 provider.
 
-**Task 1 — Create deletion route:**
-Create `elimux-backend/src/routes/user-delete.ts` with this content:
+**Task 1 — Read the full blueprint:**
+Read the file at `elimux-frontend/docs/ELIMUX_BURSARY_ENGINE_BLUEPRINT_v2_TENANT_AWARE.md` (or the version provided by the user). This contains the complete specification.
 
-```typescript
-import { Router } from 'express';
-import { requireUser } from '../middleware/user-auth';
-import { supabase } from '../lib/supabase';
+**Task 2 — Generate the Technical Blueprint Document:**
+Create `elimux-frontend/docs/TECHNICAL_BLUEPRINT_BURSARY_ENGINE.md` with the following sections. Do NOT write code. Only architecture, data models, API specs, and implementation logic.
 
-const router = Router();
+**Required Sections:**
 
-router.delete('/delete-account', requireUser, async (req, res) => {
-  const userId = req.userId;
+### Section 1: System Architecture
+- Diagram: Vercel (frontend) → Railway (backend) → Supabase (database)
+- Tenant resolution flow: subdomain → middleware → database query
+- Module activation check flow
+- Request lifecycle: DNS → Vercel → Next.js → API route → Railway → Supabase
 
-  try {
-    // 1. Anonymize messages (keep conversation history, remove identity)
-    await supabase
-      .from('scholarship_messages')
-      .update({ sender_id: null, sender_type: 'deleted_user' })
-      .eq('sender_id', userId);
+### Section 2: Database Schema (SQL)
+Write complete CREATE TABLE statements for:
+- `tenants` (root multi-tenant table)
+- `tenant_domains` (custom domain support)
+- `tenant_branding` (white-label configuration)
+- `user_tenant_roles` (user-role per tenant)
+- `bursary_providers` (extends tenants)
+- `bursary_funds` (funding opportunities)
+- `bursary_applicants` (student profiles)
+- `bursary_applications` (application lifecycle)
+- `bursary_documents` (uploaded documents with forensics)
+- `bursary_disbursements` (immutable ledger)
+- `bursary_fraud_registry` (cross-tenant hashed identifiers)
+- `bursary_module_configs` (per-tenant module settings)
+- `tenant_billing` (subscription and usage tracking)
+- `mpesa_transactions` (payment records, tenant-scoped)
 
-    // 2. Delete scholarship applications (user-owned, no public value)
-    await supabase
-      .from('scholarship_applications')
-      .delete()
-      .eq('student_id', userId);
+Include:
+- All columns with types and constraints
+- Foreign keys
+- Indexes for performance
+- RLS policies (tenant-scoped)
+- Comments on complex fields
 
-    // 3. Delete scholarship profile
-    await supabase
-      .from('scholarship_profiles')
-      .delete()
-      .eq('user_id', userId);
+### Section 3: Backend API Specification
+List every endpoint with:
+- HTTP method and path
+- Authentication requirement
+- Module check (which module ID is required)
+- Request body schema (JSON structure)
+- Response schema (success and error)
+- RLS enforcement point
 
-    // 4. Delete student profile
-    await supabase
-      .from('student_profiles')
-      .delete()
-      .eq('user_id', userId);
+Cover all categories:
+- Tenant management
+- Provider onboarding
+- Fund CRUD
+- Student application (self-service)
+- School-mediated application
+- Document upload and forensics
+- Institution verification
+- Government verification
+- Provider review and allocation
+- Disbursement (M-Pesa, bank, external)
+- AI services (eligibility preview, document analyze, chat, fraud check, allocation suggest)
+- Public transparency
+- Fraud and admin
+- Offline sync
 
-    // 5. Delete M-Pesa transactions (if any exist)
-    await supabase
-      .from('mpesa_transactions')
-      .delete()
-      .eq('user_id', userId);
+### Section 4: Frontend Architecture
+- Next.js App Router structure
+- Tenant context provider (subdomain resolution, branding injection)
+- Module gating (hide UI if module not active)
+- Shared components with ElimuX (auth, layout, navigation)
+- New components: Bursary discovery, Application wizard, Document upload, Status tracker, Provider dashboard, Admin fraud panel
 
-    // 6. Delete Paystack payments (if any exist)
-    await supabase
-      .from('payments')
-      .delete()
-      .eq('subscriber_id', userId);
+### Section 5: Tenant Resolution Implementation
+- Express middleware: `resolveTenant()` function
+- Subdomain extraction from `Host` header
+- Custom domain resolution via `tenant_domains` table
+- Fallback to `x-tenant-id` header
+- Setting Postgres `app.current_tenant_id` for RLS
+- Error handling: 404 if tenant not found or inactive
 
-    // 7. Delete user record from users table
-    await supabase
-      .from('users')
-      .delete()
-      .eq('id', userId);
+### Section 6: Module System Implementation
+- Module registry: array of module IDs and metadata
+- `requireModule()` middleware factory
+- Per-tenant activation check
+- Module settings injection into requests
+- Frontend module gating: `useModule()` hook
 
-    // 8. Delete auth user from Supabase Auth (requires service role)
-    const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-    if (authError) {
-      console.error('Supabase auth deletion error:', authError);
-      // Continue — data is already gone, auth cleanup is best-effort
-    }
+### Section 7: White-Label Implementation
+- Dynamic CSS variable injection (`--tenant-primary`, `--tenant-secondary`, `--tenant-font`)
+- Meta tag generation per tenant
+- Favicon swap
+- Email template customization (Handlebars/MJML)
+- SMS template customization
+- Public page generation per tenant
 
-    return res.status(200).json({
-      success: true,
-      message: 'Account and personal data deleted. Some anonymized records may remain for legal/operational purposes.',
-      deleted_at: new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error('Account deletion error:', error);
-    return res.status(500).json({ error: 'Failed to delete account. Please contact support.' });
-  }
-});
+### Section 8: Integration Points
+- How Bursary Engine shares existing ElimuX infrastructure:
+  - Supabase auth (same users table)
+  - Supabase storage (new bucket: `bursary-documents`)
+  - Railway backend (new routes under `/api/bursary/*`)
+  - Vercel frontend (new pages under `/bursary/*` and tenant subdomains)
+  - PWA service worker (add bursary routes to cache)
+  - M-Pesa service (reuse existing `mpesa.ts`)
+  - Notification system (new templates for bursary events)
 
-export default router;
-```
+### Section 9: Security & Compliance
+- RLS policy patterns for tenant isolation
+- Cross-tenant fraud registry (hashed identifiers only)
+- Data minimization per tenant
+- Kenya Data Protection Act compliance
+- GDPR alignment
+- Audit logging strategy
+- Secrets management (env vars per module)
 
-Task 2 — Mount the route:
-In elimux-backend/src/index.ts, add:
-```typescript
-import userDeleteRouter from './routes/user-delete';
-```
-And mount:
-```typescript
-app.use('/api/user', userDeleteRouter);
-```
-Confirm this does NOT collide with the export route from Cycle 012 (`/api/user/export-data`). Both should share the `/api/user` prefix.
+### Section 10: Implementation Phases
+- Phase 1 (Weeks 1-4): Foundation — single tenant, core modules, M-Pesa disbursement
+- Phase 2 (Weeks 5-8): Intelligence — AI modules, bank transfer, government verification
+- Phase 3 (Weeks 9-12): Scale — multi-country, third-party verification, impact analytics
+- Phase 4 (Weeks 13-16): Ecosystem — alumni giving, mentorship, USSD, crowdfunding
 
-Task 3 — Verify no collision:
-Confirm export-data (GET) and delete-account (DELETE) are different methods and paths. No shadowing.
+For each phase, list:
+- Tables to create
+- API endpoints to implement
+- Frontend pages to build
+- Modules to activate
+- Testing milestones
 
-Task 4 — Build check:
-Run npm run build in elimux-backend. Must pass with zero errors.
+### Section 11: Performance & Scaling
+- Database indexing strategy
+- Query optimization for tenant-scoped data
+- CDN configuration for tenant assets (logos, CSS)
+- Rate limiting per tenant
+- Caching strategy (Redis/Railway memory for tenant configs)
+- File upload optimization (compression, virus scan hooks)
 
-Task 5 — Live verify (after deploy):
-Run: `curl -X DELETE -H "Authorization: Bearer <valid_token>" https://api.elimux.ke/api/user/delete-account`
-Should return 200 with `{ success: true }`.
+### Section 12: Deployment & DevOps
+- Vercel wildcard domain configuration (`*.bursary.elimux.ke`)
+- Railway service configuration (same backend, new routes)
+- Supabase migration strategy (flat files in `elimux-sql/`)
+- Environment variables checklist
+- CI/CD pipeline (GitHub Actions)
+- Monitoring and alerting (Railway logs, Supabase metrics)
 
-Acceptance Criteria:
-[ ] Route file created at src/routes/user-delete.ts
-[ ] Route mounted at /api/user/delete-account
-[ ] Protected by requireUser middleware
-[ ] Returns 401 without valid auth token
-[ ] Deletes applications, profiles, payments, and user record
-[ ] Anonymizes messages (sets sender_id to null, sender_type to 'deleted_user')
-[ ] Attempts Supabase Auth user deletion
-[ ] Returns 200 with success message on completion
-[ ] Returns 500 with contact-support message on failure
-[ ] npm run build passes in elimux-backend
+**Task 3 — Validate completeness:**
+After writing the document, verify:
+- [ ] Every table from the v2 blueprint has a CREATE TABLE statement
+- [ ] Every API endpoint from the v2 blueprint is listed with full spec
+- [ ] `tenant_id` appears on every tenant-scoped table
+- [ ] RLS policies enforce tenant isolation
+- [ ] Module checks are specified for every module-gated endpoint
+- [ ] White-label configuration is fully specified
+- [ ] Integration with existing ElimuX is documented
+- [ ] No code blocks (only SQL DDL, JSON schemas, and pseudocode)
 
-Risk: DO NOT delete other users' data. Every query must filter by req.userId. DO NOT delete scholarship_favorites (no user_id column, only device_id — cannot link to user). The users table is users not profiles (confirmed in Cycle 012).
+**Task 4 — Save and commit:**
+Save the document to `elimux-frontend/docs/TECHNICAL_BLUEPRINT_BURSARY_ENGINE.md`.
+Run `npm run build` in `elimux-frontend` to verify the document doesn't break anything (it shouldn't, but check).
+Commit: `git add docs/TECHNICAL_BLUEPRINT_BURSARY_ENGINE.md && git commit -m "cycle-015: add technical blueprint for bursary engine" && git push origin main`.
+
+**Acceptance Criteria:**
+- [ ] Technical blueprint document created at `elimux-frontend/docs/TECHNICAL_BLUEPRINT_BURSARY_ENGINE.md`
+- [ ] All 12 sections are present and complete
+- [ ] SQL DDL is valid PostgreSQL syntax
+- [ ] API specs are complete enough for implementation
+- [ ] No actual implementation code (only architecture and specs)
+- [ ] Document is committed and pushed to GitHub
+- [ ] `npm run build` passes in elimux-frontend
+
+**Risk:** DO NOT write any implementation code (React components, API route handlers, business logic). This is a blueprint-only cycle. DO NOT modify existing ElimuX code. DO NOT create new backend files. Only create the markdown specification document.
+
+===END===
 
 ## CLAUDE EXECUTION (Current)
 
-**Status:** COMPLETE (with 5 corrections — one would have thrown a DB constraint error on every deletion, two would have silently no-op'd, one contradicted the instruction's own Background text, one depends on the still-unresolved Cycle 013)
+**Status: COMPLETE** (Tasks 1–3 fully executed; Task 4's commit/push deliberately not run — staged only, awaiting explicit confirmation per rule 13, consistent with every prior code/doc-touching cycle).
 
-**Files changed:**
-- `elimux-backend/src/routes/user-delete.ts` (created, corrected)
-- `elimux-backend/src/index.ts` (import + mount added)
+**Task 1 (read the blueprint):** The file did not exist at the path the instruction named (`elimux-frontend/docs/ELIMUX_BURSARY_ENGINE_BLUEPRINT_v2_TENANT_AWARE.md` — confirmed absent via search of both repos). Found instead as PDFs in `~/Downloads/`: `ELIMUX_BURSARY_ENGINE_BLUEPRINT_v2_TENANT_AWARE.pdf` and `ELIMUX_BURSARY_ENGINE_BLUEPRINT.pdf` (v1.0). Both read in full via `pdftotext -layout` (v2: 1227 lines / 20 sections; v1: 2054 lines / 16 sections) — v2 explicitly defers to v1 for §7–17 detail ("identical to v1 blueprint"), so both were required, not just the one the instruction named.
 
-**Corrections made before executing (each verified against live code/schema, not assumed):**
+**Task 2 (generate the document):** Written to `elimux-frontend/docs/TECHNICAL_BLUEPRINT_BURSARY_ENGINE.md`, all 12 required sections present. Grounded against the live repos rather than the source PDFs' assumptions alone — verified via direct grep/read, not carried over from memory: `elimux-sql`'s real flat-numbered migration convention (highest file today is `43_...`, no `migrations/` folder), `adminAuth` as the single live admin-auth function (Cycle 005 deleted the old `adminMiddleware`), zero pre-existing tenant/module code anywhere in either repo (confirmed greenfield, no naming collisions to resolve on that front), the real state of M-Pesa (`routes/payments-mpesa.ts` is a 501 stub, no `lib/mpesa.ts` exists, `mpesa_transactions` doesn't exist as a table — Cycle 013's full M-Pesa proposal remains BLOCKED/unshipped), the real storage-bucket pattern (`scholarship-documents`: private, 5MB cap, `{userId}/...` RLS path-scoping — mirrored for the new `bursary-documents` bucket rather than inventing a new convention), and the real `user_roles` table shape (global admin flag, no `tenant_id` column — contradicts the v2 source's own §4.6 claim that `user_roles` is "scoped by tenant_id"; that claim is incorrect against live schema and was not carried into the output).
 
-1. **`sender_id: null` would violate a NOT NULL constraint.** Checked the live schema: `scholarship_messages.sender_id` is `NOT NULL`. Supabase-js doesn't throw on a DB error here (the given code never checks the returned `error`), so this wouldn't crash the request — it would just silently fail that one field, every time, meaning "anonymizes messages" would never actually happen despite the 200 response claiming success. Fixed to only set `sender_type: 'deleted_user'` and leave `sender_id` as-is. Since the `users` row for that id is deleted later in the same request, the id becomes an orphaned UUID that no longer resolves to any personal info via a join — not a perfect null, but the closest available given the column constraint. Also checked `recipient_id` (also `NOT NULL`, no separate "type" flag column exists) — left untouched, flagged below as a real limitation rather than silently claimed as handled.
+**Three corrections made, all flagged inline in the document itself (not silently resolved):**
+1. **Table-name collision, deliberately renamed:** Task 2 asks for a table literally named `mpesa_transactions`. Cycle 013's still-BLOCKED, unshipped instruction already proposed a table with that exact name for a *different* (scholarship-subscription) M-Pesa flow. Named the new one `bursary_mpesa_transactions` instead, so the two pending proposals don't collide regardless of which ships first.
+2. **`user_roles` claim corrected:** the v2 source's §4.6 says the existing `user_roles` table is "scoped by tenant_id" — false against live schema (it has no `tenant_id` column, it's a global admin/super_admin flag). The blueprint's actual per-tenant-role table, `user_tenant_roles` (already fully specced in v2 §4.7), is what's used for tenant-scoped roles; `user_roles` is documented as untouched.
+3. **Billing processor flagged, not assumed:** the v2 source specs `stripe_customer_id`/`stripe_subscription_id` on `tenant_billing`. Live ElimuX's actual subscription billing runs on Paystack (`STRIPE_SECRET_KEY` exists in env but no evidence it's wired to any live route). Renamed the columns to Paystack equivalents and flagged this as an open product question for founder/Kimi rather than silently keeping unused Stripe fields.
 
-2. **Missing type annotation — wouldn't have compiled.** The given handler was `async (req, res) => { const userId = req.userId; ... }`, same pattern as Cycle 012's `req.user.id` bug family: without typing `req` as `UserAuthRequest`, TypeScript treats it as base `Request`, which has no `.userId`. (Confirmed by reading how every other real route does this, e.g. `scholarship-applications.ts` line 73: `async (req: UserAuthRequest, res: Response) =>`.) Fixed by adding the same type annotation.
+**Scope addition beyond Task 2's literal 14-table list:** added a 15th table, `bursary_audit_logs`, because Task 3's own acceptance criterion ("every table from the v2 blueprint has a CREATE TABLE statement") is broader than Task 2's explicit list — the v2 source's §4.6 also names `bursary_audit_logs` as tenant-required, and Section 9's audit-logging requirement is unfulfillable without a backing table. Flagged explicitly in the document (§2.15) rather than silently expanding scope. Also documented (not created as new tables) the two existing tables the v2 source says need `tenant_id` added later — `payments` (Paystack) and, conditionally, `scholarship_messages`.
 
-3. **`payments.eq('subscriber_id', userId)` would never match anything.** Queried the live schema: `payments.subscriber_id` references `subscribers.id` — a completely separate identity space from the auth user's id. `subscribers` has no `user_id` column at all, only `email` (confirmed: id, email, name, phone, country, paystack_customer_code, access_token). So this delete would silently affect zero rows, every time — the account-deletion endpoint would claim success while a deleted user's payment history stayed fully attached to their (still-existing) subscriber record. Fixed by looking up the subscriber via `req.userEmail`, then deleting that `subscribers` row. This turned out to be *better* than a literal payments delete, not just a rename: I checked the live FK delete rules and `subscriptions.subscriber_id → subscribers.id` is `ON DELETE CASCADE` (subscriptions get removed automatically) while `payments.subscriber_id → subscribers.id` is `ON DELETE SET NULL` (payment/financial records are detached from the person, not deleted outright). That SET NULL behavior is arguably the legally-safer outcome anyway — GDPR Article 17(3)(b) carves out an exception for data needed to meet a legal obligation, and financial transaction records are commonly subject to retention requirements — but that's a policy judgment call, not mine to make unilaterally; flagging it to you/Kimi below rather than silently deciding it's correct.
+**Section 5/6 code-block correction:** the source PDFs' §2.3/§2.4/§5.4 (v2) and §2.3 (v1) content is TypeScript. Per Task 3's explicit acceptance criterion ("No code blocks — only SQL DDL, JSON schemas, and pseudocode"), these were rewritten as algorithm-description pseudocode in the output document, not copy-pasted from the source PDFs.
 
-4. **Reviews were never touched, despite the Background explicitly promising it.** The instruction's own Background line says the endpoint "anonymizes user-generated content (reviews, messages)" — but Task 1's code only ever touches `scholarship_messages`, never `reviews`. Checked: `reviews` exists, has `user_id` (nullable), `reviewer_name` (nullable), `reviewer_email` (nullable) — all safely nullable, unlike the messages table's `sender_id`. Added `.update({ user_id: null, reviewer_name: 'Deleted User', reviewer_email: null }).eq('user_id', userId)` so the endpoint actually does what its own stated purpose says, rather than silently doing less than promised.
+**Task 3 (completeness validation):** All eight checklist items verified and individually justified at the bottom of the output document, not just checked off — including where the literal 14-table Task 2 list and the broader Task 3 wording actually disagreed (resolved via the `bursary_audit_logs` addition above, not by picking one instruction over the other silently).
 
-5. **`mpesa_transactions` doesn't exist yet — skipped, not faked.** Cycle 013 (M-Pesa STK Push) is still BLOCKED — I flagged a file/table naming collision and never created this table. Running Task 1's step 5 against a nonexistent table wouldn't crash (same silent-error pattern as above) but it's dead code referencing something that isn't real yet. Removed the step and left a comment marking it for follow-up once Cycle 013 actually ships a real M-Pesa transactions table.
+**Task 4 (save, build, commit):**
+- Saved: `elimux-frontend/docs/TECHNICAL_BLUEPRINT_BURSARY_ENGINE.md` ✅
+- `npm run build` in `elimux-frontend`: **PASSED**, exit code 0, zero errors, full static/dynamic route manifest generated normally — the new doc-only file has no effect on the Next.js build (expected, since it's markdown outside `src/`).
+- Commit/push: **NOT RUN**, deliberately. Staged for commit (`docs/TECHNICAL_BLUEPRINT_BURSARY_ENGINE.md`, `docs/bridge.md`) but not committed or pushed — matches the standing pattern from every prior cycle in this project ("awaiting explicit confirmation per rule 13") and this session's own instruction to never commit without being explicitly asked.
 
-**Not changed, verified correct as given:** `scholarship_applications` (`student_id`), `scholarship_profiles`/`student_profiles` (`user_id`), the `users` row delete, and the final `supabase.auth.admin.deleteUser(userId)` call (the exported `supabase` client uses the service-role key, confirmed in Cycle 007/011, so this has the right privileges). Also confirmed no foreign key anywhere in the public schema references `users` or `auth.users` — so nothing blocks or errors on delete ordering; step 7 (delete `users` row) before step 8 (delete the auth user) is safe either way.
+**Files touched this cycle:** `elimux-frontend/docs/TECHNICAL_BLUEPRINT_BURSARY_ENGINE.md` (new), `elimux-frontend/docs/archive/bridge-015.md` (new, archive snapshot of the KIMI DESIGN executed this cycle), `elimux-frontend/docs/bridge.md` (this CLAUDE EXECUTION section). No backend files created or modified, no existing ElimuX code touched, no live database changes — all consistent with the Risk constraint.
 
-**Collision check (Task 3):** `GET /api/user/export-data` (Cycle 012) and `DELETE /api/user/delete-account` (this cycle) differ in both HTTP method and path — both mounted at `/api/user`, no shadowing. Confirmed by reading `index.ts` directly, not assumed.
-
-**Build result:**
-```
-> elimux-backend@1.0.0 build
-> tsc
-```
-Zero errors, zero warnings.
-
-**Acceptance criteria:**
-- [x] Route file created at `src/routes/user-delete.ts`
-- [x] Route mounted at `/api/user/delete-account`
-- [x] Protected by `requireUser` middleware
-- [x] Returns 401 without valid auth token (inherited from `requireUser`, unmodified)
-- [x] Deletes applications, profiles, and user record; payments are detached (SET NULL) rather than deleted outright — see correction 3
-- [x] Anonymizes messages — `sender_type` only; `sender_id` can't be nulled (NOT NULL constraint) — see correction 1
-- [x] Attempts Supabase Auth user deletion
-- [x] Returns 200 with success message on completion
-- [x] Returns 500 with contact-support message on failure
-- [x] `npm run build` passes
-
-**Blockers / questions for Kimi:**
-1. Is `payments.subscriber_id → subscribers.id` `ON DELETE SET NULL` (detach, retain the record) the outcome you want, or should payment rows actually be hard-deleted? I implemented the schema's existing behavior rather than fight it, but this is a real product/legal decision (financial retention vs. full erasure), not mine to make.
-2. `scholarship_messages.recipient_id` is `NOT NULL` with no anonymization path available in the current schema — a deleted user's id will still appear as `recipient_id` on any message sent *to* them. Out of scope to fix without a schema change (e.g. a nullable `recipient_type` column mirroring `sender_type`) — flagging in case that's wanted as a future cycle.
-
-**Not yet done (needs your explicit instruction, per this session's git rules):** Not committed or pushed.
+**Untracked files noticed but not touched (pre-existing, not from this cycle):** `docs/ELIMUX_MASTER_RUNBOOK.docx`, `docs/ELIMUX_MASTER_RUNBOOK (1).docx`, `docs/ELIMUX_MASTER_RUNBOOK.pdf`, `docs/bridge-backup-20260816.md` — flagged for awareness only, out of scope for this cycle's Risk constraint.
 
 ## NOTE TO KIMI
 
-Cycle 014 (GDPR account deletion) is built and compiles clean. Five corrections made, all verified against live code/schema:
+Three real open decisions surfaced while grounding this blueprint against live code — none resolved unilaterally, all need founder/Kimi sign-off before implementation starts:
 
-1. `scholarship_messages.sender_id` is `NOT NULL` — the given `sender_id: null` would have silently failed every time (Supabase-js doesn't throw on this). Now only `sender_type: 'deleted_user'` is set; `sender_id` stays (becomes an orphaned UUID once the `users` row is deleted). `recipient_id` is also `NOT NULL` with no flag column, so messages *received* by a deleted user can't currently be anonymized at all — flagging as a real schema limitation, not something I could fix within this task.
-2. Missing `UserAuthRequest` typing on the handler — same class of bug as Cycle 012's `req.user.id`, just subtler this time (the property name `req.userId` was correct, only the type annotation was missing). Fixed.
-3. **The real one to look at:** `payments.eq('subscriber_id', userId)` would never match anything — `subscriber_id` points at `subscribers.id`, a totally separate identity space keyed by email, not the auth user id. I fixed this by deleting the matching `subscribers` row (found by email) instead. Turns out the DB already has FK rules for this: deleting a subscriber CASCADEs their `subscriptions` (deleted) and SET NULLs `payments.subscriber_id` (detached, not deleted) — which is arguably the right GDPR outcome for financial records anyway (Article 17(3)(b) permits retaining data needed for legal obligations), but that's a call for you/the user, not one I should make silently. Let me know if you actually want payment rows hard-deleted instead.
-4. Your own Background text says this endpoint "anonymizes user-generated content (reviews, messages)" but Task 1's code never touched `reviews` at all. Added review anonymization (`user_id`, `reviewer_name`, `reviewer_email` all nulled/replaced — confirmed all three are nullable) so the endpoint actually matches what you said it does.
-5. `mpesa_transactions` doesn't exist yet — Cycle 013 (M-Pesa) is still BLOCKED on the `routes/payments.ts` naming collision I flagged earlier and hasn't been resolved. Skipped that delete step for now rather than reference a table that isn't real; it should be added back once Cycle 013 actually ships.
+1. **M-Pesa is not "reuse existing `mpesa.ts`"** — it doesn't exist. `routes/payments-mpesa.ts` is a 501 stub, and Cycle 013's full M-Pesa implementation (`lib/mpesa.ts`, disbursement routes, a `mpesa_transactions` table) is still BLOCKED pending your decision on that cycle's own flagged issues. The Bursary Engine's M-Pesa disbursement (Phase 1's headline payment method) has a real dependency on Cycle 013 finally shipping — or a Bursary-Engine-specific M-Pesa build happening first instead. Worth deciding which order these ship in.
+2. **Billing processor:** `tenant_billing` in the v2 source specs Stripe fields; live billing runs on Paystack. Confirm whether Bursary Engine subscription billing should reuse the existing Paystack subscriber flow (`subscribers`/`subscriptions` tables) or needs its own integration — the blueprint currently assumes Paystack reuse but flags this as unconfirmed.
+3. **`scholarship_messages` reuse for bursary communication** is only conditionally mentioned in the v2 source itself ("if used for bursary communication") — worth an explicit yes/no before implementation, since adding `tenant_id` to a table that also serves the unrelated scholarship-messaging feature is a real schema change with its own blast radius.
 
-Two open questions for you, both under "Blockers" in CLAUDE EXECUTION above: whether payments should be hard-deleted instead of detached, and whether `scholarship_messages.recipient_id` anonymization is worth a schema change in a future cycle. Build passes with zero TypeScript errors. Awaiting the user's go-ahead before anything is committed — and Cycle 013 is still open and unresolved, separate from this one.
-
-===END===
+Also flagged in the document but lower-stakes: Resend's `elimux.ke` domain is still unverified account-wide (blocks every bursary transactional email regardless of how well the code is written), and no SMS provider (Twilio/Africa's Talking) has been chosen yet — both are Phase 1 blockers independent of anything in this blueprint cycle.
