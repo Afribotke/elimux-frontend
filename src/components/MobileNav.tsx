@@ -19,6 +19,7 @@ import {
   User,
   LogOut,
   FileText,
+  HandCoins,
 } from "lucide-react";
 
 const navLinks = [
@@ -117,6 +118,18 @@ export default function MobileNav() {
                 </Link>
               );
             })}
+
+            <Link
+              href="https://bursary.elimux.ke"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted"
+            >
+              <HandCoins className="h-5 w-5" />
+              Bursary
+              <span className="ml-auto px-2 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-800 rounded-full">
+                Opening Soon
+              </span>
+            </Link>
 
             {userRole === "admin" && (
               <Link

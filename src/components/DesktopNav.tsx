@@ -105,6 +105,16 @@ export default function DesktopNav() {
                 size="md"
               />
             ))}
+            <Link
+              href="https://bursary.elimux.ke"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-all text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            >
+              <span className="text-sm">💰</span>
+              Bursary
+              <span className="px-2 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-800 rounded-full">
+                Opening Soon
+              </span>
+            </Link>
                 <PoweredByHeaderBadge />
 
           </nav>

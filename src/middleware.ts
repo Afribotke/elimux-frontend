@@ -4,7 +4,25 @@ import type { NextRequest } from "next/server"
 // Protected routes that require authentication
 const PROTECTED_PATHS = ["/dashboard", "/admin"]
 
+// Matches "bursary.elimux.ke" or "bursary.elimux.ke:<port>" (local/preview
+// dev) exactly — deliberately NOT a startsWith() check, since
+// host.startsWith('bursary.elimux.ke') would also match a spoofed host like
+// "bursary.elimux.ke.attacker.com".
+const BURSARY_HOST = /^bursary\.elimux\.ke(:\d+)?$/
+
 export async function middleware(request: NextRequest) {
+  const host = request.headers.get('host') || ''
+
+  // Bursary Engine "Opening Soon" subdomain: rewrite every path to /bursary
+  // (single coming-soon page today, per Cycle 016 — Task 2 creates only the
+  // one page, so anything beyond the root still resolves to it via this
+  // catch-all rewrite rather than 404ing).
+  if (BURSARY_HOST.test(host)) {
+    const url = request.nextUrl.clone()
+    url.pathname = request.nextUrl.pathname === '/' ? '/bursary/' : `/bursary${request.nextUrl.pathname}`
+    return NextResponse.rewrite(url)
+  }
+
   // SINGLE-HOP REDIRECT: /internships → /opportunities/ (runs before trailingSlash normalization)
   if (request.nextUrl.pathname === '/internships' || request.nextUrl.pathname === '/internships/') {
     return NextResponse.redirect(new URL('/opportunities/', request.url), 308)
@@ -34,6 +52,14 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/internships", "/internships/"]
+  // Broadened from the original ["/dashboard/:path*", "/admin/:path*",
+  // "/internships", "/internships/"] — a strict superset, not a narrowing —
+  // because the bursary-host rewrite above needs to run on every path on
+  // that subdomain (root "/", not just the four previously-matched
+  // patterns), not only on /dashboard, /admin, and /internships. This does
+  // mean middleware now runs on effectively every request instead of four
+  // route patterns; the existing auth-gate and redirect logic inside the
+  // function are unchanged and still only act on their original paths.
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"]
 }
 
