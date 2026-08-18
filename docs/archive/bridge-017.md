@@ -488,64 +488,47 @@ CREATE POLICY "branding_tenant_admin" ON tenant_branding
             AND status = 'active'
         )
     );
-Task 2 — Run migration against live database:
-bash
+```
+
+**Task 2 — Run migration against live database:**
+```bash
 cd elimux-sql
 psql $DATABASE_URL -f 44_create_bursary_engine_phase1.sql
-Task 3 — Verify tables created:
-bash
+```
+
+**Task 3 — Verify tables created:**
+```bash
 psql $DATABASE_URL -c "\dt" | grep -E "tenants|bursary_"
+```
 Confirm all 10 tables appear.
-Task 4 — Verify RLS policies:
-bash
+
+**Task 4 — Verify RLS policies:**
+```bash
 psql $DATABASE_URL -c "\dp bursary_funds"
 psql $DATABASE_URL -c "\dp bursary_applications"
+```
 Confirm RLS policies are listed.
-Task 5 — Build check:
-Run npm run build in elimux-backend. Must pass with zero errors (no code changes, just verify nothing broke).
-Task 6 — Commit:
-bash
+
+**Task 5 — Build check:**
+Run `npm run build` in `elimux-backend`. Must pass with zero errors (no code changes, just verify nothing broke).
+
+**Task 6 — Commit:**
+```bash
 git add elimux-sql/44_create_bursary_engine_phase1.sql
 git commit -m "cycle-017: create bursary engine phase 1 database schema"
 git push origin main
-Acceptance Criteria:
-[ ] Migration file created at elimux-sql/44_create_bursary_engine_phase1.sql
-[ ] Migration runs successfully against live Supabase database
-[ ] All 10 tables created: tenants, tenant_branding, user_tenant_roles, bursary_funds, bursary_applicants, bursary_applications, bursary_documents, bursary_disbursements, bursary_mpesa_transactions, bursary_fraud_registry
-[ ] RLS policies enabled on all tables
-[ ] Indexes created for performance
-[ ] Foreign keys properly defined
-[ ] tenant_id present on every tenant-scoped table
-[ ] npm run build passes in elimux-backend
-[ ] Migration committed and pushed to GitHub
-Risk: DO NOT drop existing tables. DO NOT modify existing tables (scholarships, users, etc.). This migration only CREATEs new tables. If any table already exists, use CREATE TABLE IF NOT EXISTS to skip. Verify migration output for any errors before committing.
+```
+
+**Acceptance Criteria:**
+- [ ] Migration file created at `elimux-sql/44_create_bursary_engine_phase1.sql`
+- [ ] Migration runs successfully against live Supabase database
+- [ ] All 10 tables created: tenants, tenant_branding, user_tenant_roles, bursary_funds, bursary_applicants, bursary_applications, bursary_documents, bursary_disbursements, bursary_mpesa_transactions, bursary_fraud_registry
+- [ ] RLS policies enabled on all tables
+- [ ] Indexes created for performance
+- [ ] Foreign keys properly defined
+- [ ] tenant_id present on every tenant-scoped table
+- [ ] npm run build passes in elimux-backend
+- [ ] Migration committed and pushed to GitHub
+
+**Risk:** DO NOT drop existing tables. DO NOT modify existing tables (scholarships, users, etc.). This migration only CREATEs new tables. If any table already exists, use CREATE TABLE IF NOT EXISTS to skip. Verify migration output for any errors before committing.
 ===END===
-
-## CLAUDE EXECUTION (Current)
-
-**Status: COMPLETE** (Tasks 1–5 fully executed and verified live against the database; Task 6's commit/push deliberately not run — staged only, awaiting explicit confirmation per rule 13, same as every prior cycle).
-
-**Task 1 (migration file) — filed at a corrected path:** `elimux-sql/44_create_bursary_engine_phase1.sql` as named would have collided — `44_` was already taken by `44_gamification_leaderboard_view.sql`, created and committed to `elimux-sql` earlier the same day (a different, unrelated fix from a direct in-chat request, not a bridge.md cycle). Filed as `elimux-sql/45_create_bursary_engine_phase1.sql` instead, sequential from the real highest existing file. SQL content itself applied verbatim, unmodified — reviewed it carefully against the live schema and against my own Cycle 015 blueprint before applying, and found no invented tables/columns and no logic bugs worth correcting. Two small design choices worth noting, not fixed unilaterally since the instruction said "this exact content": `bursary_applicants.school_id`/`teacher_id` and `bursary_mpesa_transactions.user_id` are plain `uuid` columns with no FK constraint (to `institutions`/`auth.users`/`auth.users` respectively) — looser referential integrity than my Cycle 015 blueprint had, but not broken, just permissive. Flagged in NOTE TO KIMI, not changed.
-
-**Task 2 (run migration) — `psql`/`DATABASE_URL` don't exist in this environment,** matching the established "SQL migrations are manual-paste" convention for this project. Applied via the Supabase MCP `apply_migration` tool against project `ohlgjvenwekpbpkykutz` instead (the same method used for `44_gamification_leaderboard_view.sql` earlier today) — confirmed this is a real, working substitute before relying on it. Verified beforehand, live, that none of the 10 target tables already existed (empty result set), so `CREATE TABLE IF NOT EXISTS` genuinely created everything fresh rather than silently skipping anything.
-
-**Task 3 (verify tables) — done via direct query, not `psql \dt`:** all 10 tables confirmed present in `pg_class` with `relrowsecurity = true`: `tenants`, `tenant_branding`, `user_tenant_roles`, `bursary_funds`, `bursary_applicants`, `bursary_applications`, `bursary_documents`, `bursary_disbursements`, `bursary_mpesa_transactions`, `bursary_fraud_registry`.
-
-**Task 4 (verify RLS) — done via `pg_policies`, not `psql \dp`:** all 18 policies from the migration confirmed present and correctly attached — 2 per table on 8 tables, 1 each on `bursary_fraud_registry` (super-admin-only, matches the cross-tenant-sensitive design intent) and `bursary_mpesa_transactions` (tenant-finance-admin-only, no public-read policy, correct for payment records).
-
-**Went beyond Tasks 3/4's literal ask:** ran a real `BEGIN; INSERT ...; ROLLBACK;` test — inserted a test tenant and a test fund referencing it inside a transaction, confirmed the `active_modules` array default and `budget` jsonb default (`{"total":0,"committed":0,"disbursed":0,"currency":"KES"}`) both resolve correctly and the `bursary_funds.tenant_id` FK chain works, then rolled back and confirmed zero rows leaked (`SELECT count(*) ... = 0`). Schema exists and is structurally sound, not just "the CREATE TABLE statements didn't error."
-
-**Task 5 (build check):** `npm run build` in `elimux-backend` — **PASSED**, exit code 0, zero errors. Expected, since no backend code was touched this cycle — this only confirms the DB-only change didn't somehow break the TypeScript build (e.g. via generated types), which it didn't.
-
-**Task 6 (commit) — NOT RUN**, deliberately. `elimux-sql/45_create_bursary_engine_phase1.sql` is staged/untracked, not committed — matches the standing pattern from every prior cycle in this project and this session's own default: never commit without being explicitly asked.
-
-**Files touched this cycle:** `elimux-sql/45_create_bursary_engine_phase1.sql` (new), live Supabase schema (10 new tables + 18 RLS policies, project `ohlgjvenwekpbpkykutz`), `docs/archive/bridge-017.md` (new, archive snapshot), `docs/bridge.md` (this section). No existing tables modified or dropped, no backend/frontend code touched — matches the Risk constraint exactly.
-
-## NOTE TO KIMI
-
-Nothing blocking — Cycle 017 is clean and live-verified. Two things worth knowing:
-
-1. **File renumbered 44 → 45.** `44_gamification_leaderboard_view.sql` (unrelated — a fix for a broken device-based gamification route, done earlier the same day from a direct request, not a bridge.md cycle) already took that number. If you're tracking migration numbers on your end for future instructions, the real next-free number after this cycle is 46.
-2. **Two referential-integrity gaps carried over as-is from the given SQL, not fixed:** `bursary_applicants.school_id`/`teacher_id` have no FK to `institutions`/`auth.users`, and `bursary_mpesa_transactions.user_id` has no FK to `auth.users`. Not broken — just means the database won't catch a bad reference in those three columns, application code has to. Worth adding in a follow-up migration if you want it enforced, or confirm it's intentional (e.g. `teacher_id` deliberately loose because a school-mediated applicant might not have a resolvable teacher account yet).
-
-Also carried over from Cycles 015/016, still open: M-Pesa build ordering vs. Cycle 013 (now more pressing — `bursary_mpesa_transactions` exists as a real table, but there's still no `lib/mpesa.ts` or disbursement route to write into it), Stripe-vs-Paystack billing, and whether `scholarship_messages` gets reused for bursary communication.
