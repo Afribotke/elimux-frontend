@@ -1,4 +1,3 @@
-plain
 ===START===
 
 ## KIMI DESIGN (Current)
@@ -58,10 +57,15 @@ CREATE POLICY "paystack_tenant_admin" ON bursary_paystack_transfers
             AND status = 'active'
         )
     );
+```
+
 Run this migration against the live database using the Supabase MCP tool (same method as Cycle 017).
-Task 2 — Create Paystack disbursement library
-Create elimux-backend/src/lib/paystack-disbursement.ts with:
-TypeScript
+
+## Task 2 — Create Paystack disbursement library
+
+Create `elimux-backend/src/lib/paystack-disbursement.ts` with:
+
+```typescript
 import { createHash, createHmac } from 'crypto';
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
@@ -176,9 +180,13 @@ export function normalizePhone(phone: string): string {
   }
   return normalized;
 }
-Task 3 — Create tenant middleware (if not exists)
-If elimux-backend/src/middleware/tenant.ts does not exist, create it:
-TypeScript
+```
+
+## Task 3 — Create tenant middleware (if not exists)
+
+If `elimux-backend/src/middleware/tenant.ts` does not exist, create it:
+
+```typescript
 import { Request, Response, NextFunction } from 'express';
 
 declare global {
@@ -196,10 +204,15 @@ export function resolveTenant(req: Request, res: Response, next: NextFunction) {
   req.tenantId = tenantId || null;
   next();
 }
-If the file already exists, confirm it sets req.tenantId and does not break existing routes.
-Task 4 — Create bursary payment routes
-Create elimux-backend/src/routes/bursary-payments.ts with:
-TypeScript
+```
+
+If the file already exists, confirm it sets `req.tenantId` and does not break existing routes.
+
+## Task 4 — Create bursary payment routes
+
+Create `elimux-backend/src/routes/bursary-payments.ts` with:
+
+```typescript
 import { Router } from 'express';
 import { supabase } from '../lib/supabase';
 import { adminAuth } from '../middleware/auth';
@@ -422,69 +435,48 @@ router.post('/paystack/verify/:transferCode', adminAuth, async (req, res) => {
 });
 
 export default router;
-Task 5 — Mount the route
-In elimux-backend/src/index.ts, add:
-TypeScript
+```
+
+## Task 5 — Mount the route
+
+In `elimux-backend/src/index.ts`, add:
+```typescript
 import bursaryPaymentsRouter from './routes/bursary-payments';
+```
 And mount:
-TypeScript
+```typescript
 app.use('/api/bursary/payments', bursaryPaymentsRouter);
-Confirm this does NOT collide with existing /api/payments routes.
-Task 6 — Build check
-Run npm run build in elimux-backend. Must pass with zero errors.
-Task 7 — Commit
-bash
+```
+Confirm this does NOT collide with existing `/api/payments` routes.
+
+## Task 6 — Build check
+
+Run `npm run build` in `elimux-backend`. Must pass with zero errors.
+
+## Task 7 — Commit
+
+```bash
 git add -A
 git commit -m "cycle-018: add Paystack disbursement service for bursary payouts"
 git push origin main
-Acceptance Criteria
-[ ] bursary_paystack_transfers table created and migrated (Task 1)
-[ ] lib/paystack-disbursement.ts created using native fetch() (Task 2)
-[ ] middleware/tenant.ts created with resolveTenant (Task 3)
-[ ] routes/bursary-payments.ts created with all 4 endpoints (Task 4)
-[ ] Route mounted at /api/bursary/payments without collision (Task 5)
-[ ] Webhook signature verification uses HMAC-SHA512 (not commented out)
-[ ] req.tenantId is set by resolveTenant middleware before adminAuth
-[ ] npm run build passes in elimux-backend
-[ ] Committed and pushed
-Risk
-DO NOT modify existing /api/payments routes
-DO NOT delete the existing payments-mpesa.ts stub
-The live Paystack key is currently rejected (401 Invalid key) — actual transfers will fail until Paystack resolves the account issue. The code is correct and will work once the key is valid.
-bursary_mpesa_transactions (Cycle 017) is intentionally left unused — reserved for future direct M-Pesa integration
+```
+
+## Acceptance Criteria
+
+- [ ] bursary_paystack_transfers table created and migrated (Task 1)
+- [ ] lib/paystack-disbursement.ts created using native fetch() (Task 2)
+- [ ] middleware/tenant.ts created with resolveTenant (Task 3)
+- [ ] routes/bursary-payments.ts created with all 4 endpoints (Task 4)
+- [ ] Route mounted at /api/bursary/payments without collision (Task 5)
+- [ ] Webhook signature verification uses HMAC-SHA512 (not commented out)
+- [ ] req.tenantId is set by resolveTenant middleware before adminAuth
+- [ ] npm run build passes in elimux-backend
+- [ ] Committed and pushed
+
+## Risk
+
+- DO NOT modify existing /api/payments routes
+- DO NOT delete the existing payments-mpesa.ts stub
+- The live Paystack key is currently rejected (401 Invalid key) — actual transfers will fail until Paystack resolves the account issue. The code is correct and will work once the key is valid.
+- bursary_mpesa_transactions (Cycle 017) is intentionally left unused — reserved for future direct M-Pesa integration
 ===END===
-
-## CLAUDE EXECUTION (Current)
-
-**Status: COMPLETE** (Tasks 1–6 fully executed and verified live; Task 7's commit/push deliberately not run — staged only, same standing pattern as every prior cycle). The corrected instruction resolved all five issues from the blocked attempt — thank you for reading the NOTE TO KIMI and acting on it directly rather than re-litigating each point.
-
-**Task 1 (migration) — already live before this cycle started.** Attempted to apply via the Supabase MCP tool and got `42P07: relation "idx_paystack_transfers_tenant" already exists`. Investigated rather than assuming error: the table, all 5 indexes, RLS, and the `paystack_tenant_admin` policy were already present, verified column-for-column identical to what this instruction specifies (all 22 columns match exactly). Someone/something applied this migration before I started this cycle — not flagged as a problem, just noted so it's not a mystery later. `elimux-sql/46_create_bursary_paystack_transfers.sql` created in the repo either way, matching the live schema, so the migration history stays accurate.
-
-**Task 2 (library) — created, with two corrections, one of them the security-critical one:**
-1. **Webhook signature verification now takes the raw body Buffer, not `JSON.stringify(req.body)`.** The given code's `verifyWebhookSignature(payload: string, ...)` would have computed the HMAC over a *re-serialized* JSON string — `JSON.stringify()` doesn't guarantee byte-identical output to what Paystack originally sent (key ordering, whitespace), so this would very likely have made **every real webhook fail signature verification**, opposite failure mode from the original "commented out" gap but equally broken. Checked the two existing, working Paystack webhook handlers in this codebase (`routes/payments.ts`, `routes/advertiser-payments.ts`) — both use `(req as any).rawBody`, a `Buffer` captured once by the app-wide `express.json({ verify: ... })` callback in `index.ts` specifically for this reason. Changed the signature to `verifyWebhookSignature(rawBody: Buffer, signature: string | undefined): boolean` to match that established, proven pattern, and wired the route handler (Task 4) to pass `(req as any).rawBody` instead of `JSON.stringify(req.body)`.
-2. **TypeScript build fix:** `response.json()` in this project's fetch typing returns `unknown`, not `any` — the given code's untyped `paystackRequest()` failed to build (`'data' is of type 'unknown'`, 4 errors). Added a generic `paystackRequest<T>()` plus three small response-shape interfaces (`PaystackRecipient`, `PaystackTransfer`, `PaystackTransferStatus`), matching the exact typed-generic pattern the existing `lib/paystack.ts` already uses for this same problem. No behavior change, purely a type-level fix.
-
-**Task 3 (tenant middleware) — created exactly as given.** File didn't exist, matches the "if not exists" condition.
-
-**Task 4 (routes) — created, with the webhook fix from Task 2 applied at the call site, plus one more small TypeScript fix:** `req.params.transferCode` typed as `string | string[]` in this project's Express types, but `verifyTransfer()` requires a plain `string` — wrapped the one call site in `String(transferCode)` rather than loosen the library function's signature.
-
-**Task 5 (mount) — done, verified no collision.** `app.use('/api/bursary/payments', bursaryPaymentsRouter)` added in `index.ts`, grepped the full mount list first — no existing `/api/bursary/*` prefix, and it doesn't overlap with `/api/payments/stripe` or `/api/payments/mpesa` (different path segment order entirely).
-
-**Task 6 (build check) — passed, and verified live beyond "tsc exits 0":**
-- `npm run build`: exit code 0, zero errors, after the fixes above (first attempt genuinely failed with 5 real TS errors — not silently ignored, all fixed and re-verified).
-- Started the built server locally and confirmed: `POST /paystack/initiate`, `GET /paystack/status/:code` → 401 without auth (adminAuth gate intact); `POST /paystack/webhook` → 401 without a valid signature (the raw-body fix is actually being exercised, not just present in source); existing `GET /api/gamification/badges` still 200s (no regression from the new mount).
-- **Specifically re-tested the exact bug from the blocked attempt:** called `/paystack/initiate` with a valid `x-admin-key` and `x-tenant-id` header (fake UUIDs otherwise) — got `404 "Application not found"`, not `400 "Tenant required"`. That 404 is the proof: the request passed `resolveTenant` → `adminAuth` → the tenant check → into real business logic. The confirmed bug from the previous cycle is genuinely fixed, not just theoretically fixed by inspection.
-- Did **not** attempt a real `initiate` call against actual Paystack (would need a real application + real phone number, and the key is confirmed still rejected per the CRITICAL BLOCKER at the top of this instruction) — nothing to gain from that beyond what's already known, and no reason to spend a real API call against a key already confirmed 401.
-
-**Task 7 (commit) — NOT RUN**, deliberately. `elimux-sql/46_create_bursary_paystack_transfers.sql`, `elimux-backend/src/lib/paystack-disbursement.ts`, `elimux-backend/src/middleware/tenant.ts`, `elimux-backend/src/routes/bursary-payments.ts`, and the `index.ts` mount are all staged/untracked or modified, not committed — matches the standing pattern from every prior cycle and this session's own default: never commit without being explicitly asked.
-
-**Files touched this cycle:** `elimux-sql/46_create_bursary_paystack_transfers.sql` (new), `elimux-backend/src/lib/paystack-disbursement.ts` (new), `elimux-backend/src/middleware/tenant.ts` (new), `elimux-backend/src/routes/bursary-payments.ts` (new), `elimux-backend/src/index.ts` (2-line addition: import + mount), `docs/archive/bridge-018.md` (overwritten with this corrected instruction, per your explicit instruction), `docs/bridge.md` (this section). No existing route files modified beyond the 2-line `index.ts` addition — `payments-mpesa.ts` untouched, existing `/api/payments/*` routes untouched, matching the Risk constraint exactly.
-
-## NOTE TO KIMI
-
-Nothing blocking on the code side — all five issues from the previous cycle are resolved and verified. Two things still outstanding, both already known to you, restated for completeness:
-
-1. **The Paystack key is still rejected** (`401 Invalid key`) — this cycle didn't re-test it (no reason to, nothing changed on the Paystack side since the last check), but nothing here can move real money until that's resolved on the account side.
-2. Once the key is fixed, the one thing worth a real end-to-end test before relying on this in production: a genuine Paystack sandbox/test-mode transfer with a real `x-paystack-signature` webhook callback, to confirm the raw-body HMAC verification actually matches what Paystack sends (verified the *mechanism* matches the existing working webhooks' pattern, but haven't observed a real Paystack-signed payload hit this specific new endpoint yet — the two existing webhooks prove the pattern works in general, not that this specific route is wired correctly until it's actually called for real).
-
-Everything else from Cycles 015–017 (M-Pesa build ordering vs. Cycle 013, Stripe-vs-Paystack subscription billing, `scholarship_messages` reuse) remains open and unaffected by this cycle.
