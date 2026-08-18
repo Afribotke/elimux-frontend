@@ -2378,3 +2378,65 @@ export interface BursaryFundSummary {
 export function fetchBursaryProviderFunds(slug: string) {
   return request<{ funds: BursaryFundSummary[] }>(`/api/bursary/providers/${slug}/funds`)
 }
+
+// --- Bursary Engine: admin provider approval queue ---
+
+export interface AdminBursaryProviderRow {
+  id: string
+  slug: string
+  name: string
+  type: string
+  status: string
+  verification_status: string
+  contact: { email?: string; phone?: string; county?: string; sub_county?: string; ward?: string; address?: string }
+  registration_number: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AdminBursaryProviderListParams {
+  status?: 'pending' | 'active' | 'suspended' | 'all'
+  page?: number
+  limit?: number
+  search?: string
+}
+
+export function listAdminBursaryProviders(params: AdminBursaryProviderListParams, adminKey: string) {
+  return request<{ providers: AdminBursaryProviderRow[]; pagination: ApiListMeta }>(
+    `/api/admin/bursary-providers${buildQuery(params)}`,
+    {},
+    adminKey
+  )
+}
+
+export function fetchAdminBursaryProvider(id: string, adminKey: string) {
+  return request<{ provider: AdminBursaryProviderRow & { tenant_branding: unknown } }>(
+    `/api/admin/bursary-providers/${id}`,
+    {},
+    adminKey
+  )
+}
+
+export function approveBursaryProvider(id: string, adminKey: string, notes?: string) {
+  return request<{ success: boolean; message: string }>(
+    `/api/admin/bursary-providers/${id}/approve`,
+    { method: 'PATCH', body: JSON.stringify({ notes }) },
+    adminKey
+  )
+}
+
+export function rejectBursaryProvider(id: string, adminKey: string, reason?: string) {
+  return request<{ success: boolean; message: string }>(
+    `/api/admin/bursary-providers/${id}/reject`,
+    { method: 'PATCH', body: JSON.stringify({ reason }) },
+    adminKey
+  )
+}
+
+export function suspendBursaryProvider(id: string, adminKey: string, reason?: string) {
+  return request<{ success: boolean; message: string }>(
+    `/api/admin/bursary-providers/${id}/suspend`,
+    { method: 'PATCH', body: JSON.stringify({ reason }) },
+    adminKey
+  )
+}

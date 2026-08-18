@@ -43,6 +43,7 @@ import {
   DollarSign,
   PieChart,
   ShieldAlert,
+  Landmark,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -172,6 +173,13 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "Reviews", href: "/admin/reviews", icon: Star, badge: 12 },
       { label: "Messages", href: "/admin/messages", icon: MessageSquare, badge: 3 },
       { label: "Bulk Upload", href: "/admin/bulk-upload", icon: Upload },
+    ],
+  },
+  {
+    title: "Bursary Engine",
+    icon: Landmark,
+    items: [
+      { label: "Bursary Providers", href: "/admin/bursary-providers", icon: Landmark },
     ],
   },
   {
