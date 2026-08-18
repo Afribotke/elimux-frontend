@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Landmark, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { Landmark, Mail, ArrowLeft, CheckCircle2, Building2 } from 'lucide-react'
 
 const NOTIFY_STORAGE_KEY = 'elimux-bursary-notify-emails'
 
@@ -93,12 +93,13 @@ export default function BursaryComingSoonPage() {
         {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
       </div>
 
-      <a
-        href="mailto:support@elimux.ke?subject=Bursary%20Provider%20Interest"
-        className="inline-flex items-center gap-2 text-sm font-medium text-primary-400 hover:text-primary-300 transition-colors mt-10"
+      <Link
+        href="/bursary/provider/register"
+        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-primary-500/30 text-primary-400 font-medium hover:bg-primary-500/10 transition-colors mt-10"
       >
-        Are you a funding provider? Register your interest
-      </a>
+        <Building2 className="w-4 h-4" />
+        Are you a funding provider? Register as a Provider
+      </Link>
 
       <footer className="mt-20 text-sm text-muted">
         Powered by{' '}

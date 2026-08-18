@@ -2305,3 +2305,76 @@ export function fetchScraperSources(adminKey: string) {
     adminKey
   )
 }
+
+// --- Bursary Engine: provider onboarding ---
+
+export interface BursaryProviderRegistration {
+  name: string
+  type: string
+  registrationNumber?: string
+  email: string
+  phone: string
+  county?: string
+  subCounty?: string
+  ward?: string
+  address?: string
+  adminName: string
+  adminEmail: string
+  adminPhone?: string
+}
+
+export interface BursaryProviderRegistrationResult {
+  success: boolean
+  message: string
+  tenant: {
+    id: string
+    slug: string
+    name: string
+    type: string
+    status: string
+    portalUrl: string
+  }
+  adminInvite: {
+    email: string
+    token: string
+  }
+}
+
+export function registerBursaryProvider(data: BursaryProviderRegistration) {
+  return request<BursaryProviderRegistrationResult>('/api/bursary/providers/register', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export interface BursaryProviderProfile {
+  id: string
+  slug: string
+  name: string
+  type: string
+  status: string
+  verification_status: string
+  contact: Record<string, unknown>
+  created_at: string
+  branding: Record<string, unknown>
+}
+
+export function fetchBursaryProvider(slug: string) {
+  return request<BursaryProviderProfile>(`/api/bursary/providers/${slug}`)
+}
+
+export interface BursaryFundSummary {
+  id: string
+  name: string
+  description: string | null
+  fund_type: string
+  status: string
+  budget: Record<string, unknown>
+  eligibility_rules: Record<string, unknown>
+  application_window: Record<string, unknown>
+  created_at: string
+}
+
+export function fetchBursaryProviderFunds(slug: string) {
+  return request<{ funds: BursaryFundSummary[] }>(`/api/bursary/providers/${slug}/funds`)
+}
