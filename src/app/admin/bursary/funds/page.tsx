@@ -26,9 +26,10 @@ interface FormState {
   totalAmount: string
   currency: string
   deadline: string
+  requiredDocuments: string
 }
 
-const EMPTY_FORM: FormState = { tenantId: '', name: '', description: '', totalAmount: '', currency: 'KES', deadline: '' }
+const EMPTY_FORM: FormState = { tenantId: '', name: '', description: '', totalAmount: '', currency: 'KES', deadline: '', requiredDocuments: '' }
 
 export default function AdminBursaryFundsPage() {
   const { adminKey } = useAdminKey()
@@ -82,6 +83,7 @@ export default function AdminBursaryFundsPage() {
       totalAmount: String(fund.budget?.total ?? ''),
       currency: fund.budget?.currency || 'KES',
       deadline: fund.application_window?.deadline?.slice(0, 10) || '',
+      requiredDocuments: (fund.required_documents || []).join(', '),
     })
     setShowForm(true)
   }
@@ -98,6 +100,10 @@ export default function AdminBursaryFundsPage() {
         totalAmount: form.totalAmount ? Number(form.totalAmount) : undefined,
         currency: form.currency,
         deadline: form.deadline || undefined,
+        requiredDocuments: form.requiredDocuments
+          .split(',')
+          .map((doc) => doc.trim())
+          .filter(Boolean),
       }
       if (editingId) {
         await updateAdminBursaryFund(editingId, payload, adminKey)
@@ -196,6 +202,16 @@ export default function AdminBursaryFundsPage() {
             <div>
               <label className={labelClass}>Application Deadline</label>
               <input type="date" className={inputClass} value={form.deadline} onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))} />
+            </div>
+            <div className="sm:col-span-2">
+              <label className={labelClass}>Required Documents</label>
+              <input
+                className={inputClass}
+                placeholder="ID Card, Transcript, Recommendation Letter"
+                value={form.requiredDocuments}
+                onChange={(e) => setForm((f) => ({ ...f, requiredDocuments: e.target.value }))}
+              />
+              <p className="text-xs text-gray-400 mt-1">Comma-separated list</p>
             </div>
             <div className="sm:col-span-2 flex justify-end gap-2 mt-2">
               <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg border border-gray-200 text-sm">

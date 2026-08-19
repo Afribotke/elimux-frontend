@@ -2477,6 +2477,7 @@ export interface AdminBursaryFund {
   budget: { total?: number; committed?: number; disbursed?: number; currency?: string }
   application_window: { opens_at?: string | null; deadline?: string | null }
   eligibility_rules: Record<string, unknown>
+  required_documents: string[]
   applicant_count: number
   created_at: string
   updated_at: string
@@ -2506,6 +2507,7 @@ export interface CreateBursaryFundInput {
   deadline?: string
   opensAt?: string
   eligibilityRules?: Record<string, unknown>
+  requiredDocuments?: string[]
 }
 
 export function createAdminBursaryFund(data: CreateBursaryFundInput, adminKey: string) {

@@ -165,7 +165,11 @@ export default function BursaryDetailPage() {
             <div className="mb-8">
               <h2 className="text-lg font-semibold text-foreground mb-3">Required Documents</h2>
               <div className="bg-elimux-dark border border-border rounded-lg p-4">
-                <pre className="text-muted text-sm whitespace-pre-wrap">{JSON.stringify(requiredDocs, null, 2)}</pre>
+                <ul className="list-disc list-inside space-y-1">
+                  {requiredDocs.map((doc, i) => (
+                    <li key={i} className="text-muted text-sm">{String(doc)}</li>
+                  ))}
+                </ul>
               </div>
             </div>
           )}
