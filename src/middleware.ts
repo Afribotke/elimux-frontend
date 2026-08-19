@@ -19,7 +19,17 @@ export async function middleware(request: NextRequest) {
   // catch-all rewrite rather than 404ing).
   if (BURSARY_HOST.test(host)) {
     const url = request.nextUrl.clone()
-    url.pathname = request.nextUrl.pathname === '/' ? '/bursary/' : `/bursary${request.nextUrl.pathname}`
+    const path = request.nextUrl.pathname
+    // Tolerate a path that already includes the /bursary prefix (e.g. someone
+    // reuses a www.elimux.ke/bursary/... URL on this subdomain) instead of
+    // double-prefixing it to /bursary/bursary/... and 404ing.
+    if (path === '/') {
+      url.pathname = '/bursary/'
+    } else if (path === '/bursary' || path.startsWith('/bursary/')) {
+      url.pathname = path
+    } else {
+      url.pathname = `/bursary${path}`
+    }
     return NextResponse.rewrite(url)
   }
 
