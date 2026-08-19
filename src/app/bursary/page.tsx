@@ -1,12 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getBursaryFunds } from '@/lib/api'
+import { createClient } from '@/lib/supabase/client'
+import { getUserWithTimeout } from '@/lib/client-auth'
+import { getBursaryFunds, addBursaryBookmark, removeBursaryBookmark, getMyBursaryBookmarks } from '@/lib/api'
 import type { BursaryFund } from '@/types/bursary'
-import { Landmark, Building2, Wallet, Calendar, ArrowRight } from 'lucide-react'
+import { Landmark, Building2, Wallet, Calendar, ArrowRight, Heart } from 'lucide-react'
 
 export default function BursaryListingPage() {
+  const router = useRouter()
   const [funds, setFunds] = useState<BursaryFund[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -14,10 +18,61 @@ export default function BursaryListingPage() {
   const [minAmount, setMinAmount] = useState('')
   const [maxAmount, setMaxAmount] = useState('')
   const [deadlineBefore, setDeadlineBefore] = useState('')
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
+  const [loggedIn, setLoggedIn] = useState(false)
 
   useEffect(() => {
     fetchFunds()
+    loadBookmarks()
   }, [])
+
+  async function loadBookmarks() {
+    const { data } = await getUserWithTimeout()
+    setLoggedIn(Boolean(data.user))
+    if (!data.user) return
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    try {
+      const { bookmarks } = await getMyBursaryBookmarks(session.access_token)
+      setBookmarkedIds(new Set(bookmarks.map((b) => b.fund.id)))
+    } catch {
+      // non-fatal — bookmarks just won't show as saved
+    }
+  }
+
+  async function toggleBookmark(e: React.MouseEvent, fundId: string) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!loggedIn) {
+      router.push('/auth/login?redirect=/bursary')
+      return
+    }
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+
+    const isBookmarked = bookmarkedIds.has(fundId)
+    setBookmarkedIds((prev) => {
+      const next = new Set(prev)
+      isBookmarked ? next.delete(fundId) : next.add(fundId)
+      return next
+    })
+    try {
+      if (isBookmarked) {
+        await removeBursaryBookmark(fundId, session.access_token)
+      } else {
+        await addBursaryBookmark(fundId, session.access_token)
+      }
+    } catch {
+      // revert on failure
+      setBookmarkedIds((prev) => {
+        const next = new Set(prev)
+        isBookmarked ? next.add(fundId) : next.delete(fundId)
+        return next
+      })
+    }
+  }
 
   async function fetchFunds() {
     setLoading(true)
@@ -124,8 +179,16 @@ export default function BursaryListingPage() {
             </div>
 
             <Link
+              href="/bursary/bookmarks"
+              className="mt-4 inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-border text-foreground text-sm font-medium hover:bg-elimux-card transition-colors w-full justify-center"
+            >
+              <Heart className="w-4 h-4" />
+              My Saved Bursaries
+            </Link>
+
+            <Link
               href="/bursary/provider/register"
-              className="mt-4 inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-primary-500/30 text-primary-400 text-sm font-medium hover:bg-primary-500/10 transition-colors w-full justify-center"
+              className="mt-3 inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-primary-500/30 text-primary-400 text-sm font-medium hover:bg-primary-500/10 transition-colors w-full justify-center"
             >
               <Building2 className="w-4 h-4" />
               Register as a Provider
@@ -191,7 +254,18 @@ export default function BursaryListingPage() {
                           )}
                         </div>
                       </div>
-                      <ArrowRight className="w-5 h-5 text-muted flex-shrink-0 mt-1" />
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={(e) => toggleBookmark(e, fund.id)}
+                          aria-label={bookmarkedIds.has(fund.id) ? 'Remove bookmark' : 'Save bursary'}
+                          className="p-2 rounded-full hover:bg-elimux-dark transition-colors"
+                        >
+                          <Heart
+                            className={`w-5 h-5 ${bookmarkedIds.has(fund.id) ? 'fill-primary-500 text-primary-500' : 'text-muted'}`}
+                          />
+                        </button>
+                        <ArrowRight className="w-5 h-5 text-muted mt-1" />
+                      </div>
                     </div>
                   </Link>
                 ))}

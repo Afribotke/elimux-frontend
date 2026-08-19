@@ -34,6 +34,12 @@ export interface BursaryApplicantProfile {
   updatedAt: string
 }
 
+export interface BursaryBookmark {
+  bookmarkId: string
+  bookmarkedAt: string
+  fund: BursaryFund
+}
+
 export interface BursaryApplication {
   id: string
   applicantId: string

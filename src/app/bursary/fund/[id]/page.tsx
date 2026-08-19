@@ -1,16 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { getUserWithTimeout } from '@/lib/client-auth'
-import { getBursaryFund, applyToBursary, getBursaryApplicantProfile } from '@/lib/api'
+import { getBursaryFund, applyToBursary, getBursaryApplicantProfile, addBursaryBookmark, removeBursaryBookmark, getMyBursaryBookmarks } from '@/lib/api'
 import type { BursaryFund } from '@/types/bursary'
-import { ArrowLeft, Wallet, Calendar, Tag, UserCircle2 } from 'lucide-react'
+import { ArrowLeft, Wallet, Calendar, Tag, UserCircle2, Heart } from 'lucide-react'
 
 export default function BursaryDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const fundId = params.id as string
 
   const [fund, setFund] = useState<BursaryFund | null>(null)
@@ -21,6 +22,8 @@ export default function BursaryDetailPage() {
   const [applying, setApplying] = useState(false)
   const [applyError, setApplyError] = useState<string | null>(null)
   const [applySuccess, setApplySuccess] = useState(false)
+  const [bookmarked, setBookmarked] = useState(false)
+  const [bookmarking, setBookmarking] = useState(false)
 
   useEffect(() => {
     fetchFund()
@@ -40,6 +43,36 @@ export default function BursaryDetailPage() {
       setProfileComplete(Boolean(profile?.fullName))
     } catch {
       setProfileComplete(false)
+    }
+    try {
+      const { bookmarks } = await getMyBursaryBookmarks(session.access_token)
+      setBookmarked(bookmarks.some((b) => b.fund.id === fundId))
+    } catch {
+      // non-fatal
+    }
+  }
+
+  async function toggleBookmark() {
+    if (!loggedIn) {
+      router.push(`/auth/login?redirect=/bursary/fund/${fundId}`)
+      return
+    }
+    setBookmarking(true)
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      if (bookmarked) {
+        await removeBursaryBookmark(fundId, session.access_token)
+        setBookmarked(false)
+      } else {
+        await addBursaryBookmark(fundId, session.access_token)
+        setBookmarked(true)
+      }
+    } catch {
+      // leave state unchanged on failure
+    } finally {
+      setBookmarking(false)
     }
   }
 
@@ -111,17 +144,27 @@ export default function BursaryDetailPage() {
 
         <div className="bg-elimux-card border border-border rounded-xl p-8">
           <div className="border-b border-border pb-6 mb-6">
-            <div className="flex items-center gap-3 mb-3">
-              <h1 className="text-2xl font-bold text-foreground">{fund.name}</h1>
-              <span
-                className={`px-3 py-1 text-sm font-medium rounded-full ${
-                  fund.status === 'open' && !isDeadlinePassed
-                    ? 'bg-primary-500/10 text-primary-400'
-                    : 'bg-elimux-dark text-muted'
-                }`}
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-foreground">{fund.name}</h1>
+                <span
+                  className={`px-3 py-1 text-sm font-medium rounded-full ${
+                    fund.status === 'open' && !isDeadlinePassed
+                      ? 'bg-primary-500/10 text-primary-400'
+                      : 'bg-elimux-dark text-muted'
+                  }`}
+                >
+                  {isDeadlinePassed ? 'Closed' : fund.status === 'open' ? 'Open' : fund.status}
+                </span>
+              </div>
+              <button
+                onClick={toggleBookmark}
+                disabled={bookmarking}
+                aria-label={bookmarked ? 'Remove bookmark' : 'Save bursary'}
+                className="p-2 rounded-full hover:bg-elimux-dark transition-colors shrink-0"
               >
-                {isDeadlinePassed ? 'Closed' : fund.status === 'open' ? 'Open' : fund.status}
-              </span>
+                <Heart className={`w-5 h-5 ${bookmarked ? 'fill-primary-500 text-primary-500' : 'text-muted'}`} />
+              </button>
             </div>
             {fund.providerName && <p className="text-primary-400 font-medium">{fund.providerName}</p>}
           </div>

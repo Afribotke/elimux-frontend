@@ -5,7 +5,7 @@ import type {
   ScholarshipSponsor,
   ScholarshipSponsorFormData,
 } from '@/types/scholarships'
-import type { BursaryFund, BursaryApplication, BursaryApplicantProfile } from '@/types/bursary'
+import type { BursaryFund, BursaryApplication, BursaryApplicantProfile, BursaryBookmark } from '@/types/bursary'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -2424,6 +2424,27 @@ export function updateBursaryApplicantProfile(data: UpdateBursaryApplicantProfil
   return request<{ profile: BursaryApplicantProfile }>('/api/bursary/applicant/me', {
     method: 'PATCH',
     body: JSON.stringify(data),
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export function addBursaryBookmark(fundId: string, token: string) {
+  return request<{ success: boolean }>('/api/bursary/bookmarks', {
+    method: 'POST',
+    body: JSON.stringify({ fund_id: fundId }),
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export function removeBursaryBookmark(fundId: string, token: string) {
+  return request<{ success: boolean }>(`/api/bursary/bookmarks/${fundId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export function getMyBursaryBookmarks(token: string) {
+  return request<{ bookmarks: BursaryBookmark[] }>('/api/bursary/bookmarks', {
     headers: { Authorization: `Bearer ${token}` },
   })
 }
