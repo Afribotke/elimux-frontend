@@ -28,7 +28,7 @@ export default function PointsDisplay() {
 
   return (
     <Link
-      href="/leaderboard"
+      href="/achievements?tab=leaderboard"
       className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border text-primary-400 hover:bg-primary-500/10 transition-colors"
       title={`${points} point${points === 1 ? '' : 's'} - view leaderboard`}
     >

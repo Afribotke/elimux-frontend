@@ -734,6 +734,19 @@ export function listBadges() {
   return request<{ data: GamificationBadge[] }>('/api/gamification/badges')
 }
 
+export interface GamificationActionRow {
+  id: string
+  action_key: string
+  action_name: string
+  points: number
+  daily_limit: number | null
+  is_active: boolean
+}
+
+export function listGamificationActions() {
+  return request<{ data: GamificationActionRow[] }>('/api/gamification/actions')
+}
+
 export function createReferral(referrer_email: string) {
   return request<{ data: ReferralRow; message: string }>('/api/gamification/referrals', {
     method: 'POST',

@@ -57,8 +57,13 @@ export default async function AttachmentDetailPage({ params }: { params: Promise
 
           <div className="mt-8 rounded-lg bg-amber-50 p-4 dark:bg-amber-900/20">
             <p className="text-sm text-amber-800 dark:text-amber-400">
-              <span className="font-semibold">Eligibility:</span> Only students uploaded by their university can apply for attachment placements.
-              If you are a verified student, <Link href={`/attachments/${job.id}/apply`} className="underline">click here to apply</Link>.
+              <span className="font-semibold">Eligibility:</span> Attachments are arranged through your university.
+              Your institution uploads its list of eligible students and places them into open attachments -
+              there is no direct student application for this listing.{' '}
+              <Link href="/university/placements" className="underline">
+                Institution staff: manage placements here
+              </Link>
+              .
             </p>
           </div>
 
