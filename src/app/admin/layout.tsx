@@ -44,6 +44,8 @@ import {
   PieChart,
   ShieldAlert,
   Landmark,
+  ClipboardList,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -180,6 +182,9 @@ const NAV_SECTIONS: NavSection[] = [
     icon: Landmark,
     items: [
       { label: "Bursary Providers", href: "/admin/bursary-providers", icon: Landmark },
+      { label: "Bursary Funds", href: "/admin/bursary/funds", icon: Landmark },
+      { label: "Bursary Applications", href: "/admin/bursary/applications", icon: ClipboardList },
+      { label: "Bursary Disbursements", href: "/admin/bursary/disbursements", icon: Wallet },
     ],
   },
   {

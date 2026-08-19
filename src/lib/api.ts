@@ -5,6 +5,7 @@ import type {
   ScholarshipSponsor,
   ScholarshipSponsorFormData,
 } from '@/types/scholarships'
+import type { BursaryFund, BursaryApplication } from '@/types/bursary'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -2379,6 +2380,29 @@ export function fetchBursaryProviderFunds(slug: string) {
   return request<{ funds: BursaryFundSummary[] }>(`/api/bursary/providers/${slug}/funds`)
 }
 
+// --- Bursary Engine: public discovery & application (student-facing) ---
+
+export function getBursaryFunds() {
+  return request<{ funds: BursaryFund[] }>('/api/bursary/funds')
+}
+
+export function getBursaryFund(id: string) {
+  return request<{ fund: BursaryFund }>(`/api/bursary/funds/${id}`)
+}
+
+export function applyToBursary(fundId: string, token: string) {
+  return request<{ success: boolean; application_id: string; status: string; message: string }>(
+    '/api/bursary/apply',
+    { method: 'POST', body: JSON.stringify({ fund_id: fundId }), headers: { Authorization: `Bearer ${token}` } }
+  )
+}
+
+export function getMyBursaryApplications(token: string) {
+  return request<{ applications: BursaryApplication[] }>('/api/bursary/applications/my', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
 // --- Bursary Engine: admin provider approval queue ---
 
 export interface AdminBursaryProviderRow {
@@ -2437,6 +2461,147 @@ export function suspendBursaryProvider(id: string, adminKey: string, reason?: st
   return request<{ success: boolean; message: string }>(
     `/api/admin/bursary-providers/${id}/suspend`,
     { method: 'PATCH', body: JSON.stringify({ reason }) },
+    adminKey
+  )
+}
+
+// --- Bursary Engine: admin funds/applications/disbursements management ---
+
+export interface AdminBursaryFund {
+  id: string
+  tenant_id: string
+  name: string
+  description: string | null
+  fund_type: string
+  status: string
+  budget: { total?: number; committed?: number; disbursed?: number; currency?: string }
+  application_window: { opens_at?: string | null; deadline?: string | null }
+  eligibility_rules: Record<string, unknown>
+  applicant_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface AdminBursaryTenantOption {
+  id: string
+  name: string
+  slug: string
+}
+
+export function listAdminBursaryFunds(params: { status?: string; page?: number; limit?: number }, adminKey: string) {
+  return request<{ funds: AdminBursaryFund[]; pagination: ApiListMeta }>(`/api/admin/bursary-funds${buildQuery(params)}`, {}, adminKey)
+}
+
+export function listAdminBursaryFundTenants(adminKey: string) {
+  return request<{ tenants: AdminBursaryTenantOption[] }>('/api/admin/bursary-funds/tenants', {}, adminKey)
+}
+
+export interface CreateBursaryFundInput {
+  tenantId: string
+  name: string
+  description?: string
+  fundType?: string
+  totalAmount?: number
+  currency?: string
+  deadline?: string
+  opensAt?: string
+  eligibilityRules?: Record<string, unknown>
+}
+
+export function createAdminBursaryFund(data: CreateBursaryFundInput, adminKey: string) {
+  return request<{ success: boolean; fund: AdminBursaryFund }>('/api/admin/bursary-funds', { method: 'POST', body: JSON.stringify(data) }, adminKey)
+}
+
+export function updateAdminBursaryFund(id: string, data: Partial<CreateBursaryFundInput> & { status?: string }, adminKey: string) {
+  return request<{ success: boolean; fund: AdminBursaryFund }>(`/api/admin/bursary-funds/${id}`, { method: 'PATCH', body: JSON.stringify(data) }, adminKey)
+}
+
+export function deleteAdminBursaryFund(id: string, adminKey: string) {
+  return request<{ success: boolean; fund: AdminBursaryFund }>(`/api/admin/bursary-funds/${id}`, { method: 'DELETE' }, adminKey)
+}
+
+export interface AdminBursaryApplicationRow {
+  id: string
+  tenantId: string
+  status: string
+  createdAt: string
+  applicant: { id: string; fullName: string | null; email: string | null; phone: string | null }
+  fund: { id: string; name: string }
+}
+
+export interface AdminBursaryApplicationDetail {
+  id: string
+  status: string
+  createdAt: string
+  submissionData: Record<string, unknown>
+  applicant: Record<string, unknown>
+  fund: Record<string, unknown>
+  documents: { id: string; type: string; file_url: string | null; status: string; risk_score: number | null; uploaded_at: string }[]
+}
+
+export function listAdminBursaryApplications(params: { status?: string; page?: number; limit?: number }, adminKey: string) {
+  return request<{ applications: AdminBursaryApplicationRow[]; pagination: ApiListMeta }>(
+    `/api/admin/bursary-applications${buildQuery(params)}`,
+    {},
+    adminKey
+  )
+}
+
+export function fetchAdminBursaryApplication(id: string, adminKey: string) {
+  return request<{ application: AdminBursaryApplicationDetail }>(`/api/admin/bursary-applications/${id}`, {}, adminKey)
+}
+
+export function approveAdminBursaryApplication(id: string, adminKey: string) {
+  return request<{ success: boolean }>(`/api/admin/bursary-applications/${id}/approve`, { method: 'POST' }, adminKey)
+}
+
+export function rejectAdminBursaryApplication(id: string, adminKey: string, reason?: string) {
+  return request<{ success: boolean }>(
+    `/api/admin/bursary-applications/${id}/reject`,
+    { method: 'POST', body: JSON.stringify({ reason }) },
+    adminKey
+  )
+}
+
+export interface AdminBursaryDisbursementRow {
+  id: string
+  applicationId: string
+  applicantName: string | null
+  amount: number
+  currency: string
+  method: string
+  status: string
+  createdAt: string
+  transferCode: string | null
+  paystackStatus: string | null
+  paidAt: string | null
+  failedAt: string | null
+}
+
+export function listAdminBursaryDisbursements(params: { status?: string; page?: number; limit?: number }, adminKey: string) {
+  return request<{ disbursements: AdminBursaryDisbursementRow[]; pagination: ApiListMeta }>(
+    `/api/admin/bursary-disbursements${buildQuery(params)}`,
+    {},
+    adminKey
+  )
+}
+
+export function initiateAdminBursaryDisbursement(
+  data: { applicationId: string; phoneNumber: string; amount: number; recipientName?: string; reason?: string },
+  adminKey: string,
+  tenantId: string
+) {
+  return request<{ success: boolean; transferCode: string; status: string; disbursementId: string }>(
+    '/api/bursary/payments/paystack/initiate',
+    { method: 'POST', body: JSON.stringify(data), headers: { 'x-tenant-id': tenantId } },
+    adminKey
+  )
+}
+
+export function fetchAdminBursaryTransferStatus(transferCode: string, adminKey: string, tenantId: string) {
+  return request<{ status: string; amount: number; recipientName: string; transferCode: string; paidAt: string | null; failedAt: string | null }>(
+    `/api/bursary/payments/paystack/status/${transferCode}`,
+    { headers: { 'x-tenant-id': tenantId } },
     adminKey
   )
 }
