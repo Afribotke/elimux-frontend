@@ -27,9 +27,27 @@ interface FormState {
   currency: string
   deadline: string
   requiredDocuments: string
+  minGrade: string
+  fields: string
+  nationality: string
+  maxAge: string
+  additional: string
 }
 
-const EMPTY_FORM: FormState = { tenantId: '', name: '', description: '', totalAmount: '', currency: 'KES', deadline: '', requiredDocuments: '' }
+const EMPTY_FORM: FormState = {
+  tenantId: '',
+  name: '',
+  description: '',
+  totalAmount: '',
+  currency: 'KES',
+  deadline: '',
+  requiredDocuments: '',
+  minGrade: '',
+  fields: '',
+  nationality: '',
+  maxAge: '',
+  additional: '',
+}
 
 export default function AdminBursaryFundsPage() {
   const { adminKey } = useAdminKey()
@@ -76,6 +94,7 @@ export default function AdminBursaryFundsPage() {
 
   function openEdit(fund: AdminBursaryFund) {
     setEditingId(fund.id)
+    const rules = (fund.eligibility_rules || {}) as Record<string, unknown>
     setForm({
       tenantId: fund.tenant_id,
       name: fund.name,
@@ -84,6 +103,11 @@ export default function AdminBursaryFundsPage() {
       currency: fund.budget?.currency || 'KES',
       deadline: fund.application_window?.deadline?.slice(0, 10) || '',
       requiredDocuments: (fund.required_documents || []).join(', '),
+      minGrade: typeof rules.minGrade === 'string' ? rules.minGrade : '',
+      fields: Array.isArray(rules.fields) ? rules.fields.join(', ') : '',
+      nationality: typeof rules.nationality === 'string' ? rules.nationality : '',
+      maxAge: typeof rules.maxAge === 'number' ? String(rules.maxAge) : '',
+      additional: typeof rules.additional === 'string' ? rules.additional : '',
     })
     setShowForm(true)
   }
@@ -104,6 +128,18 @@ export default function AdminBursaryFundsPage() {
           .split(',')
           .map((doc) => doc.trim())
           .filter(Boolean),
+        eligibilityRules: {
+          minGrade: form.minGrade || undefined,
+          fields: form.fields
+            ? form.fields
+                .split(',')
+                .map((f) => f.trim())
+                .filter(Boolean)
+            : [],
+          nationality: form.nationality || undefined,
+          maxAge: form.maxAge ? parseInt(form.maxAge) : undefined,
+          additional: form.additional || undefined,
+        },
       }
       if (editingId) {
         await updateAdminBursaryFund(editingId, payload, adminKey)
@@ -212,6 +248,56 @@ export default function AdminBursaryFundsPage() {
                 onChange={(e) => setForm((f) => ({ ...f, requiredDocuments: e.target.value }))}
               />
               <p className="text-xs text-gray-400 mt-1">Comma-separated list</p>
+            </div>
+            <div className="sm:col-span-2 pt-2 border-t border-gray-100">
+              <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Eligibility Rules</h3>
+            </div>
+            <div>
+              <label className={labelClass}>Minimum Grade</label>
+              <input
+                className={inputClass}
+                placeholder="e.g. B+"
+                value={form.minGrade}
+                onChange={(e) => setForm((f) => ({ ...f, minGrade: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Maximum Age</label>
+              <input
+                type="number"
+                min="0"
+                className={inputClass}
+                value={form.maxAge}
+                onChange={(e) => setForm((f) => ({ ...f, maxAge: e.target.value }))}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className={labelClass}>Fields of Study</label>
+              <input
+                className={inputClass}
+                placeholder="STEM, Computer Science, Engineering"
+                value={form.fields}
+                onChange={(e) => setForm((f) => ({ ...f, fields: e.target.value }))}
+              />
+              <p className="text-xs text-gray-400 mt-1">Comma-separated list</p>
+            </div>
+            <div>
+              <label className={labelClass}>Nationality</label>
+              <input
+                className={inputClass}
+                placeholder="e.g. Kenyan"
+                value={form.nationality}
+                onChange={(e) => setForm((f) => ({ ...f, nationality: e.target.value }))}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className={labelClass}>Additional Criteria</label>
+              <textarea
+                className={inputClass}
+                rows={2}
+                value={form.additional}
+                onChange={(e) => setForm((f) => ({ ...f, additional: e.target.value }))}
+              />
             </div>
             <div className="sm:col-span-2 flex justify-end gap-2 mt-2">
               <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg border border-gray-200 text-sm">

@@ -185,6 +185,7 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "Bursary Funds", href: "/admin/bursary/funds", icon: Landmark },
       { label: "Bursary Applications", href: "/admin/bursary/applications", icon: ClipboardList },
       { label: "Bursary Disbursements", href: "/admin/bursary/disbursements", icon: Wallet },
+      { label: "Bursary Alert Check", href: "/admin/bursary/cron", icon: Zap },
     ],
   },
   {

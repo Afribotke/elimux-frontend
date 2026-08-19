@@ -133,6 +133,11 @@ export default function BursaryDetailPage() {
   const isDeadlinePassed = fund.deadline ? new Date(fund.deadline) < new Date() : false
   const canApply = fund.status === 'open' && !isDeadlinePassed
   const requiredDocs: unknown[] = Array.isArray(fund.requiredDocuments) ? fund.requiredDocuments : []
+  const eligibility = fund.eligibilityRules || {}
+  const eligibilityFields = Array.isArray(eligibility.fields) ? (eligibility.fields as unknown[]) : []
+  const hasEligibilityCriteria = Boolean(
+    eligibility.minGrade || eligibilityFields.length > 0 || eligibility.nationality || typeof eligibility.maxAge === 'number' || eligibility.additional
+  )
 
   return (
     <main className="min-h-screen bg-elimux-dark">
@@ -207,11 +212,40 @@ export default function BursaryDetailPage() {
             </div>
           )}
 
-          {fund.eligibilityRules && Object.keys(fund.eligibilityRules).length > 0 && (
+          {hasEligibilityCriteria && (
             <div className="mb-8">
               <h2 className="text-lg font-semibold text-foreground mb-3">Eligibility Criteria</h2>
-              <div className="bg-elimux-dark border border-border rounded-lg p-4">
-                <pre className="text-muted text-sm whitespace-pre-wrap">{JSON.stringify(fund.eligibilityRules, null, 2)}</pre>
+              <div className="bg-elimux-dark border border-border rounded-lg p-4 space-y-3">
+                {typeof eligibility.minGrade === 'string' && eligibility.minGrade && (
+                  <div className="flex gap-2 text-sm">
+                    <span className="text-muted shrink-0 w-36">Minimum Grade</span>
+                    <span className="text-foreground">{eligibility.minGrade}</span>
+                  </div>
+                )}
+                {eligibilityFields.length > 0 && (
+                  <div className="flex gap-2 text-sm">
+                    <span className="text-muted shrink-0 w-36">Fields of Study</span>
+                    <span className="text-foreground">{eligibilityFields.map(String).join(', ')}</span>
+                  </div>
+                )}
+                {typeof eligibility.nationality === 'string' && eligibility.nationality && (
+                  <div className="flex gap-2 text-sm">
+                    <span className="text-muted shrink-0 w-36">Nationality</span>
+                    <span className="text-foreground">{eligibility.nationality}</span>
+                  </div>
+                )}
+                {typeof eligibility.maxAge === 'number' && (
+                  <div className="flex gap-2 text-sm">
+                    <span className="text-muted shrink-0 w-36">Maximum Age</span>
+                    <span className="text-foreground">{eligibility.maxAge}</span>
+                  </div>
+                )}
+                {typeof eligibility.additional === 'string' && eligibility.additional && (
+                  <div className="flex gap-2 text-sm">
+                    <span className="text-muted shrink-0 w-36">Additional Criteria</span>
+                    <span className="text-foreground whitespace-pre-wrap">{eligibility.additional}</span>
+                  </div>
+                )}
               </div>
             </div>
           )}

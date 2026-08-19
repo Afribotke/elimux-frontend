@@ -4,5 +4,8 @@
     { "source": "/programmes/", "destination": "/programs/", "permanent": true },
     { "source": "/programmes/:path*", "destination": "/programs/:path*", "permanent": true },
     { "source": "/programmes/:path*/", "destination": "/programs/:path*/", "permanent": true }
+  ],
+  "crons": [
+    { "path": "/api/cron/bursary-alerts", "schedule": "0 9 * * *" }
   ]
 }
