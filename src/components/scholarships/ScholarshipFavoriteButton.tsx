@@ -1,58 +1,82 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Bookmark, BookmarkCheck } from 'lucide-react'
-import { favoriteScholarship, unfavoriteScholarship } from '@/lib/api'
+import { createClient } from '@/lib/supabase/client'
+import { getUserWithTimeout } from '@/lib/client-auth'
+import { favoriteScholarship, unfavoriteScholarship, listScholarshipFavorites } from '@/lib/api'
 
 interface ScholarshipFavoriteButtonProps {
   scholarshipId: string
 }
 
-const STORAGE_KEY = 'elimux-favorites-scholarship'
-
 export default function ScholarshipFavoriteButton({ scholarshipId }: ScholarshipFavoriteButtonProps) {
+  const router = useRouter()
   const [isFavorite, setIsFavorite] = useState(false)
+  const [loggedIn, setLoggedIn] = useState(false)
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) setIsFavorite(JSON.parse(stored).includes(scholarshipId))
+    checkStatus()
   }, [scholarshipId])
 
-  const toggleFavorite = async () => {
-    const nextState = !isFavorite
+  async function checkStatus() {
+    const { data } = await getUserWithTimeout()
+    setLoggedIn(Boolean(data.user))
+    if (!data.user) return
 
-    // Optimistic: localStorage flips immediately, same pattern as
-    // FavoriteButton.tsx. No offline-queue integration here (unlike
-    // FavoriteButton) - that infra is keyed to the generic
-    // item_id/item_type shape in QueueableActionType's 'favorite' payload,
-    // not scholarship_id, and scholarships don't need offline support yet.
-    const stored = localStorage.getItem(STORAGE_KEY)
-    const favorites = stored ? JSON.parse(stored) : []
-    const updated = nextState ? [...favorites, scholarshipId] : favorites.filter((id: string) => id !== scholarshipId)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-    setIsFavorite(nextState)
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
 
     try {
+      const { data: favorites } = await listScholarshipFavorites(session.access_token)
+      setIsFavorite(favorites.some((f) => f.scholarship?.id === scholarshipId))
+    } catch {
+      // leave as not-favorited on failure
+    }
+  }
+
+  async function toggleFavorite() {
+    if (!loggedIn) {
+      router.push(`/auth/login?redirect=/scholarships/${scholarshipId}`)
+      return
+    }
+
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      router.push(`/auth/login?redirect=/scholarships/${scholarshipId}`)
+      return
+    }
+
+    const nextState = !isFavorite
+    setIsFavorite(nextState)
+    setBusy(true)
+    try {
       if (nextState) {
-        await favoriteScholarship(scholarshipId)
+        await favoriteScholarship(scholarshipId, session.access_token)
       } else {
-        await unfavoriteScholarship(scholarshipId)
+        await unfavoriteScholarship(scholarshipId, session.access_token)
       }
     } catch {
-      // Local star already flipped; no error UI on this button to surface a
-      // server-side failure to, same tradeoff as FavoriteButton.tsx.
+      setIsFavorite(!nextState)
+    } finally {
+      setBusy(false)
     }
   }
 
   return (
     <button
       onClick={toggleFavorite}
-      className={`p-2 rounded-full transition-all ${
+      disabled={busy}
+      className={`p-2 rounded-full transition-all disabled:opacity-50 ${
         isFavorite
           ? 'bg-primary-500/20 text-primary-400 hover:bg-primary-500/30'
           : 'bg-elimux-card border border-border text-muted hover:bg-muted/10 hover:text-foreground'
       }`}
-      title={isFavorite ? 'Remove from favorites' : 'Save this scholarship'}
+      title={loggedIn ? (isFavorite ? 'Remove from favorites' : 'Save this scholarship') : 'Log in to save this scholarship'}
     >
       {isFavorite ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
     </button>

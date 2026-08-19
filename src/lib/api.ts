@@ -1195,12 +1195,18 @@ export function listScholarships(params: ScholarshipListParams = {}) {
   return request<ScholarshipListResponse>(`/api/scholarships${buildQuery(params)}`)
 }
 
-export function favoriteScholarship(id: string) {
-  return request<{ data: unknown }>(`/api/scholarships/${id}/favorite`, { method: 'POST' })
+export function favoriteScholarship(id: string, token: string) {
+  return request<{ data: unknown }>(`/api/scholarships/${id}/favorite`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  })
 }
 
-export function unfavoriteScholarship(id: string) {
-  return request<{ message: string }>(`/api/scholarships/${id}/favorite`, { method: 'DELETE' })
+export function unfavoriteScholarship(id: string, token: string) {
+  return request<{ message: string }>(`/api/scholarships/${id}/favorite`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
 }
 
 export interface ScholarshipFavoriteRow {
@@ -1209,8 +1215,10 @@ export interface ScholarshipFavoriteRow {
   scholarship: ScholarshipRow
 }
 
-export function listScholarshipFavorites() {
-  return request<{ data: ScholarshipFavoriteRow[] }>('/api/scholarships/favorites')
+export function listScholarshipFavorites(token: string) {
+  return request<{ data: ScholarshipFavoriteRow[] }>('/api/scholarships/favorites', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
 }
 
 export interface CreateScholarshipAlertInput {

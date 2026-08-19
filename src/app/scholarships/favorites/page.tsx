@@ -1,21 +1,44 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
+import { getUserWithTimeout } from '@/lib/client-auth'
 import { listScholarshipFavorites, type ScholarshipFavoriteRow } from '@/lib/api'
 import ScholarshipCard from '@/components/scholarships/ScholarshipCard'
 import { Bookmark, ArrowRight, Loader2 } from 'lucide-react'
 
 export default function ScholarshipFavoritesPage() {
+  const router = useRouter()
   const [favorites, setFavorites] = useState<ScholarshipFavoriteRow[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    listScholarshipFavorites()
-      .then((res) => setFavorites(res.data))
-      .catch((err) => console.error('Error loading scholarship favorites:', err))
-      .finally(() => setLoading(false))
+    checkAuthAndLoad()
   }, [])
+
+  async function checkAuthAndLoad() {
+    const { data } = await getUserWithTimeout()
+    if (!data.user) {
+      router.push('/auth/login?redirect=/scholarships/favorites')
+      return
+    }
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      router.push('/auth/login?redirect=/scholarships/favorites')
+      return
+    }
+    try {
+      const res = await listScholarshipFavorites(session.access_token)
+      setFavorites(res.data)
+    } catch (err) {
+      console.error('Error loading scholarship favorites:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <main className="min-h-screen py-16 px-4">
