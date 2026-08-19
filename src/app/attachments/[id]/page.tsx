@@ -14,7 +14,13 @@ async function getAttachment(id: string) {
       cache: "no-store"
     })
     if (!res.ok) return null
-    return res.json()
+    // Backend wraps the row as { success, data }, not the row itself - this
+    // page previously read job.type directly on the unwrapped response,
+    // which is always undefined, so it showed "not found" for every real
+    // attachment (only surfaced now that a real attachment-type row exists
+    // to test against - the table was empty in production until this cycle).
+    const body = await res.json()
+    return body?.data ?? null
   } catch {
     return null
   }
