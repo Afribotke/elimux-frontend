@@ -44,9 +44,9 @@ export default async function AttachmentDetailPage({ params }: { params: Promise
           <p className="mt-1 text-lg text-gray-600 dark:text-gray-400">{job.employer?.company_name || "Unknown Company"}</p>
 
           <div className="mt-6 flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
-            <span>📍 {job.location || "Not specified"}</span>
-            <span>⏱️ {job.duration || "Not specified"}</span>
-            <span>👥 {job.slots || 1} slots</span>
+            <span>📍 {job.location_county || "Not specified"}</span>
+            <span>⏱️ {job.duration_weeks ? `${job.duration_weeks} weeks` : "Not specified"}</span>
+            <span>👥 {job.total_slots || 1} slots</span>
           </div>
 
           <div className="mt-8">
