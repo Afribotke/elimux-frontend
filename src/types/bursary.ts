@@ -40,6 +40,24 @@ export interface BursaryBookmark {
   fund: BursaryFund
 }
 
+export interface BursaryNotification {
+  id: string
+  type: string
+  title: string
+  message: string
+  fundId: string | null
+  applicationId: string | null
+  isRead: boolean
+  createdAt: string
+}
+
+export interface BursaryAlertPreferences {
+  alertTypes: string[]
+  fieldOfStudy: string | null
+  minAmount: number | null
+  maxAmount: number | null
+}
+
 export interface BursaryApplication {
   id: string
   applicantId: string

@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useState, useRef, useEffect } from 'react';
 import PoweredByHeaderBadge from './PoweredByHeaderBadge';
+import NotificationBell from './bursary/NotificationBell';
 
 const PRIMARY_NAV = [
   { icon: '🏠', label: 'Home', href: '/' },
@@ -123,6 +124,8 @@ export default function DesktopNav() {
           <div className="flex items-center gap-3 shrink-0 ml-auto lg:ml-0">
             <ThemeToggle />
 
+            {user && <NotificationBell />}
+
             {user ? (
               <div className="relative" ref={profileRef}>
                 <button
@@ -153,6 +156,13 @@ export default function DesktopNav() {
                       className="block px-4 py-2 text-foreground text-sm hover:bg-muted"
                     >
                       📝 My Applications
+                    </Link>
+                    <Link
+                      href="/bursary/notifications"
+                      onClick={() => setProfileOpen(false)}
+                      className="block px-4 py-2 text-foreground text-sm hover:bg-muted"
+                    >
+                      🔔 Bursary Notifications
                     </Link>
                     {isAdmin && (
                       <Link

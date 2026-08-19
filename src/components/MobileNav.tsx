@@ -20,6 +20,7 @@ import {
   LogOut,
   FileText,
   HandCoins,
+  Bell,
 } from "lucide-react";
 
 const navLinks = [
@@ -165,6 +166,14 @@ export default function MobileNav() {
                 >
                   <FileText className="h-5 w-5" />
                   My Applications
+                </Link>
+                <Link
+                  href="/bursary/notifications"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted"
+                >
+                  <Bell className="h-5 w-5" />
+                  Bursary Notifications
                 </Link>
                 <button
                   onClick={() => {

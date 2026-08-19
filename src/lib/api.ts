@@ -5,7 +5,14 @@ import type {
   ScholarshipSponsor,
   ScholarshipSponsorFormData,
 } from '@/types/scholarships'
-import type { BursaryFund, BursaryApplication, BursaryApplicantProfile, BursaryBookmark } from '@/types/bursary'
+import type {
+  BursaryFund,
+  BursaryApplication,
+  BursaryApplicantProfile,
+  BursaryBookmark,
+  BursaryNotification,
+  BursaryAlertPreferences,
+} from '@/types/bursary'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -2445,6 +2452,38 @@ export function removeBursaryBookmark(fundId: string, token: string) {
 
 export function getMyBursaryBookmarks(token: string) {
   return request<{ bookmarks: BursaryBookmark[] }>('/api/bursary/bookmarks', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export function getBursaryNotifications(token: string) {
+  return request<{ notifications: BursaryNotification[] }>('/api/bursary/notifications', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export function markBursaryNotificationRead(id: string, token: string) {
+  return request<{ success: boolean }>(`/api/bursary/notifications/${id}/read`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export function getBursaryAlertPreferences(token: string) {
+  return request<{ preferences: BursaryAlertPreferences }>('/api/bursary/alert-preferences', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export function updateBursaryAlertPreferences(prefs: Partial<BursaryAlertPreferences>, token: string) {
+  return request<{ preferences: BursaryAlertPreferences }>('/api/bursary/alert-preferences', {
+    method: 'PATCH',
+    body: JSON.stringify({
+      alertTypes: prefs.alertTypes,
+      fieldOfStudy: prefs.fieldOfStudy,
+      minAmount: prefs.minAmount,
+      maxAmount: prefs.maxAmount,
+    }),
     headers: { Authorization: `Bearer ${token}` },
   })
 }
