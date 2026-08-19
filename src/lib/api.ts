@@ -5,7 +5,7 @@ import type {
   ScholarshipSponsor,
   ScholarshipSponsorFormData,
 } from '@/types/scholarships'
-import type { BursaryFund, BursaryApplication } from '@/types/bursary'
+import type { BursaryFund, BursaryApplication, BursaryApplicantProfile } from '@/types/bursary'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -2399,6 +2399,31 @@ export function applyToBursary(fundId: string, token: string) {
 
 export function getMyBursaryApplications(token: string) {
   return request<{ applications: BursaryApplication[] }>('/api/bursary/applications/my', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export function getBursaryApplicantProfile(token: string) {
+  return request<{ profile: BursaryApplicantProfile | null }>('/api/bursary/applicant/me', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export interface UpdateBursaryApplicantProfileInput {
+  fullName?: string
+  email?: string
+  phone?: string
+  dateOfBirth?: string
+  institution?: string
+  course?: string
+  yearOfStudy?: number
+  gpa?: string
+}
+
+export function updateBursaryApplicantProfile(data: UpdateBursaryApplicantProfileInput, token: string) {
+  return request<{ profile: BursaryApplicantProfile }>('/api/bursary/applicant/me', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
     headers: { Authorization: `Bearer ${token}` },
   })
 }

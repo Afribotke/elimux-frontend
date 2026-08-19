@@ -20,6 +20,20 @@ export interface BursaryFund {
   updatedAt: string
 }
 
+export interface BursaryApplicantProfile {
+  id: string
+  fullName: string | null
+  email: string | null
+  phone: string | null
+  dateOfBirth: string | null
+  institution: string | null
+  course: string | null
+  yearOfStudy: number | null
+  gpa: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface BursaryApplication {
   id: string
   applicantId: string

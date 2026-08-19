@@ -87,6 +87,7 @@ export default function AdminBursaryApplicationDetailPage() {
   }
 
   const personal = (application.applicant.personal_info as Record<string, unknown>) || {}
+  const academic = (application.applicant.academic_info as Record<string, unknown>) || {}
   const fund = application.fund as Record<string, unknown>
 
   return (
@@ -136,6 +137,14 @@ export default function AdminBursaryApplicationDetailPage() {
             <div>
               <dt className="text-gray-400">Phone</dt>
               <dd className="text-gray-700">{(personal.phone as string) || '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-400">Institution</dt>
+              <dd className="text-gray-700">{(academic.institution as string) || '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-400">Course</dt>
+              <dd className="text-gray-700">{(academic.course as string) || '—'}</dd>
             </div>
           </dl>
         </section>

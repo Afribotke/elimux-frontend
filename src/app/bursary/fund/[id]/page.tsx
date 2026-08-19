@@ -5,9 +5,9 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { getUserWithTimeout } from '@/lib/client-auth'
-import { getBursaryFund, applyToBursary } from '@/lib/api'
+import { getBursaryFund, applyToBursary, getBursaryApplicantProfile } from '@/lib/api'
 import type { BursaryFund } from '@/types/bursary'
-import { ArrowLeft, Wallet, Calendar, Tag } from 'lucide-react'
+import { ArrowLeft, Wallet, Calendar, Tag, UserCircle2 } from 'lucide-react'
 
 export default function BursaryDetailPage() {
   const params = useParams()
@@ -17,6 +17,7 @@ export default function BursaryDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [loggedIn, setLoggedIn] = useState(false)
+  const [profileComplete, setProfileComplete] = useState(false)
   const [applying, setApplying] = useState(false)
   const [applyError, setApplyError] = useState<string | null>(null)
   const [applySuccess, setApplySuccess] = useState(false)
@@ -29,6 +30,17 @@ export default function BursaryDetailPage() {
   async function checkAuth() {
     const { data } = await getUserWithTimeout()
     setLoggedIn(Boolean(data.user))
+    if (!data.user) return
+
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    try {
+      const { profile } = await getBursaryApplicantProfile(session.access_token)
+      setProfileComplete(Boolean(profile?.fullName))
+    } catch {
+      setProfileComplete(false)
+    }
   }
 
   async function fetchFund() {
@@ -182,6 +194,17 @@ export default function BursaryDetailPage() {
                   You can track your application status in{' '}
                   <Link href="/bursary/my-applications" className="underline font-medium text-primary-400">
                     My Applications
+                  </Link>
+                  .
+                </p>
+              </div>
+            ) : loggedIn && canApply && !profileComplete ? (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 flex items-center gap-3">
+                <UserCircle2 className="w-5 h-5 text-amber-400 shrink-0" />
+                <p className="text-amber-400 text-sm">
+                  Complete your profile to apply —{' '}
+                  <Link href={`/bursary/profile?redirect=/bursary/fund/${fundId}`} className="underline font-medium">
+                    fill in your applicant profile
                   </Link>
                   .
                 </p>
