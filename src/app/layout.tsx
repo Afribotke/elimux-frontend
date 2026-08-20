@@ -10,6 +10,7 @@ import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import BackgroundSyncManager from "@/components/BackgroundSyncManager";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import { Toaster } from "sonner";
+import { Analytics } from '@vercel/analytics/next';
 
 import InstallPrompt from '@/components/InstallPrompt';
 import SiteVisitTracker from '@/components/SiteVisitTracker';
@@ -95,6 +96,7 @@ export default function RootLayout({
           </AuthProvider>
         </ThemeProvider>
             <InstallPrompt />
+            <Analytics />
 </body>
     </html>
   );
