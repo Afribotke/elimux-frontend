@@ -9,7 +9,9 @@ import ProgramCardSkeleton from '@/components/ProgramCardSkeleton';
 import { CompareProvider, useCompareSelection } from '@/components/CompareProvider';
 import CompareDrawer from '@/components/CompareDrawer';
 import { trackSearchAnalytics } from '@/lib/analytics';
-import { Loader2, Filter, Search } from 'lucide-react';
+import { Loader2, Filter, Search, SearchX } from 'lucide-react';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Button } from '@/components/ui/button';
 
 interface Program {
   id: string;
@@ -44,6 +46,11 @@ interface FilterState {
   search: string;
   minFees: string;
   maxFees: string;
+  // 'university' | 'tvet' | '' — driven by the UnifiedNavBar pills, which
+  // classify real institution_types rows by name pattern (see the
+  // fetchFilters effect below) rather than assuming fixed enum values,
+  // since institution_types is an admin-managed table, not a fixed set.
+  type: string;
 }
 
 function ProgramsPageInner() {
@@ -54,6 +61,7 @@ function ProgramsPageInner() {
   const [categories, setCategories] = useState<{id: string; name: string}[]>([]);
   const [countries, setCountries] = useState<{id: string; name: string}[]>([]);
   const [levels, setLevels] = useState<string[]>([]);
+  const [institutionTypeIds, setInstitutionTypeIds] = useState<{ university: string[]; tvet: string[] }>({ university: [], tvet: [] });
   const [loading, setLoading] = useState(true);
   // Seeded from the URL on first render (not a useEffect) so a shared/bookmarked
   // link with ?country=... renders filtered immediately, instead of fetching
@@ -65,6 +73,7 @@ function ProgramsPageInner() {
     search: searchParams.get('search') || '',
     minFees: searchParams.get('minFees') || '',
     maxFees: searchParams.get('maxFees') || '',
+    type: searchParams.get('type') || '',
   }));
   const [page, setPage] = useState(() => {
     const fromUrl = parseInt(searchParams.get('page') || '1', 10);
@@ -72,6 +81,17 @@ function ProgramsPageInner() {
   });
   const [totalCount, setTotalCount] = useState(0);
   const PAGE_SIZE = 12;
+
+  // UnifiedNavBar navigates to /programs?type=... with router.push even when
+  // already on this route. Since the route itself doesn't remount, the
+  // useState initializer above won't re-run — this effect is what actually
+  // applies a pill click made while already on /programs. It only reacts to
+  // real Next.js navigations (useSearchParams), not the URL-sync effect
+  // below (which uses raw history.replaceState and doesn't feed back here).
+  useEffect(() => {
+    const urlType = searchParams.get('type') || '';
+    setFilters((f) => (f.type === urlType ? f : { ...f, type: urlType }));
+  }, [searchParams]);
 
   // Keep the URL in sync as filters/page change, so the current view stays
   // shareable/bookmarkable. replaceState (not push) so filtering doesn't spam
@@ -84,6 +104,7 @@ function ProgramsPageInner() {
     if (filters.search) params.set('search', filters.search);
     if (filters.minFees) params.set('minFees', filters.minFees);
     if (filters.maxFees) params.set('maxFees', filters.maxFees);
+    if (filters.type) params.set('type', filters.type);
     if (page > 1) params.set('page', page.toString());
 
     const query = params.toString();
@@ -94,15 +115,26 @@ function ProgramsPageInner() {
   // Fetch filter options
   useEffect(() => {
     async function fetchFilters() {
-      const [{ data: cats }, { data: ctry }, { data: lvls }] = await Promise.all([
+      const [{ data: cats }, { data: ctry }, { data: lvls }, { data: instTypes }] = await Promise.all([
         supabase.from('program_categories').select('id,name').eq('is_active', true).order('name'),
         supabase.from('countries').select('id,name').eq('is_active', true).order('name'),
         supabase.from('programs').select('level').eq('is_active', true).not('level', 'is', null),
+        supabase.from('institution_types').select('id,name'),
       ]);
       setCategories(cats || []);
       setCountries(ctry || []);
       const uniqueLevels = [...new Set((lvls || []).map((l: any) => l.level))].sort();
       setLevels(uniqueLevels);
+
+      // institution_types is admin-managed (no fixed enum), so bucket by
+      // name pattern rather than assuming specific ids/strings exist.
+      const university: string[] = [];
+      const tvet: string[] = [];
+      for (const t of instTypes || []) {
+        if (/tvet|technical|vocational|polytechnic/i.test(t.name)) tvet.push(t.id);
+        else if (/universit|college/i.test(t.name)) university.push(t.id);
+      }
+      setInstitutionTypeIds({ university, tvet });
     }
     fetchFilters();
   }, []);
@@ -125,6 +157,13 @@ function ProgramsPageInner() {
     if (filters.search) query = query.ilike('name', `%${filters.search}%`);
     if (filters.minFees) query = query.gte('tuition_fees', parseFloat(filters.minFees));
     if (filters.maxFees) query = query.lte('tuition_fees', parseFloat(filters.maxFees));
+    if (filters.type === 'university' || filters.type === 'tvet') {
+      const ids = institutionTypeIds[filters.type];
+      // No matching institution_types rows yet (still loading, or none
+      // configured) - filter to zero results rather than silently ignoring
+      // the pill and showing everything.
+      query = query.in('institution.type_id', ids.length > 0 ? ids : ['00000000-0000-0000-0000-000000000000']);
+    }
 
     const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
@@ -148,7 +187,7 @@ function ProgramsPageInner() {
       });
     }
     setLoading(false);
-  }, [filters, page]);
+  }, [filters, page, institutionTypeIds]);
 
   useEffect(() => {
     fetchPrograms();
@@ -157,7 +196,7 @@ function ProgramsPageInner() {
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const clearFilters = () => {
-    setFilters({ category: '', country: '', level: '', search: '', minFees: '', maxFees: '' });
+    setFilters({ category: '', country: '', level: '', search: '', minFees: '', maxFees: '', type: '' });
     setPage(1);
   };
 
@@ -168,19 +207,22 @@ function ProgramsPageInner() {
       {/* Header */}
       <div className="bg-background border-b">
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold text-foreground">Explore Programs</h1>
+          <h1 className="text-balance text-display-2 font-bold text-foreground">Explore Programs</h1>
           <p className="mt-2 text-muted-foreground">Discover {totalCount.toLocaleString()} programs from top institutions worldwide</p>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Filters Bar */}
-        <div className="bg-background rounded-lg shadow-sm border p-4 mb-6">
+        <div className="bg-background rounded-lg shadow-card border p-4 mb-6">
           <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-5 h-5 text-blue-600" />
+            <Filter className="w-5 h-5 text-primary-600" />
             <h2 className="font-semibold text-foreground">Filters</h2>
             {hasActiveFilters && (
-              <button onClick={clearFilters} className="ml-auto text-sm text-blue-600 hover:text-blue-800">
+              <button
+                onClick={clearFilters}
+                className="ml-auto text-sm text-primary-600 hover:text-primary-700 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
                 Clear all
               </button>
             )}
@@ -195,7 +237,7 @@ function ProgramsPageInner() {
                 placeholder="Search programs..."
                 value={filters.search}
                 onChange={(e) => { setFilters(f => ({ ...f, search: e.target.value })); setPage(1); }}
-                className="w-full pl-10 pr-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-3 min-h-[44px] border rounded-lg transition-all focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
 
@@ -203,7 +245,7 @@ function ProgramsPageInner() {
             <select
               value={filters.category}
               onChange={(e) => { setFilters(f => ({ ...f, category: e.target.value })); setPage(1); }}
-              className="w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 min-h-[44px] border rounded-lg transition-all focus:ring-2 focus:ring-primary-500"
               aria-label="Category"
             >
               <option value="">All Categories</option>
@@ -216,7 +258,7 @@ function ProgramsPageInner() {
             <select
               value={filters.country}
               onChange={(e) => { setFilters(f => ({ ...f, country: e.target.value })); setPage(1); }}
-              className="w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 min-h-[44px] border rounded-lg transition-all focus:ring-2 focus:ring-primary-500"
               aria-label="Country"
             >
               <option value="">All Countries</option>
@@ -229,7 +271,7 @@ function ProgramsPageInner() {
             <select
               value={filters.level}
               onChange={(e) => { setFilters(f => ({ ...f, level: e.target.value })); setPage(1); }}
-              className="w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 min-h-[44px] border rounded-lg transition-all focus:ring-2 focus:ring-primary-500"
               aria-label="Education Level"
             >
               <option value="">All Levels</option>
@@ -246,14 +288,14 @@ function ProgramsPageInner() {
               placeholder="Min fees (USD)"
               value={filters.minFees}
               onChange={(e) => { setFilters(f => ({ ...f, minFees: e.target.value })); setPage(1); }}
-              className="w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 min-h-[44px] border rounded-lg transition-all focus:ring-2 focus:ring-primary-500"
             />
             <input
               type="number"
               placeholder="Max fees (USD)"
               value={filters.maxFees}
               onChange={(e) => { setFilters(f => ({ ...f, maxFees: e.target.value })); setPage(1); }}
-              className="w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 min-h-[44px] border rounded-lg transition-all focus:ring-2 focus:ring-primary-500"
             />
           </div>
         </div>
@@ -272,16 +314,20 @@ function ProgramsPageInner() {
             ))}
           </div>
         ) : programs.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">No programs found matching your criteria.</p>
-            <button onClick={clearFilters} className="mt-4 text-blue-600 hover:text-blue-800">
-              Clear filters and try again
-            </button>
-          </div>
+          <EmptyState
+            icon={<SearchX className="w-8 h-8" />}
+            title="No programs found"
+            description="No programs match your current filters. Try adjusting or clearing them."
+            action={<Button onClick={clearFilters}>Clear filters and try again</Button>}
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {programs.map((program) => (
-              <Link key={program.id} href={`/programs/${program.id}/?from=list`}>
+              <Link
+                key={program.id}
+                href={`/programs/${program.id}/?from=list`}
+                className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
                 <ProgramCard
                   program={program}
                   compareMode
@@ -300,7 +346,7 @@ function ProgramsPageInner() {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-4 py-2.5 min-h-[44px] border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
+              className="px-4 py-2.5 min-h-[44px] border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               Previous
             </button>
@@ -310,7 +356,7 @@ function ProgramsPageInner() {
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="px-4 py-2.5 min-h-[44px] border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
+              className="px-4 py-2.5 min-h-[44px] border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               Next
             </button>
@@ -328,8 +374,8 @@ export default function ProgramsPage() {
     <CompareProvider>
       <Suspense
         fallback={
-          <div className="min-h-screen bg-muted flex justify-center py-24">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <div className="min-h-screen bg-muted flex justify-center py-24" role="status" aria-label="Loading programs">
+            <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
           </div>
         }
       >

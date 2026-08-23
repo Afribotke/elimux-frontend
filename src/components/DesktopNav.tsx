@@ -12,7 +12,6 @@ const PRIMARY_NAV = [
   { icon: '🏠', label: 'Home', href: '/' },
   { icon: '🏛️', label: 'Institutions', href: '/institutions' },
   { icon: '✨', label: 'AI Search', href: '/ai-search' },
-  { icon: '💼', label: 'Opportunities', href: "/opportunities" },
   { icon: '📋', label: 'Programs', href: '/programs' },
 ];
 
@@ -82,7 +81,7 @@ export default function DesktopNav() {
   const isAdmin = (user as any)?.role === 'admin';
 
   return (
-    <header className="sticky top-0 z-50 bg-background border-b border-border">
+    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
       {/* Line 1 — Primary */}
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center h-[52px]">
@@ -106,16 +105,6 @@ export default function DesktopNav() {
                 size="md"
               />
             ))}
-            <Link
-              href="https://bursary.elimux.ke"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-all text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            >
-              <span className="text-sm">💰</span>
-              Bursary
-              <span className="px-2 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-800 rounded-full">
-                Opening Soon
-              </span>
-            </Link>
                 <PoweredByHeaderBadge />
 
           </nav>

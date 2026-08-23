@@ -58,6 +58,32 @@ export interface BursaryAlertPreferences {
   maxAmount: number | null
 }
 
+export interface BursaryProviderTenant {
+  id: string
+  slug: string
+  name: string
+  type: string
+  status: 'pending' | 'active' | 'suspended'
+  registrationNumber: string | null
+  verificationStatus: string | null
+  contact: Record<string, unknown> | null
+  adminUsers: string[]
+  activeModules: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface BursaryProviderAdminRole {
+  id: string
+  tenantId: string
+  userId: string | null
+  role: string
+  status: 'invited' | 'active' | 'revoked'
+  invitedAt: string | null
+  acceptedAt: string | null
+  tenant?: BursaryProviderTenant
+}
+
 export interface BursaryApplication {
   id: string
   applicantId: string

@@ -79,6 +79,7 @@ export default function InternshipsPage() {
         .from("internships")
         .select("*, employer:employers(company_name, logo_url, industry, average_rating, review_count)")
         .eq("status", "active")
+        .eq("type", "internship")
         .order("is_featured", { ascending: false })
         .order("created_at", { ascending: false });
 
@@ -125,7 +126,8 @@ export default function InternshipsPage() {
       const { count } = await supabase
         .from("internships")
         .select("*", { count: "exact", head: true })
-        .eq("status", "active");
+        .eq("status", "active")
+        .eq("type", "internship");
       setActiveVacancies(count || 0);
     } catch (err) {
       toast.error("Failed to load internships");

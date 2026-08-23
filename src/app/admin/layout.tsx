@@ -230,6 +230,7 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "Accreditation", href: "/admin/accreditation", icon: Award },
       { label: "Internships", href: "/admin/internships", icon: Briefcase },
         { label: "Attachment Reports", href: "/admin/reports", icon: FileText },
+        { label: "Approvals", href: "/admin/approvals", icon: ClipboardCheck },
       { label: "NITA Compliance", href: "/admin/nita", icon: ShieldAlert },
       { label: "Compliance & Verification", href: "/admin/compliance", icon: Shield },
       { label: "Audit Log", href: "/admin/audit", icon: FileText },
@@ -259,7 +260,7 @@ function SidebarItem({
     <Link
       href={item.href}
       onClick={onClick}
-      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
         isActive
           ? "bg-amber-50 text-amber-700 border border-amber-200"
           : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
@@ -451,7 +452,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         <div className="p-3 border-t border-gray-100 shrink-0 space-y-1">
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
           >
             <LogOut className="w-4 h-4" />
             Sign Out
@@ -464,7 +465,8 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+              aria-label="Open sidebar"
+              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
             >
               <Menu className="w-5 h-5 text-gray-600" />
             </button>
@@ -476,7 +478,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="relative p-2 hover:bg-gray-100 rounded-lg">
+            <button aria-label="Notifications" className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
               <Bell className="w-5 h-5 text-gray-600" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
             </button>

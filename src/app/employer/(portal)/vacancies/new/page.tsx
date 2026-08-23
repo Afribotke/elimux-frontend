@@ -35,6 +35,7 @@ export default function NewVacancyPage() {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     department_id: '',
+    type: "internship" as "internship" | "attachment",
     title: "",
     description: "",
     requirements: "",
@@ -83,9 +84,10 @@ export default function NewVacancyPage() {
       status: "active",
     });
 
+    const typeLabel = form.type === "attachment" ? "Attachment" : "Internship";
     if (error) toast.error("Failed to create: " + error.message);
     else {
-      toast.success("Internship posted successfully");
+      toast.success(`${typeLabel} posted successfully`);
       router.push("/employer/vacancies");
     }
     setSubmitting(false);
@@ -97,10 +99,23 @@ export default function NewVacancyPage() {
         <Button variant="ghost" className="mb-4" onClick={() => router.push("/employer/vacancies")}>
           <ArrowLeft className="w-4 h-4 mr-2" />Back
         </Button>
-        <h1 className="text-3xl font-bold text-foreground mb-8">Post New Internship</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-8">
+          {form.type === "attachment" ? "Post New Attachment" : "Post New Internship"}
+        </h1>
 
         <Card>
           <CardContent className="p-6 space-y-6">
+            <div>
+              <Label>Listing Type *</Label>
+              <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as "internship" | "attachment" })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="internship">Internship</SelectItem>
+                  <SelectItem value="attachment">Attachment</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Software Engineering Intern" /></div>
             <div><Label>Description *</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} /></div>
             <div><Label>Requirements</Label><Textarea value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} rows={3} /></div>
@@ -162,7 +177,8 @@ export default function NewVacancyPage() {
             </div>
 
             <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={handleSubmit} disabled={submitting}>
-              <Save className="w-4 h-4 mr-2" />{submitting ? "Posting..." : "Post Internship"}
+              <Save className="w-4 h-4 mr-2" />
+              {submitting ? "Posting..." : `Post ${form.type === "attachment" ? "Attachment" : "Internship"}`}
             </Button>
           </CardContent>
         </Card>

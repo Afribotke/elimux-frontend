@@ -68,15 +68,15 @@ function LoginForm() {
   return (
     <div className="min-h-screen bg-elimux-dark py-12 px-4 flex items-center justify-center">
       <div className="max-w-md w-full">
-        <div className="bg-elimux-card rounded-xl border border-border overflow-hidden">
+        <div className="bg-elimux-card rounded-xl border border-border shadow-soft-lg overflow-hidden">
           <div className="px-8 py-6 border-b border-border">
-            <h1 className="text-2xl font-bold text-foreground">Sign In</h1>
+            <h1 className="text-balance text-2xl font-bold text-foreground">Sign In</h1>
             <p className="text-muted mt-1 text-sm">Sign in to your ElimuX account</p>
           </div>
 
           <form onSubmit={handleSubmit} className="p-8 space-y-5">
             {error && (
-              <div className="bg-elimux-danger/10 border border-elimux-danger/30 rounded-lg p-4 text-elimux-danger text-sm">
+              <div role="alert" className="bg-elimux-danger/10 border border-elimux-danger/30 rounded-lg p-4 text-elimux-danger text-sm animate-fade-in">
                 {error}
               </div>
             )}
@@ -93,7 +93,7 @@ function LoginForm() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground transition-all focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
               />
             </div>
 
@@ -114,14 +114,14 @@ function LoginForm() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground focus:outline-none focus:border-primary-500"
+                className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground transition-all focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-elimux-dark font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-elimux-dark font-semibold py-3 px-6 rounded-lg shadow-soft hover:shadow-soft-lg transition-all disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <LogIn className="w-4 h-4" />
               {loading ? 'Signing in...' : 'Sign In'}

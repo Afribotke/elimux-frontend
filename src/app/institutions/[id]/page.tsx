@@ -104,7 +104,7 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
           className="px-0 mb-6"
         />
 
-        <div className="bg-elimux-card rounded-2xl p-6 md:p-8 border border-border mb-8">
+        <div className="bg-elimux-card rounded-2xl p-6 md:p-8 border border-border shadow-card mb-8">
           <div className="flex items-start gap-4">
             <div className="w-20 h-20 rounded-xl bg-background border border-border flex items-center justify-center flex-shrink-0 overflow-hidden p-2">
               <InstitutionLogo name={institution.name} logoUrl={institution.logo_url} websiteUrl={institution.website_url} />
@@ -113,7 +113,7 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <h1 className="text-2xl md:text-3xl font-bold text-foreground">{institution.name}</h1>
+                  <h1 className="text-balance text-2xl md:text-3xl font-bold text-foreground">{institution.name}</h1>
                   {institution.is_verified && <CheckCircle className="w-6 h-6 text-success flex-shrink-0" />}
                 </div>
 
@@ -163,7 +163,7 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
                     href={institution.website_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-primary-400 hover:text-primary-300 transition-colors"
+                    className="flex items-center gap-1 text-primary-400 hover:text-primary-300 transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   >
                     <Globe className="w-4 h-4" />
                     Website
@@ -180,7 +180,7 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
           </div>
         </div>
 
-        <div className="bg-elimux-card border border-border rounded-2xl p-6 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bg-elimux-card border border-border rounded-2xl shadow-card p-6 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <div className="text-foreground font-bold mb-1 flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-primary-400" />
@@ -190,14 +190,14 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
           </div>
           <Link
             href="/institution/register"
-            className="bg-primary-600 hover:bg-primary-700 text-elimux-dark px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shrink-0"
+            className="bg-primary-600 hover:bg-primary-700 text-elimux-dark px-5 py-2.5 rounded-xl font-semibold text-sm shadow-soft hover:shadow-soft-lg transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             Claim Institution →
           </Link>
         </div>
 
         {accreditations && accreditations.length > 0 && (
-          <div className="bg-elimux-card rounded-2xl p-6 md:p-8 border border-border mb-8">
+          <div className="bg-elimux-card rounded-2xl p-6 md:p-8 border border-border shadow-card mb-8">
             <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-primary-400" />
               Accreditation ({accreditations.length})
@@ -264,7 +264,11 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
         {programs && programs.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {programs.map((program) => (
-              <Link key={program.id} href={`/programs/${program.id}/`}>
+              <Link
+                key={program.id}
+                href={`/programs/${program.id}/`}
+                className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
                 <ProgramCard program={program} />
               </Link>
             ))}
@@ -273,7 +277,7 @@ export default async function InstitutionDetailPage({ params }: { params: Promis
           <p className="text-muted">No programs listed for this institution yet.</p>
         )}
 
-        <div className="bg-elimux-card rounded-2xl p-6 md:p-8 border border-border mt-8">
+        <div className="bg-elimux-card rounded-2xl p-6 md:p-8 border border-border shadow-card mt-8">
           <ReviewsSection institutionId={institution.id} />
         </div>
       </div>

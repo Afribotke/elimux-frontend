@@ -6,12 +6,27 @@
 // persisted identity from that fingerprint, not a replacement for it.
 const DEVICE_ID_KEY = 'elimux-pwa-device-id'
 
+// crypto.randomUUID() only exists in secure contexts (https:// or
+// localhost) - it's undefined over plain http on a LAN IP, which throws
+// TypeError and (since this runs in a root-layout-mounted effect) takes
+// down the whole app via global-error.tsx. crypto.getRandomValues() has
+// no such restriction, so fall back to building a v4 UUID from it.
+function generateDeviceId(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+}
+
 export function getOrCreatePwaDeviceId(): string {
   if (typeof window === 'undefined') return ''
 
   let id = localStorage.getItem(DEVICE_ID_KEY)
   if (!id) {
-    id = crypto.randomUUID()
+    id = generateDeviceId()
     localStorage.setItem(DEVICE_ID_KEY, id)
   }
   return id

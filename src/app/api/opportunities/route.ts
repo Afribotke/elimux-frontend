@@ -2,10 +2,14 @@ import { NextResponse } from "next/server"
 
 export async function GET() {
   try {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: "Service role key not configured" }, { status: 503 })
+    }
+
     const { createClient } = await import("@supabase/supabase-js")
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+      process.env.SUPABASE_SERVICE_ROLE_KEY
     )
 
     const { data, error } = await supabase

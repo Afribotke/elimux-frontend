@@ -8,6 +8,7 @@ import ScholarshipCard from '@/components/scholarships/ScholarshipCard'
 import ScholarshipFilters from '@/components/scholarships/ScholarshipFilters'
 import ScholarshipAlertModal from '@/components/scholarships/ScholarshipAlertModal'
 import { Loader2, Award, Bell } from 'lucide-react'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 const PAGE_SIZE = 12
 
@@ -69,7 +70,7 @@ function ScholarshipsPageInner() {
     <main className="min-h-screen py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Find Scholarships</h1>
+          <h1 className="text-balance text-display-2 font-bold text-foreground mb-2">Find Scholarships</h1>
           <p className="text-muted">Discover funding opportunities for your education</p>
         </div>
 
@@ -78,7 +79,7 @@ function ScholarshipsPageInner() {
             <ScholarshipFilters filters={filters} onChange={handleFiltersChange} />
             <button
               onClick={() => setAlertModalOpen(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-lg border border-border text-foreground hover:border-primary-500/50 transition-all"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-lg border border-border text-foreground hover:border-primary-500/50 hover:shadow-card transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <Bell className="w-4 h-4 text-primary-400" />
               Create Alert
@@ -89,18 +90,25 @@ function ScholarshipsPageInner() {
             <p className="text-sm text-muted mb-4">{total.toLocaleString()} scholarships found</p>
 
             {loading ? (
-              <div className="flex justify-center py-16">
+              <div className="flex justify-center py-16" role="status" aria-label="Loading scholarships">
                 <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
               </div>
             ) : scholarships.length === 0 ? (
-              <div className="text-center py-16 bg-elimux-card rounded-xl border border-border">
-                <Award className="w-12 h-12 text-muted mx-auto mb-3" />
-                <p className="text-muted">No scholarships found. Try adjusting your filters.</p>
+              <div className="bg-elimux-card rounded-xl border border-border shadow-card">
+                <EmptyState
+                  icon={<Award className="w-8 h-8" />}
+                  title="No scholarships found"
+                  description="Try adjusting your filters, or set up an alert to be notified of new matches."
+                />
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
                 {scholarships.map((s) => (
-                  <Link key={s.id} href={`/scholarships/${s.id}/`}>
+                  <Link
+                    key={s.id}
+                    href={`/scholarships/${s.id}/`}
+                    className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  >
                     <ScholarshipCard scholarship={s} />
                   </Link>
                 ))}
@@ -112,7 +120,7 @@ function ScholarshipsPageInner() {
                 <button
                   onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
                   disabled={offset === 0}
-                  className="px-4 py-2.5 min-h-[44px] rounded-lg border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted/10"
+                  className="px-4 py-2.5 min-h-[44px] rounded-lg border border-border transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                   Previous
                 </button>
@@ -122,7 +130,7 @@ function ScholarshipsPageInner() {
                 <button
                   onClick={() => setOffset((o) => o + PAGE_SIZE)}
                   disabled={currentPage >= totalPages}
-                  className="px-4 py-2.5 min-h-[44px] rounded-lg border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted/10"
+                  className="px-4 py-2.5 min-h-[44px] rounded-lg border border-border transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                   Next
                 </button>

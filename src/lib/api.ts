@@ -2408,6 +2408,36 @@ export function fetchBursaryProviderFunds(slug: string) {
   return request<{ funds: BursaryFundSummary[] }>(`/api/bursary/providers/${slug}/funds`)
 }
 
+export interface BursaryProviderInviteValidation {
+  valid: boolean
+  providerName?: string
+  email?: string
+}
+
+export function validateProviderInvite(token: string) {
+  return request<BursaryProviderInviteValidation>(`/api/bursary/providers/invite/${token}`)
+}
+
+export interface AcceptProviderInviteInput {
+  token: string
+  password: string
+  fullName: string
+}
+
+export interface AcceptProviderInviteResult {
+  success: boolean
+  message: string
+  email: string
+  redirectUrl: string
+}
+
+export function acceptProviderInvite(data: AcceptProviderInviteInput) {
+  return request<AcceptProviderInviteResult>('/api/bursary/providers/invite/accept', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
 // --- Bursary Engine: public discovery & application (student-facing) ---
 
 export function getBursaryFunds() {

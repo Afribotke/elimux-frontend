@@ -9,7 +9,6 @@ import {
   Building2,
   BookOpen,
   Sparkles,
-  Briefcase,
   Users,
   Trophy,
   Handshake,
@@ -19,7 +18,6 @@ import {
   User,
   LogOut,
   FileText,
-  HandCoins,
   Bell,
 } from "lucide-react";
 
@@ -28,7 +26,6 @@ const navLinks = [
   { href: "/institutions", label: "Institutions", icon: Building2 },
   { href: "/programs", label: "Programs", icon: BookOpen },
   { href: "/ai-search", label: "AI Search", icon: Sparkles },
-  { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/for-employers", label: "For Employers", icon: Users },
   { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/partner", label: "Partner", icon: Handshake },
@@ -55,7 +52,6 @@ export default function MobileNav() {
             { href: "/", label: "Home", icon: GraduationCap },
             { href: "/institutions", label: "Institutions", icon: Building2 },
             { href: "/ai-search", label: "AI", icon: Sparkles },
-            { href: "/opportunities", label: "Jobs", icon: Briefcase },
           ].map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -119,18 +115,6 @@ export default function MobileNav() {
                 </Link>
               );
             })}
-
-            <Link
-              href="https://bursary.elimux.ke"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted"
-            >
-              <HandCoins className="h-5 w-5" />
-              Bursary
-              <span className="ml-auto px-2 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-800 rounded-full">
-                Opening Soon
-              </span>
-            </Link>
 
             {userRole === "admin" && (
               <Link

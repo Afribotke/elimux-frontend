@@ -1,15 +1,18 @@
-import type { Metadata, Viewport } from "next";
+﻿import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/context/AuthContext";
 import DesktopNav from "@/components/DesktopNav";
 import MobileNav from "@/components/MobileNav";
+import { UnifiedNavBar } from "@/components/layout/UnifiedNavBar";
 import { CookieConsent } from "@/components/legal/CookieConsent";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import BackgroundSyncManager from "@/components/BackgroundSyncManager";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/react";
 
 import InstallPrompt from '@/components/InstallPrompt';
 import SiteVisitTracker from '@/components/SiteVisitTracker';
@@ -27,7 +30,7 @@ export const metadata: Metadata = {
     title: 'ElimuX',
   },
   title: {
-    default: "ElimuX — Discover Global Education & Career Opportunities",
+    default: "ElimuX â€” Discover Global Education & Career Opportunities",
     template: "%s | ElimuX",
   },
   description: "ElimuX is the global education discovery platform. Find courses, internships, and attachments across Kenya, Africa, and worldwide institutions.",
@@ -40,12 +43,12 @@ export const metadata: Metadata = {
     locale: "en_KE",
     url: "https://www.elimux.ke",
     siteName: "ElimuX",
-    title: "ElimuX — Discover Global Education & Career Opportunities",
+    title: "ElimuX â€” Discover Global Education & Career Opportunities",
     description: "Find courses, internships, and attachments across Kenya, Africa, and worldwide institutions.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ElimuX — Discover Global Education & Career Opportunities",
+    title: "ElimuX â€” Discover Global Education & Career Opportunities",
     description: "Find courses, internships, and attachments across Kenya, Africa, and worldwide institutions.",
   },
   robots: {
@@ -84,6 +87,9 @@ export default function RootLayout({
         >
           <AuthProvider>
             <DesktopNav />
+            <Suspense fallback={null}>
+              <UnifiedNavBar />
+            </Suspense>
             <main className="min-h-screen pb-16 lg:pb-0">{children}</main>
             <MobileNav />
             <Toaster position="top-right" richColors />
@@ -95,7 +101,8 @@ export default function RootLayout({
           </AuthProvider>
         </ThemeProvider>
             <InstallPrompt />
-</body>
+      <Analytics />
+    </body>
     </html>
   );
 }

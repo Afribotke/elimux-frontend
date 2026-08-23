@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useAdminKey } from '@/components/admin/AdminKeyContext'
 import { getAdminDashboardStats, type AdminDashboardStats } from '@/lib/api'
-import { Building2, GraduationCap, Briefcase, FileText, Star, ShieldAlert, TrendingUp } from 'lucide-react'
+import { Building2, GraduationCap, Briefcase, FileText, Star, ShieldAlert, TrendingUp, AlertCircle } from 'lucide-react'
+import { LoadingState } from '@/components/ui/LoadingState'
 
 export default function AdminDashboardPage() {
   const { adminKey } = useAdminKey()
@@ -19,15 +20,30 @@ export default function AdminDashboardPage() {
       .finally(() => setLoading(false))
   }, [adminKey])
 
-  if (loading) return <div className="p-8 text-gray-500">Loading dashboard...</div>
-  if (error) return <div className="p-8 text-red-600">{error}</div>
+  if (loading) {
+    return (
+      <div>
+        <h1 className="text-display-2 font-bold text-gray-900 mb-2">Dashboard Overview</h1>
+        <p className="text-gray-500 mb-8">Platform-wide entity counts and 30-day growth</p>
+        <LoadingState count={4} />
+      </div>
+    )
+  }
+  if (error) {
+    return (
+      <div className="flex items-center gap-2 p-4 rounded-xl bg-red-50 text-red-700 border border-red-200">
+        <AlertCircle className="w-5 h-5 shrink-0" />
+        {error}
+      </div>
+    )
+  }
   if (!stats) return null
 
   const { totals: t, growth_30d: g } = stats
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Dashboard Overview</h1>
+    <div className="animate-fade-in">
+      <h1 className="text-balance text-display-2 font-bold text-gray-900 mb-2">Dashboard Overview</h1>
       <p className="text-gray-500 mb-8">Platform-wide entity counts and 30-day growth</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -70,7 +86,7 @@ function StatCard({
   }
 
   return (
-    <div className={`rounded-xl p-5 ${colorMap[color]}`}>
+    <div className={`rounded-2xl p-5 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all ${colorMap[color]}`}>
       <div className="flex items-center justify-between mb-2">
         <Icon className="w-5 h-5 opacity-70" />
         {growth !== undefined && (
@@ -80,7 +96,7 @@ function StatCard({
           </span>
         )}
       </div>
-      <div className="text-2xl font-bold">{value.toLocaleString()}</div>
+      <div className="text-display-2 font-bold">{value.toLocaleString()}</div>
       <div className="text-sm opacity-80">{label}</div>
     </div>
   )

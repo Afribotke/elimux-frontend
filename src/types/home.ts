@@ -19,5 +19,3 @@ export interface Program {
     country: string;
   };
 }
-
-export type TabType = 'uni' | 'skills' | 'scholarships';

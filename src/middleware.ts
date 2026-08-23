@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 // Protected routes that require authentication
-const PROTECTED_PATHS = ["/dashboard", "/admin"]
+const PROTECTED_PATHS = ["/dashboard", "/admin", "/bursary/provider/dashboard"]
 
 // Matches "bursary.elimux.ke" or "bursary.elimux.ke:<port>" (local/preview
 // dev) exactly — deliberately NOT a startsWith() check, since
@@ -31,11 +31,6 @@ export async function middleware(request: NextRequest) {
       url.pathname = `/bursary${path}`
     }
     return NextResponse.rewrite(url)
-  }
-
-  // SINGLE-HOP REDIRECT: /internships → /opportunities/ (runs before trailingSlash normalization)
-  if (request.nextUrl.pathname === '/internships' || request.nextUrl.pathname === '/internships/') {
-    return NextResponse.redirect(new URL('/opportunities/', request.url), 308)
   }
 
   const { pathname } = request.nextUrl
