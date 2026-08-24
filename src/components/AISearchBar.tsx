@@ -8,6 +8,12 @@ interface AISearchBarProps {
   loading?: boolean
   placeholder?: string
   initialQuery?: string
+  // Opt-in hardcoded-dark styling for permanently-dark hero sections (e.g.
+  // /ai-search's Cycle 030 redesign), matching the homepage hero's own
+  // bg-slate-800/80 + border-slate-600 treatment. Defaults to false so the
+  // other consumer (the legacy SKOLEX_HOME=false fallback in
+  // src/app/page.tsx) keeps its existing theme-adaptive styling unchanged.
+  dark?: boolean
 }
 
 const DEFAULT_PLACEHOLDER = 'Ask anything... e.g., "I want to study medicine in Kenya"'
@@ -23,7 +29,7 @@ const SUGGESTIONS = [
   'Affordable MBA programs',
 ]
 
-export default function AISearchBar({ onSearch, loading, placeholder, initialQuery }: AISearchBarProps) {
+export default function AISearchBar({ onSearch, loading, placeholder, initialQuery, dark }: AISearchBarProps) {
   const [query, setQuery] = useState(initialQuery ?? '')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -48,7 +54,10 @@ export default function AISearchBar({ onSearch, loading, placeholder, initialQue
   return (
     <div className="w-full max-w-4xl mx-auto">
       <form onSubmit={handleSubmit} className="relative">
-        <div className="bg-elimux-card/70 backdrop-blur-md rounded-2xl p-2 shadow-2xl border border-border">
+        <div className={dark
+          ? "bg-slate-800/80 backdrop-blur-md rounded-2xl p-2 shadow-2xl border border-slate-600"
+          : "bg-elimux-card/70 backdrop-blur-md rounded-2xl p-2 shadow-2xl border border-border"
+        }>
           <div className="flex items-center gap-2 px-3">
             <Sparkles className="w-5 h-5 text-primary-400 flex-shrink-0" />
             <input
@@ -61,13 +70,19 @@ export default function AISearchBar({ onSearch, loading, placeholder, initialQue
               }}
               onFocus={() => setShowSuggestions(query.length > 0)}
               placeholder={placeholder ?? DEFAULT_PLACEHOLDER}
-              className="flex-1 bg-transparent text-foreground placeholder-muted py-3 focus:outline-none text-lg min-w-0"
+              className={dark
+                ? "flex-1 bg-transparent text-white placeholder-gray-400 py-3 focus:outline-none text-lg min-w-0"
+                : "flex-1 bg-transparent text-foreground placeholder-muted py-3 focus:outline-none text-lg min-w-0"
+              }
             />
             {query && (
               <button
                 type="button"
                 onClick={() => { setQuery(''); setShowSuggestions(false) }}
-                className="text-muted hover:text-foreground transition-colors flex-shrink-0"
+                className={dark
+                  ? "text-gray-400 hover:text-white transition-colors flex-shrink-0"
+                  : "text-muted hover:text-foreground transition-colors flex-shrink-0"
+                }
               >
                 <X className="w-5 h-5" />
               </button>
@@ -84,15 +99,21 @@ export default function AISearchBar({ onSearch, loading, placeholder, initialQue
         </div>
 
         {showSuggestions && filteredSuggestions.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-elimux-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
+          <div className={dark
+            ? "absolute top-full left-0 right-0 mt-2 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl z-50 overflow-hidden"
+            : "absolute top-full left-0 right-0 mt-2 bg-elimux-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden"
+          }>
             <div className="p-3">
-              <p className="text-xs text-muted uppercase tracking-wider mb-2">Try asking</p>
+              <p className={dark ? "text-xs text-gray-400 uppercase tracking-wider mb-2" : "text-xs text-muted uppercase tracking-wider mb-2"}>Try asking</p>
               {filteredSuggestions.map((suggestion, index) => (
                 <button
                   key={index}
                   type="button"
                   onClick={() => applySuggestion(suggestion)}
-                  className="w-full text-left px-3 py-2 rounded-lg text-sm text-muted hover:bg-muted/10 hover:text-foreground transition-colors flex items-center gap-2"
+                  className={dark
+                    ? "w-full text-left px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors flex items-center gap-2"
+                    : "w-full text-left px-3 py-2 rounded-lg text-sm text-muted hover:bg-muted/10 hover:text-foreground transition-colors flex items-center gap-2"
+                  }
                 >
                   <Search className="w-3.5 h-3.5 flex-shrink-0" />
                   {suggestion}

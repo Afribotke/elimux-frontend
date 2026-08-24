@@ -12,7 +12,46 @@ import InterestSelector from '@/components/InterestSelector'
 import CareerPathway from '@/components/CareerPathway'
 import ProgramCard from '@/components/ProgramCard'
 import InstitutionCard from '@/components/InstitutionCard'
+import { Footer } from '@/components/layout/Footer'
 import { Sparkles, GraduationCap, Building2, MapPin, DollarSign, BarChart3 } from 'lucide-react'
+
+// Cycle 030: same 6 categories/hrefs/colors as NewHomePage.tsx's own
+// HERO_CATEGORIES - kept as a local copy rather than importing that
+// module's internals, matching the exact precedent NewHomePage.tsx itself
+// set when it copied UnifiedNavBar's PILLS locally for the same reason
+// (see NewHomePage.tsx's own comment on this).
+const HERO_CATEGORIES = [
+  {
+    label: 'Universities & College', icon: '🎓', href: '/programs?type=university',
+    topBorder: 'border-t-blue-500', iconBg: 'bg-blue-500',
+    glow: 'hover:shadow-[0_10px_40px_-4px_rgba(59,130,246,0.3)]', ring: 'focus-visible:ring-blue-400',
+  },
+  {
+    label: 'Skills & Trades (TVET)', icon: '🔧', href: '/programs?type=tvet',
+    topBorder: 'border-t-orange-500', iconBg: 'bg-orange-500',
+    glow: 'hover:shadow-[0_10px_40px_-4px_rgba(249,115,22,0.3)]', ring: 'focus-visible:ring-orange-400',
+  },
+  {
+    label: 'Scholarships', icon: '🏆', href: '/scholarships',
+    topBorder: 'border-t-yellow-500', iconBg: 'bg-yellow-500',
+    glow: 'hover:shadow-[0_10px_40px_-4px_rgba(234,179,8,0.3)]', ring: 'focus-visible:ring-yellow-400',
+  },
+  {
+    label: 'Internship', icon: '💼', href: '/internships',
+    topBorder: 'border-t-emerald-500', iconBg: 'bg-emerald-500',
+    glow: 'hover:shadow-[0_10px_40px_-4px_rgba(16,185,129,0.3)]', ring: 'focus-visible:ring-emerald-400',
+  },
+  {
+    label: 'Attachment', icon: '📎', href: '/attachments',
+    topBorder: 'border-t-violet-500', iconBg: 'bg-violet-500',
+    glow: 'hover:shadow-[0_10px_40px_-4px_rgba(139,92,246,0.3)]', ring: 'focus-visible:ring-violet-400',
+  },
+  {
+    label: 'Bursary', icon: '💰', href: '/bursary',
+    topBorder: 'border-t-rose-500', iconBg: 'bg-rose-500',
+    glow: 'hover:shadow-[0_10px_40px_-4px_rgba(244,63,94,0.3)]', ring: 'focus-visible:ring-rose-400',
+  },
+]
 
 // Feature flag: the University/Skills toggle only renders when this is 'true'
 // in the environment (Vercel env var). Absent/false = page identical to before.
@@ -118,28 +157,61 @@ function AISearchContent() {
         : undefined
 
   return (
-    <main className="min-h-screen py-16 px-4">
-      <div className="max-w-6xl mx-auto text-center mb-10">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-400 text-sm mb-6">
-          <Sparkles className="w-4 h-4" />
-          AI-Powered Education Discovery
-        </div>
-        <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
-          Tell us what you&apos;re looking for
-        </h1>
-        <p className="text-lg text-muted mb-10 max-w-2xl mx-auto">
-          Describe it in your own words, pick your interests, or tell us your dream career - we&apos;ll match you to real programs.
-        </p>
+    <main className="min-h-screen">
+      {/* Hero — matches NewHomePage.tsx's own hero gradient exactly
+          (from-gray-900 via-slate-900 to-gray-950), not the instruction's
+          restated "from-slate-950 via-slate-900 to-black" - checked the
+          real homepage source rather than the instruction's paraphrase of
+          it, since "match the current homepage aesthetic" means matching
+          what the homepage actually ships, not a close approximation of
+          it. Permanently dark, same deliberate pattern as the homepage
+          hero (not theme-toggle-adaptive). */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-slate-900 to-gray-950">
+        <div
+          className="pointer-events-none absolute left-1/2 top-24 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-primary-500/10 blur-3xl"
+          aria-hidden="true"
+        />
+        <div className="relative max-w-5xl mx-auto px-4 pt-14 pb-12 text-center">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white text-center drop-shadow-lg text-balance max-w-3xl mx-auto">
+            AI-Powered Education Search
+          </h1>
 
-        {SKILLS_TOGGLE_ENABLED && (
-          <div className="mb-6">
-            <SearchModeToggle value={institutionMode} onChange={setInstitutionMode} />
+          <p className="text-lg text-gray-300 text-center mt-4 mb-10 max-w-2xl mx-auto">
+            Describe what you&apos;re looking for in your own words. Our AI matches you to universities, TVET institutes, scholarships, internships, attachments, and bursaries.
+          </p>
+
+          {SKILLS_TOGGLE_ENABLED && (
+            <div className="mb-6">
+              <SearchModeToggle value={institutionMode} onChange={setInstitutionMode} />
+            </div>
+          )}
+
+          <AISearchBar onSearch={handleSearch} loading={loading} placeholder={searchPlaceholder} initialQuery={initialQuery} dark />
+
+          <div className="flex items-center gap-4 max-w-[560px] mx-auto mt-8 mb-4">
+            <div className="h-px bg-gray-700 flex-1" />
+            <span className="text-sm text-gray-400 text-center shrink-0">Or browse by category</span>
+            <div className="h-px bg-gray-700 flex-1" />
           </div>
-        )}
 
-        <AISearchBar onSearch={handleSearch} loading={loading} placeholder={searchPlaceholder} initialQuery={initialQuery} />
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-5 max-w-[560px] mx-auto">
+            {HERO_CATEGORIES.map((cat) => (
+              <a
+                key={cat.href}
+                href={cat.href}
+                className={`flex flex-col items-center text-center bg-slate-800 border border-slate-700 hover:border-slate-500 border-t-4 ${cat.topBorder} rounded-2xl p-6 min-h-[160px] justify-center transition-all duration-300 hover:-translate-y-2 hover:bg-slate-700 ${cat.glow} focus-visible:outline-none focus-visible:ring-2 ${cat.ring} focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900`}
+              >
+                <div className={`w-14 h-14 rounded-full ${cat.iconBg} text-white flex items-center justify-center mx-auto mb-3`}>
+                  <span className="text-2xl">{cat.icon}</span>
+                </div>
+                <span className="text-white font-semibold text-base">{cat.label}</span>
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
 
+      <div className="py-12 px-4">
       <div className="max-w-4xl mx-auto mb-10">
         <InterestSelector />
       </div>
@@ -283,14 +355,18 @@ function AISearchContent() {
           )}
         </div>
       )}
+      </div>
     </main>
   )
 }
 
 export default function AISearchPage() {
   return (
-    <Suspense fallback={null}>
-      <AISearchContent />
-    </Suspense>
+    <>
+      <Suspense fallback={null}>
+        <AISearchContent />
+      </Suspense>
+      <Footer />
+    </>
   )
 }
