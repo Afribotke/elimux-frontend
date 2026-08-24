@@ -1,16 +1,44 @@
 import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import ScholarshipFavoriteButton from '@/components/scholarships/ScholarshipFavoriteButton'
 import ScholarshipApplyButton from '@/components/scholarships/ScholarshipApplyButton'
 import ScholarshipCard from '@/components/scholarships/ScholarshipCard'
 import ScholarshipAlertForm from '@/components/scholarships/ScholarshipAlertForm'
 import BackButton from '@/components/BackButton'
 import Breadcrumbs from '@/components/Breadcrumbs'
+import { ShareButton } from '@/components/share'
+import { generateShareMetadata } from '@/lib/share-metadata'
 import { Calendar, Wallet, MapPin, ExternalLink, ClipboardList, Bell } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+
+  const { data: scholarship } = await supabase
+    .from('scholarships')
+    .select('title, description, provider, institution:institutions(logo_url)')
+    .eq('id', id)
+    .eq('status', 'active')
+    .single()
+
+  if (!scholarship) {
+    return { title: 'Scholarship Not Found', description: 'This scholarship could not be found on ElimuX.' }
+  }
+
+  const description = scholarship.description?.substring(0, 160) || `Apply for ${scholarship.title} on ElimuX.`
+  const institution = Array.isArray(scholarship.institution) ? scholarship.institution[0] : scholarship.institution
+
+  return generateShareMetadata({
+    title: `${scholarship.title} — Apply on ElimuX`,
+    description,
+    url: `https://www.elimux.ke/scholarships/${id}`,
+    image: institution?.logo_url || 'https://www.elimux.ke/og-scholarship.jpg',
+    hashtags: ['ElimuX', 'Scholarship', 'Education'],
+  })
+}
 
 export default async function ScholarshipDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -24,6 +52,14 @@ export default async function ScholarshipDetailPage({ params }: { params: Promis
 
   if (!scholarship) {
     notFound()
+  }
+
+  const shareData = {
+    title: `${scholarship.title} — Apply on ElimuX`,
+    description: scholarship.description?.substring(0, 160) || `Apply for ${scholarship.title} on ElimuX.`,
+    url: `https://www.elimux.ke/scholarships/${scholarship.id}`,
+    image: scholarship.institution?.logo_url || 'https://www.elimux.ke/og-scholarship.jpg',
+    hashtags: ['ElimuX', 'Scholarship', 'Education'],
   }
 
   let relatedQuery = supabase
@@ -61,7 +97,8 @@ export default async function ScholarshipDetailPage({ params }: { params: Promis
                 Featured
               </div>
             )}
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
+              <ShareButton shareData={shareData} variant="icon-only" />
               <ScholarshipFavoriteButton scholarshipId={scholarship.id} />
             </div>
           </div>

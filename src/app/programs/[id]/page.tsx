@@ -9,6 +9,7 @@ import Breadcrumbs from '@/components/Breadcrumbs'
 import TrackPageView from '@/components/TrackPageView'
 import ProgramVerificationBadge from '@/components/ProgramVerificationBadge'
 import { JsonLd } from '@/components/JsonLd'
+import { generateShareMetadata } from '@/lib/share-metadata'
 import { Clock, DollarSign, MapPin, BookOpen, GraduationCap, ClipboardList, Sparkles } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -18,7 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   const { data: program } = await supabase
     .from('programs')
-    .select('*, institution:institutions(id, name, city, country:countries(name))')
+    .select('*, institution:institutions(id, name, city, logo_url, country:countries(name))')
     .eq('id', id)
     .eq('is_active', true)
     .single()
@@ -30,13 +31,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const institutionName = program.institution?.name || 'a leading institution'
   const description = program.description || `Study ${program.name} at ${institutionName} via ElimuX.`
 
-  return {
+  return generateShareMetadata({
     title: program.name,
     description,
-    alternates: { canonical: `https://www.elimux.ke/programs/${id}` },
-    openGraph: { title: program.name, description, type: 'article', url: `https://www.elimux.ke/programs/${id}` },
-    twitter: { card: 'summary_large_image', title: program.name, description },
-  }
+    url: `https://www.elimux.ke/programs/${id}`,
+    image: program.institution?.logo_url || 'https://www.elimux.ke/og-program.jpg',
+    hashtags: ['ElimuX', 'Program', 'Career'],
+  })
 }
 
 export default async function ProgramDetailPage({ params }: { params: Promise<{ id: string }> }) {

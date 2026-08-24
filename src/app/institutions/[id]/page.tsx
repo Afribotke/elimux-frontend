@@ -12,6 +12,7 @@ import Breadcrumbs from '@/components/Breadcrumbs'
 import { ReviewsSection } from '@/components/ReviewsSection'
 import InstitutionLogo from '@/components/InstitutionLogo'
 import { JsonLd } from '@/components/JsonLd'
+import { generateShareMetadata } from '@/lib/share-metadata'
 import { MapPin, Users, Globe, Star, CheckCircle, GraduationCap, ShieldCheck, FileText } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -21,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   const { data: institution } = await supabase
     .from('institutions')
-    .select('name, description, location')
+    .select('name, description, location, logo_url')
     .eq('id', id)
     .eq('is_active', true)
     .single()
@@ -32,13 +33,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   const description = institution.description || `${institution.name} — discover programs and opportunities on ElimuX.`
 
-  return {
+  return generateShareMetadata({
     title: institution.name,
     description,
-    alternates: { canonical: `https://www.elimux.ke/institutions/${id}` },
-    openGraph: { title: institution.name, description, type: 'website', url: `https://www.elimux.ke/institutions/${id}` },
-    twitter: { card: 'summary_large_image', title: institution.name, description },
-  }
+    url: `https://www.elimux.ke/institutions/${id}`,
+    image: institution.logo_url || 'https://www.elimux.ke/og-institution.jpg',
+    hashtags: ['ElimuX', 'University', 'Education'],
+  })
 }
 
 interface InstitutionAccreditationJoinRow {
