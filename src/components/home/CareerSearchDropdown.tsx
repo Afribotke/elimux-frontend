@@ -72,10 +72,10 @@ export default function CareerSearchDropdown() {
   return (
     <div className="relative" ref={dropdownRef}>
       <div
-        className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-3 cursor-text shadow-sm hover:border-gray-300 transition-all"
+        className="flex items-center gap-2 bg-white dark:bg-elimux-card border border-gray-200 dark:border-border rounded-xl px-4 py-3 cursor-text shadow-sm hover:border-gray-300 dark:hover:border-primary-400 transition-all focus-within:ring-2 focus-within:ring-primary-400 focus-within:ring-offset-1"
         onClick={() => { inputRef.current?.focus(); setIsOpen(true); }}
       >
-        <span className="text-gray-400 text-base">🔍</span>
+        <span className="text-gray-400 dark:text-muted text-base">🔍</span>
         <input
           ref={inputRef}
           type="text"
@@ -84,10 +84,10 @@ export default function CareerSearchDropdown() {
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Type a career (e.g. Doctor)..."
-          className="flex-1 bg-transparent border-none text-gray-800 text-base outline-none placeholder:text-gray-400"
+          className="flex-1 bg-transparent border-none text-gray-800 dark:text-white text-base outline-none placeholder:text-gray-400 dark:placeholder:text-muted"
         />
         <span
-          className="text-gray-400 text-xs transition-transform duration-200"
+          className="text-gray-400 dark:text-muted text-xs transition-transform duration-200"
           style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
         >
           ⌄
@@ -95,23 +95,23 @@ export default function CareerSearchDropdown() {
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+6px)] left-0 right-0 bg-white border border-gray-200 rounded-xl overflow-hidden z-50 max-h-[280px] overflow-y-auto shadow-lg">
+        <div className="absolute top-[calc(100%+6px)] left-0 right-0 bg-white dark:bg-elimux-card border border-gray-200 dark:border-border rounded-xl overflow-hidden z-50 max-h-[280px] overflow-y-auto shadow-lg">
           {filteredCareers.length === 0 ? (
-            <div className="p-4 text-center text-gray-400 text-sm">No careers found</div>
+            <div className="p-4 text-center text-gray-400 dark:text-muted text-sm">No careers found</div>
           ) : (
             filteredCareers.map((career) => (
               <div
                 key={career.id}
                 onClick={() => handleSelect(career)}
-                className="px-4 py-3 flex justify-between items-center border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors"
+                className="px-4 py-3 flex justify-between items-center border-b border-gray-100 dark:border-border last:border-b-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
               >
                 <div>
-                  <div className="text-gray-800 text-sm font-medium">{career.name}</div>
-                  <div className="text-gray-400 text-xs mt-0.5">
+                  <div className="text-gray-800 dark:text-white text-sm font-medium">{career.name}</div>
+                  <div className="text-gray-400 dark:text-muted text-xs mt-0.5">
                     {career.course_count.toLocaleString()} courses · {career.category}
                   </div>
                 </div>
-                <span className="text-gray-400 text-sm">›</span>
+                <span className="text-gray-400 dark:text-muted text-sm">›</span>
               </div>
             ))
           )}

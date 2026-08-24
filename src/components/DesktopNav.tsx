@@ -80,8 +80,34 @@ export default function DesktopNav() {
 
   const isAdmin = (user as any)?.role === 'admin';
 
+  // Cycle 027: transparent-over-hero, solid-on-scroll only applies on the
+  // homepage - it's the only route with a colored hero for the navbar to
+  // float over. Every other page keeps the same always-solid style it had
+  // before (nothing behind it to show through, so a transparent navbar
+  // there would just look broken).
+  const isHome = pathname === '/';
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    if (!isHome) return;
+    function handleScroll() {
+      setScrolled(window.scrollY > 60);
+    }
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isHome]);
+
+  const headerSolid = !isHome || scrolled;
+
   return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+    <header
+      className={`sticky top-0 z-50 transition-colors duration-200 ${
+        headerSolid
+          ? 'bg-background/80 backdrop-blur-md border-b border-border'
+          : 'bg-transparent border-b border-transparent'
+      }`}
+    >
       {/* Line 1 — Primary */}
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center h-[52px]">
@@ -195,25 +221,28 @@ export default function DesktopNav() {
         </div>
       </div>
 
-      {/* Line 2 — Secondary */}
-      <div className="hidden lg:block border-t border-border bg-muted/30">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center h-[38px]">
-            <nav className="flex items-center gap-1 mx-auto">
-              {SECONDARY_NAV.map((item) => (
-                <NavLink
-                  key={item.href}
-                  {...item}
-                  isActive={isActive(item.href)}
-                  size="sm"
-                />
-              ))}
-                  <PoweredByHeaderBadge />
+      {/* Line 2 — Secondary. Hidden on the homepage - the dark hero there
+          has nowhere for this light gray bar to sit without breaking it. */}
+      {!isHome && (
+        <div className="hidden lg:block border-t border-border bg-muted/30">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex items-center h-[38px]">
+              <nav className="flex items-center gap-1 mx-auto">
+                {SECONDARY_NAV.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    {...item}
+                    isActive={isActive(item.href)}
+                    size="sm"
+                  />
+                ))}
+                    <PoweredByHeaderBadge />
 
-            </nav>
+              </nav>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </header>
   );
 }

@@ -128,7 +128,7 @@ export default function CategoryPills() {
   return (
     <div className="relative">
       {canScrollLeft && (
-        <button onClick={() => scroll('left')} className="absolute left-0 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/90 p-1.5 shadow-md ring-1 ring-border backdrop-blur-sm hover:bg-background" aria-label="Scroll left">
+        <button onClick={() => scroll('left')} className="absolute left-0 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/90 p-1.5 shadow-md ring-1 ring-border backdrop-blur-sm hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400" aria-label="Scroll left">
           <ChevronLeft className="h-4 w-4" />
         </button>
       )}
@@ -137,7 +137,7 @@ export default function CategoryPills() {
         {categories.map((cat) => {
           const colorClass = getCategoryColor(cat.name);
           return (
-            <Link key={cat.id} href={`/programs?category=${cat.id}`} className={`inline-flex flex-shrink-0 items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium transition-all duration-200 ${colorClass}`}>
+            <Link key={cat.id} href={`/programs?category=${cat.id}`} className={`inline-flex flex-shrink-0 items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1 ${colorClass}`}>
               <span className="text-base">{iconFor(cat.name)}</span>
               <span className="whitespace-nowrap">{cat.name}</span>
             </Link>
@@ -146,7 +146,7 @@ export default function CategoryPills() {
       </div>
 
       {canScrollRight && (
-        <button onClick={() => scroll('right')} className="absolute right-0 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/90 p-1.5 shadow-md ring-1 ring-border backdrop-blur-sm hover:bg-background" aria-label="Scroll right">
+        <button onClick={() => scroll('right')} className="absolute right-0 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/90 p-1.5 shadow-md ring-1 ring-border backdrop-blur-sm hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400" aria-label="Scroll right">
           <ChevronRight className="h-4 w-4" />
         </button>
       )}

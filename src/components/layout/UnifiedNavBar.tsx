@@ -103,6 +103,11 @@ export function UnifiedNavBar() {
     };
   }, []);
 
+  // Cycle 027: hidden on the homepage only - the 6 categories live inside
+  // the redesigned hero there instead. Checked after all hooks (rules of
+  // hooks), not as an early return before them.
+  if (pathname === "/") return null;
+
   return (
     <div className="sticky top-[52px] lg:top-[90px] z-40 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="relative max-w-7xl mx-auto">

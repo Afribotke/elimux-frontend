@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect, useCallback } from 'react';
+import { Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -9,9 +9,10 @@ import ProgramCardSkeleton from '@/components/ProgramCardSkeleton';
 import { CompareProvider, useCompareSelection } from '@/components/CompareProvider';
 import CompareDrawer from '@/components/CompareDrawer';
 import { trackSearchAnalytics } from '@/lib/analytics';
-import { Loader2, Filter, Search, SearchX } from 'lucide-react';
+import { Loader2, Filter, Search, SearchX, ShieldCheck } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/button';
+import { KCSE_GRADES, gradeToNumeric, type KcseGrade } from '@/lib/kcse-grades';
 
 interface Program {
   id: string;
@@ -51,6 +52,10 @@ interface FilterState {
   // fetchFilters effect below) rather than assuming fixed enum values,
   // since institution_types is an admin-managed table, not a fixed set.
   type: string;
+  // KCSE grade letter (e.g. "C-"), set by the TVET "Match Your Grade" hero.
+  // Filters via programs.minimum_kcse_grade_numeric, the same real column
+  // GradeMatcher.tsx already queries on the homepage.
+  grade: string;
 }
 
 function ProgramsPageInner() {
@@ -74,13 +79,21 @@ function ProgramsPageInner() {
     minFees: searchParams.get('minFees') || '',
     maxFees: searchParams.get('maxFees') || '',
     type: searchParams.get('type') || '',
+    grade: searchParams.get('grade') || '',
   }));
+  const [heroGrade, setHeroGrade] = useState<KcseGrade>('C+');
   const [page, setPage] = useState(() => {
     const fromUrl = parseInt(searchParams.get('page') || '1', 10);
     return Number.isFinite(fromUrl) && fromUrl > 0 ? fromUrl : 1;
   });
   const [totalCount, setTotalCount] = useState(0);
   const PAGE_SIZE = 12;
+  // Results grid sits well below the fold under the TVET hero (badge,
+  // headline, subheadline, credibility line, grade selector, button,
+  // divider, browse link) - "Find My TVET Path" scrolls to this so the
+  // filtered grid is actually visible after the state update, instead of
+  // updating silently off-screen and looking like the click did nothing.
+  const resultsRef = useRef<HTMLDivElement | null>(null);
 
   // UnifiedNavBar navigates to /programs?type=... with router.push even when
   // already on this route. Since the route itself doesn't remount, the
@@ -105,6 +118,7 @@ function ProgramsPageInner() {
     if (filters.minFees) params.set('minFees', filters.minFees);
     if (filters.maxFees) params.set('maxFees', filters.maxFees);
     if (filters.type) params.set('type', filters.type);
+    if (filters.grade) params.set('grade', filters.grade);
     if (page > 1) params.set('page', page.toString());
 
     const query = params.toString();
@@ -164,6 +178,9 @@ function ProgramsPageInner() {
       // the pill and showing everything.
       query = query.in('institution.type_id', ids.length > 0 ? ids : ['00000000-0000-0000-0000-000000000000']);
     }
+    if (filters.grade) {
+      query = query.lte('minimum_kcse_grade_numeric', gradeToNumeric(filters.grade));
+    }
 
     const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
@@ -193,26 +210,143 @@ function ProgramsPageInner() {
     fetchPrograms();
   }, [fetchPrograms]);
 
+  // Stable "Discover N programs" count for the TVET hero credibility line -
+  // scoped only by the TVET institution-type filter (not category/level/
+  // search/grade), so it reads as "size of the whole TVET catalog" rather
+  // than fluctuating as the visitor narrows the results below. Real,
+  // freshly-queried count (see docs/bridge.md for why: 89% of active TVET
+  // programs sit under institutions not currently tveta_accredited, so
+  // this line intentionally does not claim per-program accreditation -
+  // it states the regulatory framework TVET training in Kenya operates
+  // under, same distinction TvetaBadge.tsx already draws elsewhere).
+  const [tvetTotalCount, setTvetTotalCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (filters.type !== 'tvet' || institutionTypeIds.tvet.length === 0) return;
+    let cancelled = false;
+    const fetchCount = () => {
+      supabase
+        .from('programs')
+        .select('id, institution:institutions!inner(type_id)', { count: 'exact', head: true })
+        .eq('is_active', true)
+        .in('institution.type_id', institutionTypeIds.tvet)
+        .then(({ count }) => {
+          if (!cancelled) setTvetTotalCount(count ?? null);
+        });
+    };
+    fetchCount();
+    // Re-poll while the visitor stays on the TVET page, so the count ticks
+    // up as the TVETA scraper adds institutions without needing a refresh.
+    const interval = setInterval(fetchCount, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [filters.type, institutionTypeIds.tvet]);
+
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const clearFilters = () => {
-    setFilters({ category: '', country: '', level: '', search: '', minFees: '', maxFees: '', type: '' });
+    setFilters({ category: '', country: '', level: '', search: '', minFees: '', maxFees: '', type: '', grade: '' });
     setPage(1);
   };
 
   const hasActiveFilters = Object.values(filters).some(v => v !== '');
 
+  const handleFindTvetPath = () => {
+    setFilters((f) => ({ ...f, grade: heroGrade }));
+    setPage(1);
+    resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleBrowseAllTvet = () => {
+    setFilters((f) => ({ ...f, grade: '' }));
+    setPage(1);
+    resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <div className={`min-h-screen bg-muted ${selectedIds.length > 0 ? 'pb-20' : ''}`}>
-      {/* Header */}
-      <div className="bg-background border-b">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <h1 className="text-balance text-display-2 font-bold text-foreground">Explore Programs</h1>
-          <p className="mt-2 text-muted-foreground">Discover {totalCount.toLocaleString()} programs from top institutions worldwide</p>
-        </div>
-      </div>
+      {/* Header — TVET gets the "Match Your Grade" hero instead of the
+          generic header, since this shared /programs?type=tvet view is
+          the only TVET entry point (no dedicated /tvet route exists). */}
+      {filters.type === 'tvet' ? (
+        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900">
+          <div className="max-w-3xl mx-auto py-16 px-4 text-center">
+            <div className="flex items-center gap-2 mx-auto mb-4 w-fit bg-primary-500/20 text-primary-300 border border-primary-500/30 rounded-full px-4 py-1.5 text-sm font-medium">
+              <span>🎯 Match Your Grade</span>
+            </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-white text-balance">
+              Your Grade Opens Doors — Find Your Path
+            </h1>
+
+            <p className="text-lg text-gray-300 mt-4 max-w-xl mx-auto">
+              TVET programs welcome all KCSE grades. Discover what you can become.
+            </p>
+
+            {tvetTotalCount === null ? (
+              <div className="h-4 w-64 bg-slate-700/60 rounded animate-pulse mx-auto mt-2 mb-6" aria-hidden="true" />
+            ) : (
+              <p className="flex items-center justify-center gap-1.5 text-sm text-gray-400 dark:text-gray-500 mt-2 mb-6">
+                <ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                Discover {tvetTotalCount.toLocaleString()} programs from top TVET institutions — TVET training in Kenya is regulated by the TVET Authority
+              </p>
+            )}
+
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
+              <span className="text-gray-300 text-lg">I got</span>
+              <div className="relative">
+                <select
+                  value={heroGrade}
+                  onChange={(e) => setHeroGrade(e.target.value as KcseGrade)}
+                  aria-label="My KCSE Grade"
+                  className="bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white text-lg min-w-[140px] outline-none appearance-none text-center focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                >
+                  {KCSE_GRADES.map((g) => (
+                    <option key={g.grade} value={g.grade}>{g.grade}</option>
+                  ))}
+                </select>
+              </div>
+              <span className="text-gray-300 text-lg">What can I study?</span>
+            </div>
+
+            <button
+              onClick={handleFindTvetPath}
+              disabled={loading}
+              className="mt-6 bg-primary-600 hover:bg-primary-500 text-white rounded-xl px-8 py-3 text-lg font-semibold transition-colors disabled:opacity-70 disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+            >
+              {loading ? '⏳ Finding your path...' : '🔍 Find My TVET Path'}
+            </button>
+
+            <div className="flex items-center gap-4 max-w-xs mx-auto mt-8">
+              <div className="h-px bg-gray-700 flex-1" />
+              <span className="text-gray-500 text-sm">or</span>
+              <div className="h-px bg-gray-700 flex-1" />
+            </div>
+
+            <button
+              onClick={handleBrowseAllTvet}
+              className="mt-3 text-primary-400 hover:text-primary-300 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 rounded"
+            >
+              Browse All TVET Programs →
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-background border-b">
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <h1 className="text-balance text-display-2 font-bold text-foreground">Explore Programs</h1>
+            <p className="mt-2 text-muted-foreground">Discover {totalCount.toLocaleString()} programs from top institutions worldwide</p>
+          </div>
+        </div>
+      )}
+
+      <div ref={resultsRef} className="max-w-7xl mx-auto px-4 py-6 scroll-mt-4">
         {/* Filters Bar */}
         <div className="bg-background rounded-lg shadow-card border p-4 mb-6">
           <div className="flex items-center gap-2 mb-4">
@@ -314,12 +448,21 @@ function ProgramsPageInner() {
             ))}
           </div>
         ) : programs.length === 0 ? (
-          <EmptyState
-            icon={<SearchX className="w-8 h-8" />}
-            title="No programs found"
-            description="No programs match your current filters. Try adjusting or clearing them."
-            action={<Button onClick={clearFilters}>Clear filters and try again</Button>}
-          />
+          filters.type === 'tvet' && filters.grade ? (
+            <EmptyState
+              icon={<SearchX className="w-8 h-8" />}
+              title="No programs found for this exact grade"
+              description="Try browsing all TVET programs or contact institutions directly."
+              action={<Button onClick={handleBrowseAllTvet}>Browse All TVET Programs</Button>}
+            />
+          ) : (
+            <EmptyState
+              icon={<SearchX className="w-8 h-8" />}
+              title="No programs found"
+              description="No programs match your current filters. Try adjusting or clearing them."
+              action={<Button onClick={clearFilters}>Clear filters and try again</Button>}
+            />
+          )
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {programs.map((program) => (

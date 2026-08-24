@@ -1,111 +1,133 @@
+CRITICAL BUG — "FIND MY TVET PATH" BUTTON NOT WORKING — REPORT
 
-### Visual Requirements
+Status: FIXED - root cause identified and confirmed, not a guess; build/
+bundle-verified; live click-through not watched in a real browser (see
+note below)
+Archive Ref: docs/archive/bridge-066.md (snapshot of the prior "live
+indicator" completion report, taken before this bug report replaced it -
+this bug report arrived directly in chat, not via a bridge.md edit, so
+that prior report hadn't been archived yet)
 
-1. **Background:** Use a subtle gradient (not solid green). Suggestion: `bg-gradient-to-br from-primary-900 via-primary-800 to-primary-700` for dark mode, or a clean light gradient for light mode. The current solid green looks dated.
+=== 1. THE onClick HANDLER ===
 
-2. **Headline typography:**
-   - `text-display-1` (3.5rem, font-weight 800, tracking-tight, text-balance)
-   - Color: `text-white` on dark gradient, or `text-gray-900` on light
-   - Centered, max-width for readability
+File: src/app/programs/page.tsx, button at (pre-fix) line 310-315:
 
-3. **Subheadline:**
-   - `text-body-lg` (1.125rem, line-height 1.6)
-   - Color: `text-white/80` on dark, `text-gray-500` on light
-   - Centered, max-width 2xl
+    <button
+      onClick={handleFindTvetPath}
+      className="mt-6 bg-primary-600 hover:bg-primary-500 ..."
+    >
+      🔍 Find My TVET Path
+    </button>
 
-4. **Category Cards (the 6 items):**
-   - Layout: 3x2 grid on desktop, 2x3 on tablet, 1x6 horizontal scroll on mobile
-   - Card style: `bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6` on dark gradient
-     - OR on light: `bg-white border border-gray-200 shadow-card rounded-2xl p-6`
-   - Icon: 48px, centered, with subtle background circle
-   - Label: `text-lg font-semibold text-center mt-3`
-   - Hover: `hover:bg-white/20 hover:scale-[1.02] transition-all duration-200` (dark)
-     - OR `hover:shadow-card-hover hover:-translate-y-0.5` (light)
-   - Active/selected: `ring-2 ring-primary-400 ring-offset-2` (if used as filter)
+Wired correctly. `handleFindTvetPath` was defined and did read the
+selected grade:
 
-5. **AI Search Input:**
-   - Large, prominent, centered below the category cards
-   - `bg-white rounded-2xl shadow-soft-lg px-6 py-4 text-lg`
-   - Placeholder: "Ask anything... e.g., 'I want to study medicine in Kenya'"
-   - Search button: `btn-primary` style, inside the input (right side)
+    const handleFindTvetPath = () => {
+      setFilters((f) => ({ ...f, grade: heroGrade }));
+      setPage(1);
+    };
 
-6. **Stats bar below hero:**
-   - `bg-white border-y border-gray-100 py-8`
-   - 4 stats in a row with real data (or mock if unavailable)
-   - Number: `text-3xl font-bold text-primary-600`
-   - Label: `text-sm text-gray-500`
+`heroGrade` is the select's own controlled state (`value={heroGrade}`,
+`onChange={(e) => setHeroGrade(...)}`), read correctly. This part was
+never broken.
 
----
+=== 2. THE GRADE FILTERING LOGIC ===
 
-## STEP 3: POLISH BELOW-THE-FOLD SECTIONS
+Checked whether this was a data/query problem before assuming a UI bug -
+queried the live database directly (read-only, no writes) rather than
+guessing:
 
-Every section below the hero must match SV-grade standards:
+    Total active TVET programs:                         1,121
+    ...with minimum_kcse_grade_numeric NOT NULL:         1,121  (100%)
+    ...matching grade D (numeric <= 3):                  1,017
 
-### Popular Programs Section
-- Heading: `text-display-2` with "🔥 Popular Programs" and "Explore all →" link right-aligned
-- Cards: `card-interactive` with proper image aspect ratio, institution name, duration, category badge
-- Grid: `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6`
+The column exists, is fully populated for every TVET program (not the
+"column doesn't exist / is null for most rows" cause your own checklist
+named), and the filter genuinely changes the result set (1,017 of 1,121
+- a real, if modest, reduction). `fetchPrograms()`'s existing `.lte
+('minimum_kcse_grade_numeric', gradeToNumeric(filters.grade))` clause was
+already correct and unchanged. So clicking the button DID correctly
+filter the query - this was never a broken filter.
 
-### Live Partners & Advertisers Section
-- Heading: `text-display-3` with green dot indicator
-- Category pills: same style as the 6 hero cards but smaller
-- Ad cards: `card` with dashed border for empty slots, solid for filled
-- Marquee or grid layout
+=== ROOT CAUSE ===
 
-### Sponsor Banner (Afribot)
-- Full-width banner with dark background
-- Centered logo, tagline, CTA button
-- `bg-gray-900 text-white py-16`
+Not a wiring bug, not a data bug - a visibility bug. The button sits at
+the top of a tall hero (badge, headline, subheadline, credibility line,
+grade selector, button, divider, browse-all link), and the results grid
+it's supposed to update lives well below the fold, with no scroll target
+and no loading indicator on the button itself. Clicking it silently did
+everything right (state updated, query re-ran, grid re-rendered) but
+nothing on the visible screen changed unless the visitor scrolled down
+manually - and even after scrolling, grade D only excludes ~9% of
+results, so the first page of alphabetically-sorted cards often looks
+identical anyway. From the user's seat, that's indistinguishable from
+"the button does nothing."
 
-### How It Works Section
-- Heading: `text-display-2` centered
-- 3 steps in a row with numbered circles (1, 2, 3)
-- Each step: icon, title, description
-- Connecting line between steps on desktop
+=== EXACT LINES CHANGED ===
 
----
+1. Added a `resultsRef` (useRef) on the results-section wrapper div
+   (filters bar + results count + program grid), and call
+   `resultsRef.current?.scrollIntoView({ behavior: 'smooth', block:
+   'start' })` in both `handleFindTvetPath` and `handleBrowseAllTvet`
+   right after the state updates - so clicking either button now visibly
+   carries the visitor to the (re-filtering) results, not just updates
+   state off-screen.
+2. Button now reads `disabled={loading}` and its label swaps to "⏳
+   Finding your path..." while the shared page `loading` flag is true
+   (the same flag that already drives the ProgramCardSkeleton grid) -
+   immediate visual feedback on click, addresses Task 4's "loading state
+   briefly" requirement using existing state rather than adding a new
+   one.
+3. `handleBrowseAllTvet` got the identical scroll-into-view treatment for
+   consistency, even though it wasn't reported as broken - same
+   underlying visibility problem would apply to it.
 
-## STEP 4: GLOBAL CONSISTENCY FIXES
+Not touched, because already correct: fetchPrograms()'s query logic, the
+grade column, the EmptyState encouraging-message branch (added in Cycle
+028, still correct), filters/URL sync.
 
-1. **Top navbar:** Keep it clean — ElimuX logo left, nav links center, auth right. The navbar should NOT compete with the hero for attention. Consider making it transparent over the hero with a backdrop blur, transitioning to solid on scroll.
+=== 5. CONSOLE / NETWORK CHECK ===
 
-2. **Footer:** Must appear on the homepage. The old Skolex design had no footer — add it.
+Could not perform - Chrome browser automation is unavailable this
+session (extension not connected, confirmed again for this task). No
+DevTools console/network capture was possible. What IS confirmed instead:
+the equivalent query run directly against the live Supabase REST API
+(same table, same filter clause, same grade) returns valid results with
+no error, and `npx tsc --noEmit` / `npm run build` both pass clean, so
+there's no compile-time or type error in this path. This is not the same
+as confirming zero runtime console errors in an actual browser session -
+flagged honestly rather than claimed.
 
-3. **Dark mode:** The entire homepage must respect the dark mode toggle. No hardcoded light-only sections.
+=== DOES IT WORK END-TO-END NOW? ===
 
----
+Code-verified yes, browser-verified no (see above). What changed
+concretely: previously, selecting grade D and clicking "Find My TVET
+Path" updated the underlying data correctly but produced no visible
+change unless the visitor happened to scroll down and compare closely.
+Now the same click also scrolls the results into view and shows a
+loading state on the button, so the interaction is visible.
 
-## STEP 5: VERIFICATION
+=== VERIFICATION ===
 
-After implementing:
+1. npx tsc --noEmit - clean.
+2. npm run build (2.5GB-heap/skip-sourcemaps recipe) - clean, /programs
+   route now 14.5 kB (was 14.4 kB).
+3. npx next start - running, http://localhost:3000 returns HTTP 200.
+4. Compiled-bundle check (client-hydrated page, same limitation as every
+   check on this route): confirmed scrollIntoView, "Finding your path",
+   scroll-mt-4, and disabled:cursor-wait are all present in the real
+   shipped app/programs/page-*.js chunk.
 
-1. `npx tsc --noEmit` — clean
-2. `npm run build` — clean
-3. `npx next start`
-4. Manual checks:
-   - Homepage loads, no UnifiedNavBar below the top navbar
-   - 6 category cards visible in the hero, 3x2 grid on desktop
-   - Headline reads "Discover Your Perfect Education"
-   - AI search input prominent and centered
-   - Stats bar visible below hero
-   - Popular Programs, Partners, Sponsor, How It Works all render
-   - Footer visible at bottom
-   - Dark mode toggle works on homepage
-   - Other pages (`/programs`, `/scholarships`, etc.) still show the UnifiedNavBar
+   NOT verified: actually clicking the button in a real browser and
+   watching the scroll + loading state + filtered grid happen. Strongly
+   recommend an eyeball pass at http://localhost:3000/programs?type=tvet
+   - select grade D, click, confirm the page scrolls and results update
+   - before closing this out as fully confirmed. This is the same
+   limitation flagged on every fix this session, but worth repeating
+   given this was specifically reported as user-facing broken.
 
----
+=== FILES CHANGED (uncommitted, sitting on local commit 63a3258) ===
 
-## WHAT NOT TO DO
+- elimux-frontend/src/app/programs/page.tsx
 
-- Do NOT remove UnifiedNavBar from non-homepage routes.
-- Do NOT change any API routes or database schema.
-- Do NOT break existing auth, payments, or admin pages.
-- Do NOT commit or push.
-
----
-
-## REPORTING
-
-After each step, report: files changed, tsc result, build result, any blockers.
-
-After Step 5, report: "Cycle 027 complete. Homepage hero redesigned. Awaiting review and 'commit and push it'."
+DO NOT commit. DO NOT push.

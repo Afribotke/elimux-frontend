@@ -78,13 +78,13 @@ export default function AdPortalSection() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-[#7c6f50] text-xs font-semibold tracking-widest uppercase">
+          <span className="text-display-2 text-[#7c6f50] dark:text-primary-400">
             LIVE Partners & Advertisers
           </span>
         </div>
         <a
           href="/ads/self-serve"
-          className="text-gray-900 text-sm underline underline-offset-4 decoration-gray-400 hover:text-[#7c6f50] transition-colors"
+          className="text-gray-900 dark:text-white text-sm underline underline-offset-4 decoration-gray-400 hover:text-[#7c6f50] dark:hover:text-primary-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1 rounded"
         >
           Advertise here →
         </a>
@@ -95,7 +95,7 @@ export default function AdPortalSection() {
         {canScrollLeft && (
           <button
             onClick={() => scroll('left')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-all"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white dark:bg-elimux-card border border-gray-200 dark:border-border rounded-full shadow-md flex items-center justify-center text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-white/10 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1"
           >
             ‹
           </button>
@@ -110,10 +110,10 @@ export default function AdPortalSection() {
             <button
               key={cat.name}
               onClick={() => setActiveCat(cat.name)}
-              className={`shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              className={`shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1 ${
                 activeCat === cat.name
                   ? 'bg-[#1e293b] text-white'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-400'
+                  : 'bg-white dark:bg-elimux-card text-gray-600 dark:text-muted border border-gray-200 dark:border-border hover:border-gray-400 dark:hover:border-primary-400'
               }`}
             >
               <span className="text-sm">{cat.icon}</span>
@@ -125,35 +125,35 @@ export default function AdPortalSection() {
         {canScrollRight && (
           <button
             onClick={() => scroll('right')}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-all"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white dark:bg-elimux-card border border-gray-200 dark:border-border rounded-full shadow-md flex items-center justify-center text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-white/10 transition-all"
           >
             ›
           </button>
         )}
 
         {canScrollRight && (
-          <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-white to-transparent pointer-events-none z-[5]" />
+          <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-white dark:from-background to-transparent pointer-events-none z-[5]" />
         )}
       </div>
 
       {/* Marquee Ad Ribbon */}
       <div className="relative overflow-hidden mb-8 group">
-        <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white dark:from-background to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white dark:from-background to-transparent z-10 pointer-events-none" />
 
         <div className="flex animate-marquee group-hover:[animation-play-state:paused]">
           {[...Array(SLOT_COUNT * 2)].map((_, i) => (
             <div
               key={i}
-              className="shrink-0 w-56 mx-2 bg-[#fafaf9] border border-dashed border-gray-300 rounded-2xl p-5 text-center cursor-pointer hover:border-gray-400 hover:bg-white hover:shadow-lg transition-all"
+              className="shrink-0 w-56 mx-2 bg-[#fafaf9] dark:bg-elimux-card border border-dashed border-gray-300 dark:border-border rounded-2xl p-5 text-center cursor-pointer hover:border-gray-400 dark:hover:border-primary-400 hover:bg-white dark:hover:bg-white/5 hover:shadow-lg transition-all"
               onClick={() => { window.location.href = '/ads/self-serve'; }}
             >
               <div className="text-2xl mb-2">📣</div>
-              <div className="text-gray-900 text-sm font-semibold mb-0.5">Your ad here</div>
-              <div className="text-gray-400 text-xs mb-1.5">
+              <div className="text-gray-900 dark:text-white text-sm font-semibold mb-0.5">Your ad here</div>
+              <div className="text-gray-400 dark:text-muted text-xs mb-1.5">
                 Be the first {activeCat} advertiser
               </div>
-              <div className="text-[#7c6f50] text-xs font-medium">
+              <div className="text-[#7c6f50] dark:text-primary-400 text-xs font-medium">
                 From {price}
               </div>
             </div>
@@ -172,13 +172,13 @@ export default function AdPortalSection() {
         <div className="flex justify-center gap-3">
           <a
             href="https://wa.me/254793002436"
-            className="inline-flex items-center gap-2 bg-transparent border border-gray-500 text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors"
+            className="inline-flex items-center gap-2 bg-transparent border border-gray-500 text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f172a]"
           >
             WhatsApp us
           </a>
           <a
             href="/ads/self-serve"
-            className="inline-flex items-center gap-2 bg-[#fbbf24] text-[#0f172a] px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-[#f59e0b] transition-colors"
+            className="inline-flex items-center gap-2 bg-primary-600 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-primary-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f172a]"
           >
             Advertise
           </a>

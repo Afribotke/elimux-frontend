@@ -116,38 +116,38 @@ export default function GradeMatcher() {
   return (
     <div className="text-left">
       {/* Grade Matcher Card */}
-      <div className="bg-[#fafaf9] border border-gray-200 rounded-2xl p-6 mb-6">
+      <div className="bg-[#fafaf9] dark:bg-elimux-card border border-gray-200 dark:border-border rounded-2xl p-6 mb-6">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xl">🎓</span>
-          <span className="text-gray-900 text-lg font-semibold">
+          <span className="text-gray-900 dark:text-white text-lg font-semibold">
             What can I study with my KCSE grade?
           </span>
         </div>
-        <p className="text-gray-500 text-sm leading-relaxed mb-4">
+        <p className="text-gray-500 dark:text-muted text-sm leading-relaxed mb-4">
           Enter your KCSE grade below. We&apos;ll show you every course and institution you qualify for — across ALL categories.
         </p>
 
         <div className="mb-4">
-          <label className="block text-gray-500 text-xs font-medium mb-1.5 uppercase tracking-wide">My KCSE Grade</label>
+          <label className="block text-gray-500 dark:text-muted text-xs font-medium mb-1.5 uppercase tracking-wide">My KCSE Grade</label>
           <div className="relative">
             <select
               value={selectedGrade}
               onChange={(e) => setSelectedGrade(e.target.value as KcseGrade)}
-              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-800 text-sm outline-none appearance-none focus:border-gray-400 transition-all"
+              className="w-full bg-white dark:bg-background border border-gray-200 dark:border-border rounded-xl px-4 py-3 text-gray-800 dark:text-white text-sm outline-none appearance-none focus:border-gray-400 transition-all focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1"
               aria-label="My KCSE Grade"
             >
               {KCSE_GRADES.map((g) => (
                 <option key={g.grade} value={g.grade}>{g.label}</option>
               ))}
             </select>
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">▼</span>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-muted text-xs pointer-events-none">▼</span>
           </div>
         </div>
 
         <button
           onClick={findCourses}
           disabled={loading}
-          className="w-full bg-[#7c6f50] text-white rounded-xl py-3 text-sm font-semibold hover:bg-[#5e543c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-primary-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2"
         >
           {loading ? '⏳ Searching...' : '🔍 Find My Courses'}
         </button>
@@ -160,15 +160,15 @@ export default function GradeMatcher() {
         <div>
           <div className="flex items-center gap-2 mb-4">
             <span className="text-base">📋</span>
-            <span className="text-gray-900 text-base font-semibold">
-              Courses you qualify for with <span className="text-[#7c6f50]">{selectedGrade}</span>
+            <span className="text-gray-900 dark:text-white text-base font-semibold">
+              Courses you qualify for with <span className="text-[#7c6f50] dark:text-primary-400">{selectedGrade}</span>
             </span>
           </div>
 
           {results.length === 0 ? (
             <div className="text-center py-10">
               <div className="text-3xl mb-2">😕</div>
-              <div className="text-gray-400 text-sm">
+              <div className="text-gray-400 dark:text-muted text-sm">
                 No courses found for grade {selectedGrade}.<br />Try a different grade or browse all programs.
               </div>
             </div>
@@ -180,11 +180,11 @@ export default function GradeMatcher() {
                   return (
                     <div
                       key={program.id}
-                      className="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:border-gray-400 hover:shadow-sm transition-all"
+                      className="bg-white dark:bg-elimux-card border border-gray-200 dark:border-border rounded-xl p-4 cursor-pointer hover:border-gray-400 dark:hover:border-primary-400 hover:shadow-sm transition-all"
                       onClick={() => { window.location.href = `/programs/${program.id}`; }}
                     >
                       <div className="flex justify-between items-start mb-1.5">
-                        <span className="text-gray-900 text-sm font-semibold leading-tight">{program.name}</span>
+                        <span className="text-gray-900 dark:text-white text-sm font-semibold leading-tight">{program.name}</span>
                         <span
                           className="text-[10px] px-2 py-0.5 rounded-md font-semibold shrink-0 ml-2"
                           style={{ backgroundColor: pColor.bg, color: pColor.text }}
@@ -198,15 +198,15 @@ export default function GradeMatcher() {
                           {program.kcse_grade_is_estimated && <span className="opacity-70"> (est.)</span>}
                         </span>
                       </div>
-                      <div className="text-gray-500 text-xs mb-2">{program.institution.name}</div>
+                      <div className="text-gray-500 dark:text-muted text-xs mb-2">{program.institution.name}</div>
                       <div className="flex gap-2 flex-wrap">
-                        <span className="bg-gray-100 text-gray-500 text-[10px] px-2.5 py-1 rounded-md">
+                        <span className="bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-muted text-[10px] px-2.5 py-1 rounded-md">
                           {CATEGORY_ICONS[program.category] || '📚'} {program.category}
                         </span>
-                        <span className="bg-gray-100 text-gray-500 text-[10px] px-2.5 py-1 rounded-md">
+                        <span className="bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-muted text-[10px] px-2.5 py-1 rounded-md">
                           📍 {program.institution.location}
                         </span>
-                        <span className="bg-gray-100 text-gray-500 text-[10px] px-2.5 py-1 rounded-md">
+                        <span className="bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-muted text-[10px] px-2.5 py-1 rounded-md">
                           ⏱ {program.duration}
                         </span>
                       </div>
@@ -215,7 +215,7 @@ export default function GradeMatcher() {
                 })}
               </div>
               <div className="text-center mt-4">
-                <a href="/programs" className="text-[#7c6f50] text-sm font-medium hover:underline">
+                <a href="/programs" className="text-[#7c6f50] dark:text-primary-400 text-sm font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1 rounded">
                   See all courses matching {selectedGrade} →
                 </a>
               </div>

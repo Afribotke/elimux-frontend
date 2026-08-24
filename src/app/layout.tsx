@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     default: "ElimuX â€” Discover Global Education & Career Opportunities",
     template: "%s | ElimuX",
   },
-  description: "ElimuX is the global education discovery platform. Find courses, internships, and attachments across Kenya, Africa, and worldwide institutions.",
+  description: "ElimuX is an AI-powered platform matching students with universities, colleges, TVET institutes, scholarships, internships, attachments, and bursaries.",
   keywords: ["education", "courses", "internships", "attachments", "Kenya", "Africa", "university", "college", "TVET"],
   authors: [{ name: "ElimuX" }],
   creator: "ElimuX",
@@ -44,12 +44,12 @@ export const metadata: Metadata = {
     url: "https://www.elimux.ke",
     siteName: "ElimuX",
     title: "ElimuX â€” Discover Global Education & Career Opportunities",
-    description: "Find courses, internships, and attachments across Kenya, Africa, and worldwide institutions.",
+    description: "AI-powered matching for universities, colleges, TVET, scholarships, internships, attachments, and bursaries.",
   },
   twitter: {
     card: "summary_large_image",
     title: "ElimuX â€” Discover Global Education & Career Opportunities",
-    description: "Find courses, internships, and attachments across Kenya, Africa, and worldwide institutions.",
+    description: "AI-powered matching for universities, colleges, TVET, scholarships, internships, attachments, and bursaries.",
   },
   robots: {
     index: true,
@@ -80,7 +80,7 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased bg-background text-foreground`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="dark"
           enableSystem
           value={{ light: "light", dark: "dark" }}
           disableTransitionOnChange

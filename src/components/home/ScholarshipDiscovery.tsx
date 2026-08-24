@@ -106,19 +106,19 @@ export default function ScholarshipDiscovery() {
     <div className="space-y-8">
       {/* Match Results */}
       {matchResults.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <div className="bg-white dark:bg-elimux-card border border-gray-200 dark:border-border rounded-xl p-6 shadow-sm">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-gray-900">🎯 Your Top Matches</h3>
-            <button onClick={() => setMatchResults([])} className="text-gray-500 hover:text-gray-900 text-sm">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">🎯 Your Top Matches</h3>
+            <button onClick={() => setMatchResults([])} className="text-gray-500 dark:text-muted hover:text-gray-900 dark:hover:text-white text-sm">
               Clear
             </button>
           </div>
           <div className="space-y-3">
             {matchResults.slice(0, 5).map((r) => (
-              <div key={r.scholarship_id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between gap-4">
+              <div key={r.scholarship_id} className="bg-gray-50 dark:bg-elimux-card border border-gray-200 dark:border-border rounded-lg p-4 flex items-center justify-between gap-4">
                 <div>
-                  <h4 className="font-semibold text-gray-900">{r.title}</h4>
-                  <p className="text-sm text-gray-600">{r.provider}</p>
+                  <h4 className="font-semibold text-gray-900 dark:text-white">{r.title}</h4>
+                  <p className="text-sm text-gray-600 dark:text-muted">{r.provider}</p>
                   {r.matched_criteria.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-1">
                       {r.matched_criteria.slice(0, 3).map((c) => (
@@ -155,11 +155,11 @@ export default function ScholarshipDiscovery() {
         </button>
 
         {showMatcher && (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 w-full max-w-2xl">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Tell us about yourself</h3>
+          <div className="bg-gray-50 dark:bg-elimux-card border border-gray-200 dark:border-border rounded-xl p-6 w-full max-w-2xl">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tell us about yourself</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">GPA (0.0 - 4.0)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-muted mb-1">GPA (0.0 - 4.0)</label>
                 <input
                   type="number"
                   step="0.1"
@@ -167,36 +167,36 @@ export default function ScholarshipDiscovery() {
                   min="0"
                   value={matchProfile.gpa}
                   onChange={(e) => setMatchProfile({ ...matchProfile, gpa: e.target.value })}
-                  className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-800 outline-none focus:border-gray-400"
+                  className="w-full bg-white dark:bg-elimux-card border border-gray-200 dark:border-border rounded-lg px-4 py-2 text-gray-800 dark:text-white outline-none focus:border-gray-400"
                   placeholder="3.5"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Course / Field</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-muted mb-1">Course / Field</label>
                 <input
                   type="text"
                   value={matchProfile.course_field}
                   onChange={(e) => setMatchProfile({ ...matchProfile, course_field: e.target.value })}
-                  className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-800 outline-none focus:border-gray-400"
+                  className="w-full bg-white dark:bg-elimux-card border border-gray-200 dark:border-border rounded-lg px-4 py-2 text-gray-800 dark:text-white outline-none focus:border-gray-400"
                   placeholder="Computer Science"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">County</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-muted mb-1">County</label>
                 <input
                   type="text"
                   value={matchProfile.county}
                   onChange={(e) => setMatchProfile({ ...matchProfile, county: e.target.value })}
-                  className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-800 outline-none focus:border-gray-400"
+                  className="w-full bg-white dark:bg-elimux-card border border-gray-200 dark:border-border rounded-lg px-4 py-2 text-gray-800 dark:text-white outline-none focus:border-gray-400"
                   placeholder="Nairobi"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-muted mb-1">Gender</label>
                 <select
                   value={matchProfile.gender}
                   onChange={(e) => setMatchProfile({ ...matchProfile, gender: e.target.value })}
-                  className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 outline-none focus:border-gray-400"
+                  className="w-full bg-white dark:bg-elimux-card border border-gray-200 dark:border-border rounded-lg px-4 py-2 text-gray-700 dark:text-white outline-none focus:border-gray-400"
                 >
                   <option value="">Prefer not to say</option>
                   <option value="male">Male</option>
@@ -205,7 +205,7 @@ export default function ScholarshipDiscovery() {
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className="flex items-center gap-3 text-gray-700">
+                <label className="flex items-center gap-3 text-gray-700 dark:text-muted">
                   <input
                     type="checkbox"
                     checked={matchProfile.financial_need}
@@ -233,19 +233,19 @@ export default function ScholarshipDiscovery() {
       {/* Featured Strip */}
       {featured.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Featured Scholarships</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Featured Scholarships</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {featured.map((s) => (
-              <div key={s.id} className="bg-[#fef3c7]/40 border border-[#fbbf24]/40 rounded-xl p-5 hover:border-[#fbbf24] transition-colors">
+              <div key={s.id} className="bg-[#fef3c7]/40 dark:bg-[#fbbf24]/10 border border-[#fbbf24]/40 rounded-xl p-5 hover:border-[#fbbf24] transition-colors">
                 <div className="flex items-start justify-between mb-3 gap-2">
-                  <h4 className="font-bold text-gray-900 text-lg leading-tight">{s.title}</h4>
+                  <h4 className="font-bold text-gray-900 dark:text-white text-lg leading-tight">{s.title}</h4>
                   <span className="shrink-0 px-2 py-1 bg-[#fef3c7] text-[#92400e] text-xs rounded-full">Featured</span>
                 </div>
-                <p className="text-gray-600 text-sm mb-2">{s.provider}</p>
+                <p className="text-gray-600 dark:text-muted text-sm mb-2">{s.provider}</p>
                 <div className="flex items-center gap-3 text-sm">
-                  <span className="text-green-700 font-medium">{s.amount || 'See details'}</span>
-                  <span className="text-gray-300">·</span>
-                  <span className="text-gray-500">{getCoverageLabel(s.coverage_type)}</span>
+                  <span className="text-green-700 dark:text-green-400 font-medium">{s.amount || 'See details'}</span>
+                  <span className="text-gray-300 dark:text-muted">·</span>
+                  <span className="text-gray-500 dark:text-muted">{getCoverageLabel(s.coverage_type)}</span>
                 </div>
                 <div className="mt-4 flex items-center justify-between">
                   <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getDeadlineStatus(s.application_deadline).color}`}>
@@ -262,19 +262,19 @@ export default function ScholarshipDiscovery() {
       )}
 
       {/* Filters */}
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+      <div className="bg-gray-50 dark:bg-elimux-card border border-gray-200 dark:border-border rounded-xl p-4">
         <div className="flex flex-wrap gap-3">
           <input
             type="text"
             placeholder="Search scholarships..."
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            className="flex-1 min-w-[200px] bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-800 placeholder-gray-400 outline-none focus:border-gray-400 transition-colors"
+            className="flex-1 min-w-[200px] bg-white dark:bg-elimux-card border border-gray-200 dark:border-border rounded-lg px-4 py-2 text-gray-800 dark:text-white placeholder-gray-400 outline-none focus:border-gray-400 transition-colors"
           />
           <select
             value={filters.study_level}
             onChange={(e) => setFilters({ ...filters, study_level: e.target.value })}
-            className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 outline-none focus:border-gray-400"
+            className="bg-white dark:bg-elimux-card border border-gray-200 dark:border-border rounded-lg px-4 py-2 text-gray-700 dark:text-white outline-none focus:border-gray-400"
           >
             <option value="">All Levels</option>
             <option value="bachelor">Undergraduate</option>
@@ -285,7 +285,7 @@ export default function ScholarshipDiscovery() {
           <select
             value={filters.discipline}
             onChange={(e) => setFilters({ ...filters, discipline: e.target.value })}
-            className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 outline-none focus:border-gray-400"
+            className="bg-white dark:bg-elimux-card border border-gray-200 dark:border-border rounded-lg px-4 py-2 text-gray-700 dark:text-white outline-none focus:border-gray-400"
           >
             <option value="">All Fields</option>
             <option value="engineering">Engineering</option>
@@ -299,7 +299,7 @@ export default function ScholarshipDiscovery() {
             type="date"
             value={filters.deadline_after}
             onChange={(e) => setFilters({ ...filters, deadline_after: e.target.value })}
-            className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 outline-none focus:border-gray-400"
+            className="bg-white dark:bg-elimux-card border border-gray-200 dark:border-border rounded-lg px-4 py-2 text-gray-700 dark:text-white outline-none focus:border-gray-400"
           />
         </div>
       </div>
@@ -308,14 +308,14 @@ export default function ScholarshipDiscovery() {
       {loading ? (
         <div className="text-center py-12">
           <div className="animate-spin inline-block w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full mb-4" />
-          <p className="text-gray-400">Loading scholarships...</p>
+          <p className="text-gray-400 dark:text-muted">Loading scholarships...</p>
         </div>
       ) : error ? (
         <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
           {error}
         </div>
       ) : scholarships.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-12 text-gray-400 dark:text-muted">
           <p className="text-lg mb-2">No scholarships found</p>
           <p className="text-sm">Try adjusting your filters or search terms</p>
         </div>
@@ -324,27 +324,27 @@ export default function ScholarshipDiscovery() {
           {scholarships.map((s) => {
             const deadline = getDeadlineStatus(s.application_deadline);
             return (
-              <div key={s.id} className="bg-white border border-gray-200 rounded-xl p-5 hover:border-gray-300 transition-colors group">
+              <div key={s.id} className="bg-white dark:bg-elimux-card border border-gray-200 dark:border-border rounded-xl p-5 hover:border-gray-300 dark:hover:border-primary-400 transition-colors group">
                 <div className="flex items-start justify-between mb-3 gap-2">
-                  <h4 className="font-semibold text-gray-900 leading-tight group-hover:text-gray-700 transition-colors">{s.title}</h4>
+                  <h4 className="font-semibold text-gray-900 dark:text-white leading-tight group-hover:text-gray-700 dark:group-hover:text-primary-400 transition-colors">{s.title}</h4>
                   {s.is_featured && <span className="shrink-0 px-2 py-0.5 bg-[#fef3c7] text-[#92400e] text-xs rounded-full">★</span>}
                 </div>
 
-                <p className="text-gray-500 text-sm mb-1">{s.provider}</p>
+                <p className="text-gray-500 dark:text-muted text-sm mb-1">{s.provider}</p>
                 {s.institution?.name && (
-                  <p className="text-gray-400 text-xs mb-3">{s.institution.name}</p>
+                  <p className="text-gray-400 dark:text-muted text-xs mb-3">{s.institution.name}</p>
                 )}
 
                 <div className="flex flex-wrap gap-2 mb-3">
                   {s.study_levels?.map((level) => (
-                    <span key={level} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">{level}</span>
+                    <span key={level} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-muted text-xs rounded">{level}</span>
                   ))}
                   {s.disciplines?.slice(0, 2).map((d) => (
-                    <span key={d} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">{d}</span>
+                    <span key={d} className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-muted text-xs rounded">{d}</span>
                   ))}
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-border">
                   <div className="space-y-1">
                     <p className="text-green-700 font-medium text-sm">{s.amount || 'See details'}</p>
                     <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${deadline.color}`}>

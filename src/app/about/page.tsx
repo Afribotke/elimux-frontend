@@ -22,7 +22,7 @@ export default function AboutPage() {
       <div className='bg-elimux-card rounded-2xl p-8 mb-12 border border-border'>
         <h2 className='text-2xl font-bold text-foreground mb-4'>Our Mission</h2>
         <p className='text-muted leading-relaxed'>
-          ElimuX is a global education discovery platform that connects students with universities, colleges, TVET institutes, and specialized training programs. We believe every student deserves access to quality education information.
+          ElimuX is an AI-powered global education and career discovery platform. We use artificial intelligence to connect students with universities, colleges, TVET institutes, scholarships, internships, industrial attachments, and bursaries — intelligently matched to each student's goals, grades, and aspirations. We believe every student deserves smart, personalized access to quality education and opportunity.
         </p>
       </div>
 
