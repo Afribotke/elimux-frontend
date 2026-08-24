@@ -30,6 +30,7 @@ export default async function BursaryProviderPublicPage({ params }: { params: Pr
       <div className="max-w-2xl mx-auto">
         <Link
           href="https://bursary.elimux.ke"
+          rel="noopener noreferrer"
           className="inline-flex items-center gap-2 text-sm text-muted hover:text-primary-400 transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />

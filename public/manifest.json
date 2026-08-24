@@ -1,7 +1,7 @@
 {
-  "name": "Elimux - Global Education Discovery",
-  "short_name": "Elimux",
-  "description": "Discover and compare education programs worldwide",
+  "name": "ElimuX — AI-Powered Education & Career Discovery",
+  "short_name": "ElimuX",
+  "description": "Discover universities, colleges, TVET institutes, scholarships, internships, industrial attachments, and bursaries worldwide. AI-powered matching for every student.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

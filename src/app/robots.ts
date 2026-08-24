@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin/", "/api/", "/student/", "/employer/", "/dashboard/"],
+      disallow: ["/admin/", "/api/", "/auth/", "/advertiser/", "/employer/", "/student/", "/dashboard/"],
     },
     sitemap: "https://www.elimux.ke/sitemap.xml",
   };

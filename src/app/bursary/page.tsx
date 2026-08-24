@@ -131,7 +131,7 @@ export default function BursaryListingPage() {
           <aside className="lg:w-64 flex-shrink-0">
             <div className="bg-elimux-card border border-border rounded-xl p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-foreground">Filters</h3>
+                <h2 className="font-semibold text-foreground">Filters</h2>
                 {isFiltered && (
                   <button onClick={clearFilters} className="text-sm text-primary-400 hover:text-primary-300">
                     Clear all
@@ -227,7 +227,7 @@ export default function BursaryListingPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-foreground">{fund.name}</h3>
+                          <h2 className="text-lg font-semibold text-foreground">{fund.name}</h2>
                           <span className="px-2 py-1 bg-primary-500/10 text-primary-400 text-xs font-medium rounded-full">
                             Open
                           </span>

@@ -172,6 +172,7 @@ export default function AdPortalSection() {
         <div className="flex justify-center gap-3">
           <a
             href="https://wa.me/254793002436"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-transparent border border-gray-500 text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f172a]"
           >
             WhatsApp us

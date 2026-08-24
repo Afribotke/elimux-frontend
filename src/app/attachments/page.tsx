@@ -284,7 +284,7 @@ export default function AttachmentsPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         {i.employer?.logo_url ? (
-                          <img src={i.employer.logo_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
+                          <img src={i.employer.logo_url} alt={`${i.employer?.company_name || 'Employer'} logo`} className="w-12 h-12 rounded-lg object-cover" />
                         ) : (
                           <div className="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center">
                             <Building2 className="w-6 h-6 text-emerald-600" />

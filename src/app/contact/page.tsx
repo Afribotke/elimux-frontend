@@ -52,12 +52,12 @@ export default function ContactPage() {
         <div className='space-y-6'>
           <div className='bg-elimux-card rounded-xl p-6 border border-border'>
             <Mail className='w-8 h-8 text-primary-400 mb-3' />
-            <h3 className='text-lg font-bold text-foreground mb-1'>Email Us</h3>
+            <h2 className='text-lg font-bold text-foreground mb-1'>Email Us</h2>
             <p className='text-muted text-sm'>support@elimux.ke</p>
           </div>
           <div className='bg-elimux-card rounded-xl p-6 border border-border'>
             <MessageSquare className='w-8 h-8 text-primary-400 mb-3' />
-            <h3 className='text-lg font-bold text-foreground mb-1'>Live Chat</h3>
+            <h2 className='text-lg font-bold text-foreground mb-1'>Live Chat</h2>
             <p className='text-muted text-sm'>Available 9 AM - 6 PM EAT</p>
           </div>
         </div>
@@ -67,7 +67,7 @@ export default function ContactPage() {
           {submitted ? (
             <div className='text-center py-8'>
               <CheckCircle className='w-12 h-12 text-success mx-auto mb-3' />
-              <h3 className='text-xl font-bold text-foreground mb-2'>Message Sent!</h3>
+              <h2 className='text-xl font-bold text-foreground mb-2'>Message Sent!</h2>
               <p className='text-muted'>We will get back to you within 24 hours.</p>
             </div>
           ) : (

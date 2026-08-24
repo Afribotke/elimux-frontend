@@ -1,4 +1,18 @@
+import type { Metadata } from 'next'
 import { Globe, Target, Shield, Users, Zap, Heart } from 'lucide-react'
+
+export const metadata: Metadata = {
+  // title.absolute bypasses the root layout's "%s | ElimuX" template - this
+  // title already contains "ElimuX" once ("About ElimuX..."); the template
+  // would otherwise append a second, redundant "| ElimuX".
+  title: {
+    absolute: 'About ElimuX — Our Mission & Vision',
+  },
+  description: 'ElimuX is an AI-powered global education and career discovery platform connecting students with universities, TVET institutes, scholarships, internships, attachments, and bursaries.',
+  alternates: {
+    canonical: 'https://www.elimux.ke/about/',
+  },
+}
 
 export default function AboutPage() {
   const values = [

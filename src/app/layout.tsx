@@ -16,6 +16,8 @@ import { Analytics } from "@vercel/analytics/react";
 
 import InstallPrompt from '@/components/InstallPrompt';
 import SiteVisitTracker from '@/components/SiteVisitTracker';
+import JsonLd from '@/components/seo/JsonLd';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -30,26 +32,36 @@ export const metadata: Metadata = {
     title: 'ElimuX',
   },
   title: {
-    default: "ElimuX â€” Discover Global Education & Career Opportunities",
+    default: "ElimuX — AI-Powered Education & Career Discovery",
     template: "%s | ElimuX",
   },
-  description: "ElimuX is an AI-powered platform matching students with universities, colleges, TVET institutes, scholarships, internships, attachments, and bursaries.",
-  keywords: ["education", "courses", "internships", "attachments", "Kenya", "Africa", "university", "college", "TVET"],
+  description: "Discover universities, colleges, TVET institutes, scholarships, internships, industrial attachments, and bursaries worldwide. AI-powered matching for every student.",
+  keywords: ["education", "university", "college", "TVET", "scholarship", "internship", "attachment", "bursary", "Kenya", "Africa", "study abroad"],
   authors: [{ name: "ElimuX" }],
   creator: "ElimuX",
   metadataBase: new URL("https://www.elimux.ke"),
+  alternates: {
+    canonical: "https://www.elimux.ke",
+  },
   openGraph: {
     type: "website",
     locale: "en_KE",
     url: "https://www.elimux.ke",
     siteName: "ElimuX",
-    title: "ElimuX â€” Discover Global Education & Career Opportunities",
-    description: "AI-powered matching for universities, colleges, TVET, scholarships, internships, attachments, and bursaries.",
+    title: "ElimuX — AI-Powered Education & Career Discovery",
+    description: "Find your perfect education path with AI. Universities, TVET, scholarships, internships & more.",
+    images: [{
+      url: "https://www.elimux.ke/og-image.jpg",
+      width: 1200,
+      height: 630,
+      alt: "ElimuX - AI-Powered Education & Career Discovery",
+    }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ElimuX â€” Discover Global Education & Career Opportunities",
-    description: "AI-powered matching for universities, colleges, TVET, scholarships, internships, attachments, and bursaries.",
+    title: "ElimuX — AI-Powered Education & Career Discovery",
+    description: "Find your perfect education path with AI.",
+    images: ["https://www.elimux.ke/og-image.jpg"],
   },
   robots: {
     index: true,
@@ -61,6 +73,36 @@ export const metadata: Metadata = {
       "max-image-preview": "large",
       "max-snippet": -1,
     },
+  },
+};
+
+const ORGANIZATION_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "ElimuX",
+  url: "https://www.elimux.ke",
+  logo: "https://www.elimux.ke/icon-512x512.png",
+  description: "AI-powered global education and career discovery platform",
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "Customer Support",
+    email: "support@elimux.ke",
+    availableLanguage: ["English", "Swahili"],
+  },
+};
+
+const WEBSITE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "ElimuX",
+  url: "https://www.elimux.ke",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: "https://www.elimux.ke/programs?search={search_term_string}",
+    },
+    "query-input": "required name=search_term_string",
   },
 };
 
@@ -78,6 +120,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} antialiased bg-background text-foreground`}>
+        <JsonLd data={ORGANIZATION_SCHEMA} />
+        <JsonLd data={WEBSITE_SCHEMA} />
+        <Suspense fallback={null}>
+          <BreadcrumbJsonLd />
+        </Suspense>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

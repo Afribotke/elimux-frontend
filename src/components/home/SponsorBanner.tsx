@@ -28,7 +28,7 @@ export default function SponsorBanner() {
       <a
         href={sponsor.website_url || undefined}
         target="_blank"
-        rel="noopener noreferrer"
+        rel="noopener noreferrer sponsored"
         className="inline-flex flex-col items-center gap-4 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 rounded-lg"
       >
         {sponsor.logo_url ? (

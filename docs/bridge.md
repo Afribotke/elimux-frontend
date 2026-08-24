@@ -1,133 +1,132 @@
-CRITICAL BUG — "FIND MY TVET PATH" BUTTON NOT WORKING — REPORT
+CRITICAL FIX — ENCODING ARTIFACTS IN META TAGS/TITLES — REPORT
 
-Status: FIXED - root cause identified and confirmed, not a guess; build/
-bundle-verified; live click-through not watched in a real browser (see
-note below)
-Archive Ref: docs/archive/bridge-066.md (snapshot of the prior "live
-indicator" completion report, taken before this bug report replaced it -
-this bug report arrived directly in chat, not via a bridge.md edit, so
-that prior report hadn't been archived yet)
+Status: COMPLETE - root-caused to TWO separate real issues (not one),
+both addressed on the local side; one requires a deploy to fully resolve
+Archive Ref: docs/archive/bridge-075.md (snapshot of the prior OG-image
+report, taken before this report replaced it)
 
-=== 1. THE onClick HANDLER ===
+=== ROOT CAUSE: TWO SEPARATE BUGS, NOT ONE ===
 
-File: src/app/programs/page.tsx, button at (pre-fix) line 310-315:
+The screenshot string "Elimux - Global Education Discovery - ElimuX
+â€" Discover Global Education & Career Opportunities" is two different
+things concatenated, not one bug:
 
-    <button
-      onClick={handleFindTvetPath}
-      className="mt-6 bg-primary-600 hover:bg-primary-500 ..."
-    >
-      🔍 Find My TVET Path
-    </button>
+  PART 1: "Elimux - Global Education Discovery" - from
+  public/manifest.json's `name` field (lowercase "Elimux", stale copy).
+  This is a real, previously-untouched bug - browsers/PWA install
+  contexts can prepend the manifest app name to the tab/window title in
+  certain OS-level display contexts, which explains the "Elimux - ..."
+  prefix your screenshot shows that doesn't exist anywhere in any
+  <title> tag.
 
-Wired correctly. `handleFindTvetPath` was defined and did read the
-selected grade:
+  PART 2: "ElimuX â€" Discover Global Education & Career Opportunities"
+  - this is the EXACT OLD title, mojibake and all, that Cycle 029 (SEO
+  optimization) already fixed in src/app/layout.tsx - but that fix has
+  never been deployed. Every cycle since has ended with "DO NOT commit,
+  DO NOT push," so this fix has been sitting locally, uncommitted, this
+  entire session. Confirmed directly: curl'd https://www.elimux.ke/ just
+  now and it still serves the literal old mojibake title byte-for-byte.
+  This part of the report cannot be "fixed" again locally - it's already
+  fixed in the working tree, it just hasn't shipped.
 
-    const handleFindTvetPath = () => {
-      setFilters((f) => ({ ...f, grade: heroGrade }));
-      setPage(1);
-    };
+=== STEP 1-2: SEARCH RESULTS ===
 
-`heroGrade` is the select's own controlled state (`value={heroGrade}`,
-`onChange={(e) => setHeroGrade(...)}`), read correctly. This part was
-never broken.
+  grep -rn "â€" src/ --include="*.tsx" --include="*.ts" --include="*.md"
+  -> zero matches. No mojibake anywhere in source. Confirms Part 2 above
+  is a deploy-lag issue, not a remaining source bug.
 
-=== 2. THE GRADE FILTERING LOGIC ===
+  grep -rn "Global Education Discovery" src/ public/
+  -> public/manifest.json:2 - the real source of Part 1.
 
-Checked whether this was a data/query problem before assuming a UI bug -
-queried the live database directly (read-only, no writes) rather than
-guessing:
+=== STEP 3-4: A NOTE ON THE INSTRUCTION'S OWN INTERNAL CONFLICT ===
 
-    Total active TVET programs:                         1,121
-    ...with minimum_kcse_grade_numeric NOT NULL:         1,121  (100%)
-    ...matching grade D (numeric <= 3):                  1,017
+Step 3 says replace ALL em-dashes (—) with plain hyphens (-). Step 5's
+own list of "clean" desired titles uses real em-dash characters in every
+single example ("ElimuX — AI-Powered...", "Discover Programs —
+Universities & TVET | ElimuX", etc.) - not hyphens. Followed Step 5's
+explicit, concrete spec (keep real "—" characters) rather than Step 3's
+generic rule, since applying Step 3 literally would have directly
+contradicted Step 5's own listed correct output. The actual bug was
+never "em-dashes are bad" - it was a mojibake BYTE SEQUENCE (â€") in
+place of a real em-dash, already fixed in Cycle 029 and confirmed absent
+from source now (see Step 1-2 grep above).
 
-The column exists, is fully populated for every TVET program (not the
-"column doesn't exist / is null for most rows" cause your own checklist
-named), and the filter genuinely changes the result set (1,017 of 1,121
-- a real, if modest, reduction). `fetchPrograms()`'s existing `.lte
-('minimum_kcse_grade_numeric', gradeToNumeric(filters.grade))` clause was
-already correct and unchanged. So clicking the button DID correctly
-filter the query - this was never a broken filter.
+=== STEP 5-6: TITLE-BY-TITLE VERIFICATION ===
 
-=== ROOT CAUSE ===
+All 9 checked individually via curl against the local server, not
+assumed. 7 matched already; 2 did not and were fixed:
 
-Not a wiring bug, not a data bug - a visibility bug. The button sits at
-the top of a tall hero (badge, headline, subheadline, credibility line,
-grade selector, button, divider, browse-all link), and the results grid
-it's supposed to update lives well below the fold, with no scroll target
-and no loading indicator on the button itself. Clicking it silently did
-everything right (state updated, query re-ran, grid re-rendered) but
-nothing on the visible screen changed unless the visitor scrolled down
-manually - and even after scrolling, grade D only excludes ~9% of
-results, so the first page of alphabetically-sorted cards often looks
-identical anyway. From the user's seat, that's indistinguishable from
-"the button does nothing."
+  Homepage:      "ElimuX — AI-Powered Education & Career Discovery" - MATCH
+  Programs:      "Discover Programs — Universities & TVET | ElimuX" - MATCH
+  Scholarships:  "Find Scholarships — Fully Funded & Partial | ElimuX" - MATCH
+  Internships:   "Internship Opportunities — Apply Now | ElimuX" - MATCH
+  Attachments:   "Industrial Attachments — University Placements | ElimuX" - MATCH
+  Bursary:       "Bursaries — Financial Aid for Students | ElimuX" - MATCH
+  Institutions:  "Accredited Institutions — Universities & Colleges | ElimuX" - MATCH
+  About:         WAS "About ElimuX — Our Mission & Vision | ElimuX" (WRONG -
+                 duplicated "ElimuX" via the root layout's title
+                 template auto-appending "| ElimuX" on top of a title
+                 that already said "ElimuX" once) - FIXED, now exactly
+                 "About ElimuX — Our Mission & Vision"
+  Contact:       Same bug, same fix - FIXED, now exactly
+                 "Contact ElimuX — Get in Touch"
 
-=== EXACT LINES CHANGED ===
+  Fix: switched About/Contact's `title` from a plain string to
+  `title: { absolute: '...' }` in their metadata exports - this is the
+  Next.js mechanism to opt a specific page out of the parent layout's
+  title template ("%s | ElimuX"), rather than inherit it. Every other
+  page's title intentionally keeps the "| ElimuX" suffix (matches Step
+  5's own list for those 7), only About/Contact needed the bypass since
+  their own title text already names the brand once.
 
-1. Added a `resultsRef` (useRef) on the results-section wrapper div
-   (filters bar + results count + program grid), and call
-   `resultsRef.current?.scrollIntoView({ behavior: 'smooth', block:
-   'start' })` in both `handleFindTvetPath` and `handleBrowseAllTvet`
-   right after the state updates - so clicking either button now visibly
-   carries the visitor to the (re-filtering) results, not just updates
-   state off-screen.
-2. Button now reads `disabled={loading}` and its label swaps to "⏳
-   Finding your path..." while the shared page `loading` flag is true
-   (the same flag that already drives the ProgramCardSkeleton grid) -
-   immediate visual feedback on click, addresses Task 4's "loading state
-   briefly" requirement using existing state rather than adding a new
-   one.
-3. `handleBrowseAllTvet` got the identical scroll-into-view treatment for
-   consistency, even though it wasn't reported as broken - same
-   underlying visibility problem would apply to it.
+=== ALSO FIXED: public/manifest.json ===
 
-Not touched, because already correct: fetchPrograms()'s query logic, the
-grade column, the EmptyState encouraging-message branch (added in Cycle
-028, still correct), filters/URL sync.
+  name:        "Elimux - Global Education Discovery" -> "ElimuX — AI-Powered Education & Career Discovery"
+  short_name:  "Elimux" -> "ElimuX"
+  description: "Discover and compare education programs worldwide" -> matches the real root-layout description now
 
-=== 5. CONSOLE / NETWORK CHECK ===
-
-Could not perform - Chrome browser automation is unavailable this
-session (extension not connected, confirmed again for this task). No
-DevTools console/network capture was possible. What IS confirmed instead:
-the equivalent query run directly against the live Supabase REST API
-(same table, same filter clause, same grade) returns valid results with
-no error, and `npx tsc --noEmit` / `npm run build` both pass clean, so
-there's no compile-time or type error in this path. This is not the same
-as confirming zero runtime console errors in an actual browser session -
-flagged honestly rather than claimed.
-
-=== DOES IT WORK END-TO-END NOW? ===
-
-Code-verified yes, browser-verified no (see above). What changed
-concretely: previously, selecting grade D and clicking "Find My TVET
-Path" updated the underlying data correctly but produced no visible
-change unless the visitor happened to scroll down and compare closely.
-Now the same click also scrolls the results into view and shows a
-loading state on the button, so the interaction is visible.
+This directly addresses Step 6's "inconsistent casing (Elimux vs
+ElimuX)" check - manifest.json was the one place still using the old
+lowercase "Elimux" spelling anywhere in the project.
 
 === VERIFICATION ===
 
 1. npx tsc --noEmit - clean.
-2. npm run build (2.5GB-heap/skip-sourcemaps recipe) - clean, /programs
-   route now 14.5 kB (was 14.4 kB).
+2. npm run build (2.5GB-heap/skip-sourcemaps recipe) - clean.
 3. npx next start - running, http://localhost:3000 returns HTTP 200.
-4. Compiled-bundle check (client-hydrated page, same limitation as every
-   check on this route): confirmed scrollIntoView, "Finding your path",
-   scroll-mt-4, and disabled:cursor-wait are all present in the real
-   shipped app/programs/page-*.js chunk.
+4. All 9 titles curl-verified individually against the local server post
+   -fix (listed above) - all 9 now match Step 5's spec exactly, byte for
+   byte. /manifest.json curl-verified - new name/short_name/description
+   confirmed served.
 
-   NOT verified: actually clicking the button in a real browser and
-   watching the scroll + loading state + filtered grid happen. Strongly
-   recommend an eyeball pass at http://localhost:3000/programs?type=tvet
-   - select grade D, click, confirm the page scrolls and results update
-   - before closing this out as fully confirmed. This is the same
-   limitation flagged on every fix this session, but worth repeating
-   given this was specifically reported as user-facing broken.
+=== EXACT BEFORE/AFTER, EVERY FILE CHANGED ===
 
-=== FILES CHANGED (uncommitted, sitting on local commit 63a3258) ===
+  src/app/about/page.tsx
+    BEFORE: title: 'About ElimuX — Our Mission & Vision'
+    AFTER:  title: { absolute: 'About ElimuX — Our Mission & Vision' }
 
-- elimux-frontend/src/app/programs/page.tsx
+  src/app/contact/layout.tsx
+    BEFORE: title: 'Contact ElimuX — Get in Touch'
+    AFTER:  title: { absolute: 'Contact ElimuX — Get in Touch' }
+
+  public/manifest.json
+    BEFORE: "name": "Elimux - Global Education Discovery"
+            "short_name": "Elimux"
+            "description": "Discover and compare education programs worldwide"
+    AFTER:  "name": "ElimuX — AI-Powered Education & Career Discovery"
+            "short_name": "ElimuX"
+            "description": "Discover universities, colleges, TVET institutes, scholarships, internships, industrial attachments, and bursaries worldwide. AI-powered matching for every student."
+
+No other files needed changes - src/app/layout.tsx and the 6 other
+layout.tsx files created in Cycle 029 were already correct (real em-
+dashes, correct casing, matched Step 5's spec exactly on first check).
+
+=== WHAT STILL NEEDS A DEPLOY, NOT A CODE FIX ===
+
+The screenshot the founder saw is almost certainly from production
+(www.elimux.ke), which is still running pre-Cycle-029 code. Everything
+in this report is fixed in the local working tree; none of it is live
+until a commit + push + deploy happens. Flagging plainly rather than
+implying this is resolved on the actual live site - it isn't, yet.
 
 DO NOT commit. DO NOT push.

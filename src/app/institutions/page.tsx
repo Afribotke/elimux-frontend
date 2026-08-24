@@ -1,9 +1,18 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { supabase } from '@/lib/supabase'
 import FeaturedInstitutionCard from '@/components/FeaturedInstitutionCard'
 import InstitutionsBrowser from '@/components/institutions/InstitutionsBrowser'
 import SponsorAdBanner from '@/components/SponsorAdBanner'
 import { Building2 } from 'lucide-react'
+
+export const metadata: Metadata = {
+  title: 'Accredited Institutions — Universities & Colleges',
+  description: 'Browse 10,000+ accredited universities, colleges, and TVET institutions worldwide. Check accreditation status and reviews.',
+  alternates: {
+    canonical: 'https://www.elimux.ke/institutions/',
+  },
+}
 
 export const revalidate = 60
 

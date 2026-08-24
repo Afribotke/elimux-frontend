@@ -10,7 +10,64 @@ import SponsorBanner from './SponsorBanner';
 import HowItWorks from './HowItWorks';
 import { Footer } from '@/components/layout/Footer';
 import AISearchOverlay from '@/components/search/AISearchOverlay';
+import JsonLd from '@/components/seo/JsonLd';
 import { Target, GraduationCap as GradIcon, Award } from 'lucide-react';
+
+// Cycle 029: homepage-only FAQPage schema. The "compare institutions"
+// answer was reworded from the SEO instruction's literal draft - checked
+// first and there is no institution-to-institution side-by-side compare
+// feature (grepped src/app/institutions/ and src/components/institutions/
+// for "compare" - zero matches); only /programs has a real compare tool
+// (CompareProvider/CompareDrawer). Publishing the literal claim would have
+// been a factual overstatement in indexed structured data, the same class
+// of problem as fabricating a sameAs social link - reworded to what's
+// actually true instead of what was drafted.
+const FAQ_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'How do I find the right program?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: "Use our AI-powered search to describe what you're looking for in your own words, or browse by category — Universities, TVET, Scholarships, Internships, Attachments, or Bursaries.",
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Can I compare institutions and programs?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Every institution profile shows accreditation status, location, program categories, and student reviews. Programs can be compared side by side using the compare tool on the Programs page.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How do I apply?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Head directly to the institution or program page to apply, or start with a scholarship search to fund your education.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is an industrial attachment?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Attachments are arranged through your university as part of your degree requirements. Your institution uploads eligible students, and you apply through the platform.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Who can post opportunities?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Verified employers and institutions can post internships, attachments, and bursaries. Create an employer account to get started.',
+      },
+    },
+  ],
+};
 
 // Cycle 025: the 3 category tabs (University & College / Skills & Trades /
 // Scholarships) duplicated the global UnifiedNavBar and hid content behind
@@ -89,6 +146,7 @@ export default function NewHomePage() {
 
   return (
     <div className="w-full bg-white dark:bg-background min-h-screen">
+      <JsonLd data={FAQ_SCHEMA} />
       {/* Hero Section - permanently dark, not theme-toggle-adaptive
           (same deliberate pattern as SponsorBanner/AdPortalSection's CTA
           banner elsewhere on this page). Picked the "subtle brand warmth"

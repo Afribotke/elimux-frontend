@@ -118,7 +118,7 @@ export default async function CareersPage({ params }: CareersPageProps) {
 
       {/* Footer */}
       <footer className="border-t border-gray-200 py-8 text-center text-sm opacity-50">
-        <p>Powered by <a href="https://elimux.ke" className="hover:underline" style={{ color: colors.primary }}>ElimuX</a></p>
+        <p>Powered by <a href="https://elimux.ke" rel="noopener noreferrer" className="hover:underline" style={{ color: colors.primary }}>ElimuX</a></p>
       </footer>
     </div>
   );
