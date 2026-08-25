@@ -7,7 +7,6 @@ import { supabase } from '@/lib/supabase'
 import { runAISearch, type SearchIntent, type InstitutionMode } from '@/lib/aiSearch'
 import { awardPoints } from '@/lib/api'
 import AISearchBar from '@/components/AISearchBar'
-import SearchModeToggle from '@/components/SearchModeToggle'
 import InterestSelector from '@/components/InterestSelector'
 import CareerPathway from '@/components/CareerPathway'
 import ProgramCard from '@/components/ProgramCard'
@@ -179,12 +178,6 @@ function AISearchContent() {
           <p className="text-lg text-gray-300 text-center mt-4 mb-10 max-w-2xl mx-auto">
             Describe what you&apos;re looking for in your own words. Our AI matches you to universities, TVET institutes, scholarships, internships, attachments, and bursaries.
           </p>
-
-          {SKILLS_TOGGLE_ENABLED && (
-            <div className="mb-6">
-              <SearchModeToggle value={institutionMode} onChange={setInstitutionMode} />
-            </div>
-          )}
 
           <AISearchBar onSearch={handleSearch} loading={loading} placeholder={searchPlaceholder} initialQuery={initialQuery} dark />
 
