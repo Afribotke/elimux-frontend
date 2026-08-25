@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string, email: string | undefined) => {
     // There is no 'profiles' table - student_profiles.user_id is the FK to
     // the auth user (student_profiles.id is that row's own PK, a separate
     // value). Keep `id` on the returned object as the auth user id, not
@@ -45,8 +45,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .single();
 
     if (error) {
+      // A failed profile lookup (missing row for a user who hasn't finished
+      // onboarding, a transient network/RLS hiccup, etc.) used to return
+      // null here, which the caller then set as `user` - collapsing a
+      // perfectly valid, still-authenticated session into what every
+      // consumer (DesktopNav, MobileNav) reads as "logged out", since they
+      // branch on `user` truthiness, not `session`/`isAuthenticated`.
+      // Falling back to a minimal user built from the session itself keeps
+      // auth state correct even when the richer profile row isn't
+      // available - full_name/etc. are just absent, not "not logged in".
       console.error('Failed to fetch profile:', error);
-      return null;
+      return { id: userId, email: email ?? '', role: 'student' } as User;
     }
     return { ...data, id: userId, role: 'student' } as User;
   }, []);
@@ -59,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session } } = await supabase.auth.getSession();
         if (mounted) setSession(session);
         if (session?.user && mounted) {
-          const profile = await fetchProfile(session.user.id);
+          const profile = await fetchProfile(session.user.id, session.user.email);
           if (mounted) setUser(profile);
         }
       } catch (err) {
@@ -75,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         if (mounted) setSession(session);
         if (session?.user && mounted) {
-          const profile = await fetchProfile(session.user.id);
+          const profile = await fetchProfile(session.user.id, session.user.email);
           if (mounted) setUser(profile);
         } else if (mounted) {
           setUser(null);
@@ -119,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     if (user?.id) {
-      const profile = await fetchProfile(user.id);
+      const profile = await fetchProfile(user.id, user.email);
       setUser(profile);
     }
   };

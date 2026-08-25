@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import PoweredByHeaderBadge from './PoweredByHeaderBadge';
 import NotificationBell from './bursary/NotificationBell';
+import { AuthNav } from './layout/AuthNav';
 
 const PRIMARY_NAV = [
   { icon: '🏠', label: 'Home', href: '/' },
@@ -59,26 +60,12 @@ function NavLink({
 
 export default function DesktopNav() {
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
-  const [profileOpen, setProfileOpen] = useState(false);
-  const profileRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
-        setProfileOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
+  const { user } = useAuth();
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
   };
-
-  const isAdmin = (user as any)?.role === 'admin';
 
   // Cycle 027: transparent-over-hero, solid-on-scroll only applies on the
   // homepage - it's the only route with a colored hero for the navbar to
@@ -141,82 +128,7 @@ export default function DesktopNav() {
 
             {user && <NotificationBell />}
 
-            {user ? (
-              <div className="relative" ref={profileRef}>
-                <button
-                  onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-full hover:bg-muted transition-colors border border-border"
-                >
-                  <div className="w-7 h-7 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center text-white text-[10px] font-bold">
-                    {(user as any).email?.charAt(0).toUpperCase() || 'U'}
-                  </div>
-                  <span className="text-muted-foreground text-[13px] font-medium max-w-[100px] truncate">
-                    {(user as any).email?.split('@')[0] || 'Account'}
-                  </span>
-                  <span className="text-muted-foreground text-xs">⌄</span>
-                </button>
-
-                {profileOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-52 bg-background border border-border rounded-xl shadow-lg py-2 z-50">
-                    <Link
-                      href="/student/profile"
-                      onClick={() => setProfileOpen(false)}
-                      className="block px-4 py-2 text-foreground text-sm hover:bg-muted"
-                    >
-                      Profile
-                    </Link>
-                    <Link
-                      href="/applications"
-                      onClick={() => setProfileOpen(false)}
-                      className="block px-4 py-2 text-foreground text-sm hover:bg-muted"
-                    >
-                      📝 My Applications
-                    </Link>
-                    <Link
-                      href="/bursary/notifications"
-                      onClick={() => setProfileOpen(false)}
-                      className="block px-4 py-2 text-foreground text-sm hover:bg-muted"
-                    >
-                      🔔 Bursary Notifications
-                    </Link>
-                    {isAdmin && (
-                      <Link
-                        href="/admin"
-                        onClick={() => setProfileOpen(false)}
-                        className="block px-4 py-2 text-foreground text-sm hover:bg-muted"
-                      >
-                        Admin Dashboard
-                      </Link>
-                    )}
-                    <div className="border-t border-border my-1" />
-                    <button
-                      onClick={() => {
-                        signOut();
-                        setProfileOpen(false);
-                      }}
-                      className="block w-full text-left px-4 py-2 text-red-600 text-sm hover:bg-red-50"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/login"
-                  className="text-muted-foreground text-[13px] font-medium hover:text-foreground transition-colors"
-                >
-                  Log In
-                </Link>
-                <Link
-                  href="/register"
-                  className="bg-foreground text-background text-[13px] font-semibold px-4 py-2 rounded-full hover:opacity-90 transition-colors"
-                >
-                  Get Started
-                </Link>
-              </div>
-            )}
+            <AuthNav />
           </div>
         </div>
       </div>
