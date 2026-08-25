@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Share2 } from 'lucide-react';
-import { ShareData } from '@/lib/share-utils';
+import { ShareData, getSmartShareUrl } from '@/lib/share-utils';
 import { useShare } from '@/hooks/useShare';
 import { ShareBottomSheet } from './ShareBottomSheet';
 
@@ -14,20 +14,34 @@ interface ShareButtonProps {
   variant?: 'floating' | 'inline' | 'icon-only';
   className?: string;
   label?: string;
+  /** When both are provided, share actions use a trackable smart link instead of the raw URL. */
+  contentType?: string;
+  contentId?: string;
 }
 
 export function ShareButton({
   shareData,
   variant = 'inline',
   className = '',
-  label = 'Share'
+  label = 'Share',
+  contentType,
+  contentId,
 }: ShareButtonProps) {
   const { isNativeSupported, share } = useShare();
   const [showSheet, setShowSheet] = useState(false);
+  const [resolvedShareData, setResolvedShareData] = useState(shareData);
+
+  const resolveShareData = async (): Promise<ShareData> => {
+    if (!contentType || !contentId) return shareData;
+    const smartUrl = await getSmartShareUrl(contentType, contentId);
+    return smartUrl ? { ...shareData, url: smartUrl } : shareData;
+  };
 
   const handleClick = async () => {
+    const data = await resolveShareData();
+    setResolvedShareData(data);
     if (isNativeSupported) {
-      await share(shareData);
+      await share(data);
     } else {
       setShowSheet(true);
     }
@@ -57,7 +71,9 @@ export function ShareButton({
       <ShareBottomSheet
         isOpen={showSheet}
         onClose={() => setShowSheet(false)}
-        shareData={shareData}
+        shareData={resolvedShareData}
+        contentType={contentType}
+        contentId={contentId}
       />
     </>
   );

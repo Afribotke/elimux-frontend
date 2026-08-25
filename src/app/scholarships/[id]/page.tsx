@@ -9,6 +9,7 @@ import ScholarshipAlertForm from '@/components/scholarships/ScholarshipAlertForm
 import BackButton from '@/components/BackButton'
 import Breadcrumbs from '@/components/Breadcrumbs'
 import { ShareButton } from '@/components/share'
+import ShareStats from '@/components/smarttrack/ShareStats'
 import { generateShareMetadata } from '@/lib/share-metadata'
 import { Calendar, Wallet, MapPin, ExternalLink, ClipboardList, Bell } from 'lucide-react'
 
@@ -98,13 +99,17 @@ export default async function ScholarshipDetailPage({ params }: { params: Promis
               </div>
             )}
             <div className="ml-auto flex items-center gap-2">
-              <ShareButton shareData={shareData} variant="icon-only" />
+              <ShareButton shareData={shareData} variant="icon-only" contentType="scholarship" contentId={scholarship.id} />
               <ScholarshipFavoriteButton scholarshipId={scholarship.id} />
             </div>
           </div>
 
           <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{scholarship.title}</h1>
           <p className="text-primary-400 font-medium mb-4">{scholarship.provider}</p>
+
+          <div className="mb-6">
+            <ShareStats contentType="scholarship" contentId={scholarship.id} />
+          </div>
 
           {!scholarship.scholarship_provider?.is_partner && (
             <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 mb-6">

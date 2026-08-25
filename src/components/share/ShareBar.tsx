@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Share2, Bookmark, ExternalLink } from 'lucide-react';
-import { ShareData } from '@/lib/share-utils';
+import { ShareData, getSmartShareUrl } from '@/lib/share-utils';
 import { useShare } from '@/hooks/useShare';
 import { ShareBottomSheet } from './ShareBottomSheet';
 
@@ -16,6 +16,9 @@ interface ShareBarProps {
   isSaved?: boolean;
   showApply?: boolean;
   applyLabel?: string;
+  /** When both are provided, share actions use a trackable smart link instead of the raw URL. */
+  contentType?: string;
+  contentId?: string;
 }
 
 export function ShareBar({
@@ -25,14 +28,23 @@ export function ShareBar({
   isSaved = false,
   showApply = true,
   applyLabel = 'Apply Now',
+  contentType,
+  contentId,
 }: ShareBarProps) {
   const { isNativeSupported, share } = useShare();
   const [showSheet, setShowSheet] = useState(false);
   const [saved, setSaved] = useState(isSaved);
+  const [resolvedShareData, setResolvedShareData] = useState(shareData);
 
   const handleShare = async () => {
+    let data = shareData;
+    if (contentType && contentId) {
+      const smartUrl = await getSmartShareUrl(contentType, contentId);
+      if (smartUrl) data = { ...shareData, url: smartUrl };
+    }
+    setResolvedShareData(data);
     if (isNativeSupported) {
-      await share(shareData);
+      await share(data);
     } else {
       setShowSheet(true);
     }
@@ -88,7 +100,9 @@ export function ShareBar({
       <ShareBottomSheet
         isOpen={showSheet}
         onClose={() => setShowSheet(false)}
-        shareData={shareData}
+        shareData={resolvedShareData}
+        contentType={contentType}
+        contentId={contentId}
       />
     </>
   );

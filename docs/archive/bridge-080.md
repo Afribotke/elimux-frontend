@@ -1,3 +1,5 @@
+File 1: src/lib/share-utils.ts
+TypeScript
 // src/lib/share-utils.ts
 // Utility functions for sharing, UTM params, deep links, and platform configs
 
@@ -96,7 +98,7 @@ export function copyToClipboard(text: string): Promise<boolean> {
   if (navigator.clipboard && window.isSecureContext) {
     return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
   }
-
+  
   const textArea = document.createElement('textarea');
   textArea.value = text;
   textArea.style.position = 'fixed';
@@ -105,7 +107,7 @@ export function copyToClipboard(text: string): Promise<boolean> {
   document.body.appendChild(textArea);
   textArea.focus();
   textArea.select();
-
+  
   try {
     const successful = document.execCommand('copy');
     document.body.removeChild(textArea);
@@ -120,37 +122,9 @@ export function canUseNativeShare(): boolean {
   return typeof navigator !== 'undefined' && !!navigator.share;
 }
 
-/**
- * Requests a trackable short link for a piece of content. Requires the caller to be
- * signed in server-side; on any failure (anonymous user, network error, RPC error) it
- * resolves to null so callers can fall back to the plain canonical URL.
- */
-export async function getSmartShareUrl(contentType: string, contentId: string): Promise<string | null> {
-  try {
-    const res = await fetch('/api/smart-links', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contentType, contentId }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.success ? data.shortUrl : null;
-  } catch {
-    return null;
-  }
-}
-
-export function trackShareEvent(contentType: string, contentId: string, channel: string, smartLinkId?: string) {
-  fetch('/api/share-events', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contentType, contentId, channel, smartLinkId }),
-  }).catch(() => {});
-}
-
 export function getDefaultShareData(path: string, pageType: string): ShareData {
   const url = getCanonicalUrl(path);
-
+  
   const defaults: Record<string, ShareData> = {
     scholarship: {
       title: 'Find Scholarships on ElimuX',
@@ -181,20 +155,4 @@ export function getDefaultShareData(path: string, pageType: string): ShareData {
       hashtags: ['ElimuX', 'University', 'Education'],
     },
     search: {
-      title: 'Search Results on ElimuX',
-      description: 'I found great education opportunities matching my search. Check them out!',
-      url,
-      image: `${BASE_URL}/og-search.jpg`,
-      hashtags: ['ElimuX', 'Education'],
-    },
-    default: {
-      title: 'ElimuX — Discover Your Perfect Education',
-      description: 'Find scholarships, courses, internships, and attachments. The smartest way to plan your academic future.',
-      url,
-      image: `${BASE_URL}/og-default.jpg`,
-      hashtags: ['ElimuX', 'Education', 'Africa'],
-    },
-  };
-
-  return defaults[pageType] || defaults.default;
-}
+      title

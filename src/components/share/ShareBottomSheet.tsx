@@ -5,12 +5,16 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Link2, Check, MessageCircle, Facebook, Twitter, Linkedin, Send, Mail } from 'lucide-react';
-import { ShareData, PLATFORM_CONFIGS, copyToClipboard } from '@/lib/share-utils';
+import { ShareData, PLATFORM_CONFIGS, copyToClipboard, trackShareEvent } from '@/lib/share-utils';
+import SmartQRCode from '@/components/smarttrack/SmartQRCode';
 
 interface ShareBottomSheetProps {
   isOpen: boolean;
   onClose: () => void;
   shareData: ShareData;
+  contentType?: string;
+  contentId?: string;
+  smartLinkId?: string;
 }
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -22,7 +26,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Mail: <Mail className="w-6 h-6" />,
 };
 
-export function ShareBottomSheet({ isOpen, onClose, shareData }: ShareBottomSheetProps) {
+export function ShareBottomSheet({ isOpen, onClose, shareData, contentType, contentId, smartLinkId }: ShareBottomSheetProps) {
   const [copied, setCopied] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
 
@@ -46,15 +50,21 @@ export function ShareBottomSheet({ isOpen, onClose, shareData }: ShareBottomShee
     };
   }, [isOpen, onClose]);
 
+  const track = (channel: string) => {
+    if (contentType && contentId) trackShareEvent(contentType, contentId, channel, smartLinkId);
+  };
+
   const handleCopyLink = async () => {
     const success = await copyToClipboard(shareData.url);
     if (success) {
       setCopied(true);
+      track('copy_link');
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  const handlePlatformClick = (url: string) => {
+  const handlePlatformClick = (platformName: string, url: string) => {
+    track(platformName.toLowerCase().replace(/[^a-z]/g, '_'));
     window.open(url, '_blank', 'noopener,noreferrer');
     onClose();
   };
@@ -97,7 +107,7 @@ export function ShareBottomSheet({ isOpen, onClose, shareData }: ShareBottomShee
           {PLATFORM_CONFIGS.map((platform) => (
             <button
               key={platform.name}
-              onClick={() => handlePlatformClick(platform.getUrl(shareData))}
+              onClick={() => handlePlatformClick(platform.name, platform.getUrl(shareData))}
               className="flex flex-col items-center gap-2 group"
             >
               <div
@@ -125,6 +135,12 @@ export function ShareBottomSheet({ isOpen, onClose, shareData }: ShareBottomShee
             </span>
           </button>
         </div>
+
+        {contentType && contentId && (
+          <div className="px-5 pb-4">
+            <SmartQRCode url={shareData.url} title="Scan to share" size={160} />
+          </div>
+        )}
 
         {/* Preview card */}
         <div className="mx-5 mb-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
