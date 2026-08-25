@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { runAISearch, type SearchIntent, type InstitutionMode } from '@/lib/aiSearch'
 import { awardPoints } from '@/lib/api'
@@ -57,6 +57,8 @@ const HERO_CATEGORIES = [
 const SKILLS_TOGGLE_ENABLED = process.env.NEXT_PUBLIC_FEATURE_SKILLS_TOGGLE === 'true'
 
 function AISearchContent() {
+  const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const initialQuery = searchParams.get('q') ?? ''
   const initialMode = searchParams.get('mode')
@@ -81,6 +83,7 @@ function AISearchContent() {
   const [intent, setIntent] = useState<SearchIntent | null>(null)
   const [programs, setPrograms] = useState<any[]>([])
   const [institutions, setInstitutions] = useState<any[]>([])
+  const [resultCount, setResultCount] = useState<number | null>(null)
 
   useEffect(() => {
     async function loadReferenceData() {
@@ -114,6 +117,11 @@ function AISearchContent() {
     setLoading(true)
     setHasSearched(true)
     setError(null)
+
+    if (query.trim()) {
+      router.push(`${pathname}?q=${encodeURIComponent(query)}`, { scroll: false })
+    }
+
     try {
       const result = await runAISearch(
         query,
@@ -131,10 +139,12 @@ function AISearchContent() {
       setIntent(result.intent)
       setPrograms(result.programs)
       setInstitutions(result.institutions)
+      setResultCount(result.programs.length + result.institutions.length)
       awardPoints('search').catch(() => {})
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return // superseded by a newer search
       setError(err instanceof Error ? err.message : 'AI search failed')
+      setResultCount(null)
     } finally {
       // Only this call's own controller is still current if it wasn't the
       // one just aborted above by a newer search - otherwise clearing
@@ -179,7 +189,73 @@ function AISearchContent() {
             Describe what you&apos;re looking for in your own words. Our AI matches you to universities, TVET institutes, scholarships, internships, attachments, and bursaries.
           </p>
 
-          <AISearchBar onSearch={handleSearch} loading={loading} placeholder={searchPlaceholder} initialQuery={initialQuery} dark />
+          <AISearchBar onSearch={handleSearch} loading={loading} resultCount={resultCount} placeholder={searchPlaceholder} initialQuery={initialQuery} dark />
+
+          {hasSearched && (
+            <div className="mt-6 w-full max-w-4xl mx-auto text-left transition-all duration-300 ease-out animate-fade-in">
+              {loading ? (
+                <div className="text-center py-12 text-gray-400">
+                  <div className="animate-spin inline-block w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full mb-4" />
+                  <p>Finding the best matches for you...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center py-12 bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50">
+                  <p className="text-orange-400 text-lg">{error}</p>
+                </div>
+              ) : programs.length === 0 && institutions.length === 0 ? (
+                <div className="text-center py-12 bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50">
+                  <p className="text-xl text-white mb-2">No results found</p>
+                  <p className="text-gray-400">Try adjusting your search or browse categories below</p>
+                </div>
+              ) : (
+                <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
+                  {intent && (
+                    <div className="mb-6 px-4 py-3 rounded-xl bg-slate-900/60 border border-slate-700 text-sm text-gray-300 flex flex-wrap items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary-400 flex-shrink-0" />
+                      <span>Understood as:</span>
+                      {intent.category && <span className="px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-400">{intent.category}</span>}
+                      {intent.country && <span className="px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-400">{intent.country}</span>}
+                      {intent.level && <span className="px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-400">{intent.level}</span>}
+                      {intent.maxBudget && <span className="px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-400">Under ${intent.maxBudget.toLocaleString()}</span>}
+                      {intent.keywords.length > 0 && <span className="text-gray-400">&ldquo;{intent.keywords.join(', ')}&rdquo;</span>}
+                    </div>
+                  )}
+
+                  {programs.length > 0 && (
+                    <div className="mb-8">
+                      <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <GraduationCap className="w-5 h-5 text-primary-400" />
+                        Programs ({programs.length})
+                      </h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {programs.map((program) => (
+                          <Link key={program.id} href={`/programs/${program.id}/`}>
+                            <ProgramCard program={program} />
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {institutions.length > 0 && (
+                    <div>
+                      <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <Building2 className="w-5 h-5 text-primary-400" />
+                        Institutions ({institutions.length})
+                      </h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {institutions.map((inst) => (
+                          <Link key={inst.id} href={`/institutions/${inst.id}/`}>
+                            <InstitutionCard institution={inst} />
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex items-center gap-4 max-w-[560px] mx-auto mt-8 mb-4">
             <div className="h-px bg-gray-700 flex-1" />
@@ -282,72 +358,6 @@ function AISearchContent() {
         </div>
       </div>
 
-      {hasSearched && (
-        <div className="max-w-6xl mx-auto">
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full mx-auto mb-4" />
-              <p className="text-muted">Understanding your search...</p>
-            </div>
-          ) : error ? (
-            <div className="text-center py-12">
-              <p className="text-elimux-danger text-lg">{error}</p>
-            </div>
-          ) : (
-            <>
-              {intent && (
-                <div className="mb-8 px-4 py-3 rounded-xl bg-elimux-card border border-border text-sm text-muted flex flex-wrap items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary-400 flex-shrink-0" />
-                  <span>Understood as:</span>
-                  {intent.category && <span className="px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-400">{intent.category}</span>}
-                  {intent.country && <span className="px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-400">{intent.country}</span>}
-                  {intent.level && <span className="px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-400">{intent.level}</span>}
-                  {intent.maxBudget && <span className="px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-400">Under ${intent.maxBudget.toLocaleString()}</span>}
-                  {intent.keywords.length > 0 && <span className="text-muted">&ldquo;{intent.keywords.join(', ')}&rdquo;</span>}
-                </div>
-              )}
-
-              {programs.length > 0 && (
-                <div className="mb-12">
-                  <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
-                    <GraduationCap className="w-6 h-6 text-primary-400" />
-                    Programs ({programs.length})
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {programs.map((program) => (
-                      <Link key={program.id} href={`/programs/${program.id}/`}>
-                        <ProgramCard program={program} />
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {institutions.length > 0 && (
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
-                    <Building2 className="w-6 h-6 text-primary-400" />
-                    Institutions ({institutions.length})
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {institutions.map((inst) => (
-                      <Link key={inst.id} href={`/institutions/${inst.id}/`}>
-                        <InstitutionCard institution={inst} />
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {programs.length === 0 && institutions.length === 0 && (
-                <div className="text-center py-12">
-                  <p className="text-muted text-lg">No results found. Try a different search or fewer filters.</p>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
       </div>
     </main>
   )

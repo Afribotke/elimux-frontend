@@ -6,6 +6,11 @@ import { Search, Sparkles, X } from 'lucide-react'
 interface AISearchBarProps {
   onSearch: (query: string) => void
   loading?: boolean
+  // Total result count from the last completed search. Undefined/null (the
+  // default) means "no search has completed yet" and the button just reads
+  // "Search" - callers that never pass this (e.g. the homepage) are
+  // unaffected. 0 is a valid, distinct value and renders as "0 Results".
+  resultCount?: number | null
   placeholder?: string
   initialQuery?: string
   // Opt-in hardcoded-dark styling for permanently-dark hero sections (e.g.
@@ -29,10 +34,16 @@ const SUGGESTIONS = [
   'Affordable MBA programs',
 ]
 
-export default function AISearchBar({ onSearch, loading, placeholder, initialQuery, dark }: AISearchBarProps) {
+export default function AISearchBar({ onSearch, loading, resultCount, placeholder, initialQuery, dark }: AISearchBarProps) {
   const [query, setQuery] = useState(initialQuery ?? '')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const buttonLabel = loading
+    ? 'Searching...'
+    : resultCount !== undefined && resultCount !== null
+      ? `${resultCount} Result${resultCount !== 1 ? 's' : ''}`
+      : 'Search'
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -93,7 +104,7 @@ export default function AISearchBar({ onSearch, loading, placeholder, initialQue
               className="px-6 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-semibold transition-colors shadow-lg flex items-center gap-2 flex-shrink-0 disabled:opacity-50"
             >
               <Search className="w-4 h-4" />
-              {loading ? 'Searching...' : 'Search'}
+              {buttonLabel}
             </button>
           </div>
         </div>
