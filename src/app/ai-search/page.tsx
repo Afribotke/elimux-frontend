@@ -153,6 +153,22 @@ function AISearchContent() {
     }
   }
 
+  // Fires when the search input goes back to empty (X button or deleting all text) -
+  // drops the stale result state and the ?q= URL param so the button reverts to "Search"
+  // and the results container disappears, instead of showing a result count/list for a
+  // query that's no longer there.
+  function handleClear() {
+    abortControllerRef.current?.abort()
+    setLoading(false)
+    setHasSearched(false)
+    setError(null)
+    setIntent(null)
+    setPrograms([])
+    setInstitutions([])
+    setResultCount(null)
+    router.push(pathname, { scroll: false })
+  }
+
   function handleCareerSelect(label: string) {
     setCareerGoal(label)
     handleSearch('', label)
@@ -189,7 +205,7 @@ function AISearchContent() {
             Describe what you&apos;re looking for in your own words. Our AI matches you to universities, TVET institutes, scholarships, internships, attachments, and bursaries.
           </p>
 
-          <AISearchBar onSearch={handleSearch} loading={loading} resultCount={resultCount} placeholder={searchPlaceholder} initialQuery={initialQuery} dark />
+          <AISearchBar onSearch={handleSearch} onClear={handleClear} loading={loading} resultCount={resultCount} placeholder={searchPlaceholder} initialQuery={initialQuery} dark />
 
           {hasSearched && (
             <div className="mt-6 w-full max-w-4xl mx-auto text-left transition-all duration-300 ease-out animate-fade-in">

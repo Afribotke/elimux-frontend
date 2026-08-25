@@ -5,6 +5,11 @@ import { Search, Sparkles, X } from 'lucide-react'
 
 interface AISearchBarProps {
   onSearch: (query: string) => void
+  // Fires when the query goes back to empty - either the X button or deleting
+  // all input text. Lets the parent drop its stale result state (resultCount,
+  // result lists, the ?q= URL param) instead of leaving "N Results" showing
+  // for an input that no longer has a query behind it.
+  onClear?: () => void
   loading?: boolean
   // Total result count from the last completed search. Undefined/null (the
   // default) means "no search has completed yet" and the button just reads
@@ -34,7 +39,7 @@ const SUGGESTIONS = [
   'Affordable MBA programs',
 ]
 
-export default function AISearchBar({ onSearch, loading, resultCount, placeholder, initialQuery, dark }: AISearchBarProps) {
+export default function AISearchBar({ onSearch, onClear, loading, resultCount, placeholder, initialQuery, dark }: AISearchBarProps) {
   const [query, setQuery] = useState(initialQuery ?? '')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -76,8 +81,10 @@ export default function AISearchBar({ onSearch, loading, resultCount, placeholde
               type="text"
               value={query}
               onChange={(e) => {
-                setQuery(e.target.value)
-                setShowSuggestions(e.target.value.length > 0)
+                const val = e.target.value
+                setQuery(val)
+                setShowSuggestions(val.length > 0)
+                if (val.trim() === '') onClear?.()
               }}
               onFocus={() => setShowSuggestions(query.length > 0)}
               placeholder={placeholder ?? DEFAULT_PLACEHOLDER}
@@ -89,7 +96,7 @@ export default function AISearchBar({ onSearch, loading, resultCount, placeholde
             {query && (
               <button
                 type="button"
-                onClick={() => { setQuery(''); setShowSuggestions(false) }}
+                onClick={() => { setQuery(''); setShowSuggestions(false); onClear?.() }}
                 className={dark
                   ? "text-gray-400 hover:text-white transition-colors flex-shrink-0"
                   : "text-muted hover:text-foreground transition-colors flex-shrink-0"
