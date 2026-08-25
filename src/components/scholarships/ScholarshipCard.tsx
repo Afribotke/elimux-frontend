@@ -1,15 +1,19 @@
 import { Award, Calendar, MapPin, Wallet } from 'lucide-react'
 import type { ScholarshipRow } from '@/lib/api'
+import TrendingBadge from '@/components/trending/TrendingBadge'
 
 interface ScholarshipCardProps {
   scholarship: ScholarshipRow
+  // Passed down by callers that already have SmartTrack click data for this card
+  // (e.g. a trending_snapshots lookup). Omitted callers simply show no badge.
+  trendingClicks24h?: number | null
 }
 
 function daysUntil(deadline: string): number {
   return Math.ceil((new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
 }
 
-export default function ScholarshipCard({ scholarship }: ScholarshipCardProps) {
+export default function ScholarshipCard({ scholarship, trendingClicks24h }: ScholarshipCardProps) {
   const daysLeft = daysUntil(scholarship.application_deadline)
 
   return (
@@ -21,7 +25,10 @@ export default function ScholarshipCard({ scholarship }: ScholarshipCardProps) {
         </div>
       )}
 
-      <h3 className="text-lg font-bold text-foreground mb-1 line-clamp-2">{scholarship.title}</h3>
+      <div className="flex items-start gap-2 mb-1">
+        <h3 className="text-lg font-bold text-foreground line-clamp-2">{scholarship.title}</h3>
+        <TrendingBadge clicks24h={trendingClicks24h} />
+      </div>
       <p className="text-sm text-primary-400 mb-3">{scholarship.provider}</p>
 
       <div className="flex flex-wrap gap-3 text-sm text-muted mb-3">

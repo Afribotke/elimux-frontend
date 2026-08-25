@@ -15,6 +15,7 @@ import FeatureShowcase from '@/components/home/FeatureShowcase'
 import PricingTeaser from '@/components/home/PricingTeaser'
 import FAQSection from '@/components/home/FAQSection'
 import FinalCTA from '@/components/home/FinalCTA'
+import TrendingSection from '@/components/trending/TrendingSection'
 import { GraduationCap, Building2, Globe, Sparkles, TrendingUp, Award, ArrowRight, SearchX } from 'lucide-react'
 import NewHomePage from '@/components/home/NewHomePage'
 import GradeSearch from '@/components/grade-search/GradeSearch'
@@ -235,6 +236,7 @@ function CurrentHome() {
 
       {!hasSearched && (
         <>
+          <TrendingSection />
           <HowItWorks />
           <FeatureShowcase />
 

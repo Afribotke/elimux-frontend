@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Clock, DollarSign, MapPin, BookOpen, Check, Share2 } from 'lucide-react'
 import ShareModal from './ShareModal'
 import ProgramVerificationBadge from './ProgramVerificationBadge'
+import TrendingBadge from './trending/TrendingBadge'
 
 interface ProgramCardProps {
   program: {
@@ -35,6 +36,9 @@ interface ProgramCardProps {
   compareSelected?: boolean
   compareDisabled?: boolean
   onToggleCompare?: (id: string) => void
+  // Passed down by callers that already have SmartTrack click data for this card
+  // (e.g. a trending_snapshots lookup). Omitted callers simply show no badge.
+  trendingClicks24h?: number | null
 }
 
 export default function ProgramCard({
@@ -43,6 +47,7 @@ export default function ProgramCard({
   compareSelected = false,
   compareDisabled = false,
   onToggleCompare,
+  trendingClicks24h,
 }: ProgramCardProps) {
   const categoryColor = program.category?.color || '#FFC107'
   const [shareOpen, setShareOpen] = useState(false)
@@ -122,9 +127,12 @@ export default function ProgramCard({
       )}
 
       {/* Program Name */}
-      <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-2">
-        {program.name}
-      </h3>
+      <div className="flex items-start gap-2 mb-2">
+        <h3 className="text-lg font-bold text-foreground line-clamp-2">
+          {program.name}
+        </h3>
+        <TrendingBadge clicks24h={trendingClicks24h} />
+      </div>
 
       {/* Institution */}
       {program.institution && (
