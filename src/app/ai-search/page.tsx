@@ -68,6 +68,7 @@ function AISearchContent() {
 
   const [careerGoal, setCareerGoal] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
+  const resultsRef = useRef<HTMLDivElement>(null)
 
   const [countryId, setCountryId] = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -117,6 +118,14 @@ function AISearchContent() {
     setLoading(true)
     setHasSearched(true)
     setError(null)
+
+    // Both the search bar and the career-pathway cards funnel through here, and either
+    // can be clicked from well below the fold (career cards are lower on the page) - so
+    // the results container (which only exists once hasSearched flips true) needs a beat
+    // to mount before scrollIntoView has something to target.
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 100)
 
     if (query.trim()) {
       router.push(`${pathname}?q=${encodeURIComponent(query)}`, { scroll: false })
@@ -208,7 +217,7 @@ function AISearchContent() {
           <AISearchBar onSearch={handleSearch} onClear={handleClear} loading={loading} resultCount={resultCount} placeholder={searchPlaceholder} initialQuery={initialQuery} dark />
 
           {hasSearched && (
-            <div className="mt-6 w-full max-w-4xl mx-auto text-left transition-all duration-300 ease-out animate-fade-in">
+            <div ref={resultsRef} className="mt-6 w-full max-w-4xl mx-auto text-left transition-all duration-300 ease-out animate-fade-in">
               {loading ? (
                 <div className="text-center py-12 text-gray-400">
                   <div className="animate-spin inline-block w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full mb-4" />
