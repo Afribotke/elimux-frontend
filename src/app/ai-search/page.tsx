@@ -68,7 +68,10 @@ function AISearchContent() {
 
   const [careerGoal, setCareerGoal] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
-  const resultsRef = useRef<HTMLDivElement>(null)
+  // Wraps the search bar + results zone (always mounted, unlike the results container
+  // itself which only exists once hasSearched is true) - scrolling here works instantly,
+  // with no need to wait for anything to render first.
+  const searchSectionRef = useRef<HTMLDivElement>(null)
 
   const [countryId, setCountryId] = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -100,14 +103,28 @@ function AISearchContent() {
 
   // Auto-run search when arriving with a ?q= param (e.g. from the homepage
   // hero). No-op when absent, so direct visits to /ai-search are unaffected.
+  // scrollFirst=false: the user is already at the top of the page on initial
+  // load, so there's nothing to scroll away from - forcing the scroll here
+  // would just be a small unprompted jump right after the page appears.
   useEffect(() => {
     if (initialQuery) {
-      handleSearch(initialQuery)
+      handleSearch(initialQuery, undefined, false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function handleSearch(query: string, careerGoalOverride?: string | null) {
+  async function handleSearch(query: string, careerGoalOverride?: string | null, scrollFirst = true) {
+    // Instant feedback, before any state update or async work: both the search bar and
+    // the career-pathway cards funnel through here, and either can be clicked from well
+    // below the fold (career cards sit lower on the page). Scrolling first - rather than
+    // waiting for the results container to mount or for results to arrive - is what
+    // actually reads as responsive; the loading spinner below already renders on the very
+    // next commit (hasSearched flips true a few lines down), so it's in view by the time
+    // the smooth scroll lands.
+    if (scrollFirst) {
+      searchSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+
     // Cancel a still-in-flight previous search before starting a new one -
     // without this, a slow first response could resolve after a faster
     // second one and overwrite fresher results with stale ones.
@@ -118,14 +135,6 @@ function AISearchContent() {
     setLoading(true)
     setHasSearched(true)
     setError(null)
-
-    // Both the search bar and the career-pathway cards funnel through here, and either
-    // can be clicked from well below the fold (career cards are lower on the page) - so
-    // the results container (which only exists once hasSearched flips true) needs a beat
-    // to mount before scrollIntoView has something to target.
-    setTimeout(() => {
-      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 100)
 
     if (query.trim()) {
       router.push(`${pathname}?q=${encodeURIComponent(query)}`, { scroll: false })
@@ -214,10 +223,11 @@ function AISearchContent() {
             Describe what you&apos;re looking for in your own words. Our AI matches you to universities, TVET institutes, scholarships, internships, attachments, and bursaries.
           </p>
 
+          <div ref={searchSectionRef}>
           <AISearchBar onSearch={handleSearch} onClear={handleClear} loading={loading} resultCount={resultCount} placeholder={searchPlaceholder} initialQuery={initialQuery} dark />
 
           {hasSearched && (
-            <div ref={resultsRef} className="mt-6 w-full max-w-4xl mx-auto text-left transition-all duration-300 ease-out animate-fade-in">
+            <div className="mt-6 w-full max-w-4xl mx-auto text-left transition-all duration-300 ease-out animate-fade-in">
               {loading ? (
                 <div className="text-center py-12 text-gray-400">
                   <div className="animate-spin inline-block w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full mb-4" />
@@ -281,6 +291,7 @@ function AISearchContent() {
               )}
             </div>
           )}
+          </div>
 
           <div className="flex items-center gap-4 max-w-[560px] mx-auto mt-8 mb-4">
             <div className="h-px bg-gray-700 flex-1" />
