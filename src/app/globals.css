@@ -56,6 +56,19 @@ body {
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
+/* Chrome/Safari force their own autofill background + text color, which can
+   otherwise land as dark-on-dark or light-on-light against this app's
+   theme-token inputs (bg-elimux-dark/text-foreground) - override both so
+   autofilled text stays visible in both themes. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: rgb(var(--foreground));
+  -webkit-box-shadow: 0 0 0px 1000px rgb(var(--elimux-dark)) inset;
+  box-shadow: 0 0 0px 1000px rgb(var(--elimux-dark)) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
