@@ -1103,3 +1103,18 @@ If a mistake is made in any cycle:
   Founder added the redirect URI and asked for a re-test. Re-ran the identical curl command - this time the final URL after following the redirect was accounts.google.com/v3/signin/identifier (Google's real account-picker/sign-in page), with "Sign in" / "continue to" in the body and zero trace of redirect_uri_mismatch. Confirmed fixed without needing the founder to manually click through and report back - the curl-based reproduction gave a fast, precise verification loop for both the broken and fixed states.
 
   Flagged what this does and doesn't fully confirm rather than overclaiming: the OAuth handshake through Google's sign-in screen is now verified working end-to-end, but the very last hop (Supabase exchanging the code for a session, app/auth/callback/route.ts redirecting the signed-in user onward) still hasn't been exercised with a real Google account click-through in this session - that code hasn't changed since Cycle 031 and isn't new risk, but wasn't claimed as tested when it wasn't.
+
+---
+
+## Cycle 040 - Auth Page Logo Visual Check: PASSED via real browser, no bug found - closes out all four original priorities
+- Date: 2026-08-27T00:00:00Z
+- Trigger: Founder asked to check the auth-page logos next, the last unresolved item from the original four-priority list (share system, PWA icons, Google OAuth, auth logos) - flagged as open since Cycle 033/035 because it had only ever been build/HTML-verified, never visually confirmed in a real browser.
+- Archive Ref: docs/archive/bridge-111.md (snapshot of Cycle 039's report, taken before this report replaced it in docs/bridge.md).
+- Status: RESOLVED. No bug found, no code changes.
+- Files Changed: None.
+- Errors: None found.
+- Notes: The Claude-in-Chrome browser extension connected for the first time this session (unavailable for every prior cycle, forcing curl/HTML-based substitutes each time) - used it to actually load and screenshot /auth/login, /auth/register, and /advertiser/login on live production rather than reasoning about contrast from the code alone. All three show the white lockup logo (/logo-white.png) rendering clearly against their bg-elimux-dark cards - zoomed into /auth/login's logo specifically to rule out it being an actually-blank/broken image that merely reads as small and dim in a full-page screenshot (it wasn't - real logo, correct contrast, just small at 64x64px against a large dark card).
+
+  Also spot-checked the Google sign-in button (fixed in Cycle 039) while already in the browser on /auth/login - renders correctly with the proper multi-color Google "G" mark. Did not click it through, since doing so would submit this machine's real saved browser credentials (the email/password fields were pre-filled by the browser's own autofill, unprompted) - clicking "Sign In" or "Sign in with Google" was outside the scope of a visual logo check and would have been an unrequested authentication action.
+
+  This closes the concern raised back in Cycle 033/035 ("on dark backgrounds, the wrong logo variant could be invisible") as a non-issue - the white variant was the correct choice for all three pages from the start, exactly as reasoned through when it was first implemented. With this, all four items from the founder's original post-launch priority list (share system unification, PWA icons, Google OAuth, auth-page logos) are now closed - two were real bugs (share system inconsistency, Google OAuth redirect_uri_mismatch) and two were false alarms (PWA icons, auth logos) that cost verification time but no code changes.

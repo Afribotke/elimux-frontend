@@ -1,48 +1,50 @@
-# Cycle 039 Report — Google OAuth Verification: FIXED, confirmed
+# Cycle 040 Report — Auth Page Logo Visual Check: PASSED, no bug
 
-## Status: RESOLVED. No code changes — this was a Google Cloud Console
-## config issue, not a bug in the app.
+## Status: RESOLVED. No code changes — the logo was fine all along; this
+## was the one item this whole priority list couldn't be closed without
+## an actual browser, and one connected this session.
 
-Archived as `docs/archive/bridge-110.md` before this report replaced it.
+Archived as `docs/archive/bridge-111.md` before this report replaced it.
 
-## What was tested
-Rather than needing a real browser click (no browser tool connected this
-session), hit the exact same OAuth flow the "Sign in with Google" button
-triggers, directly:
+## What was checked
+The Claude-in-Chrome browser extension connected this session (wasn't
+available for any prior cycle) — used it to actually load and screenshot
+all three auth pages on production, rather than reasoning about contrast
+from the code alone.
 
-```
-curl -s -L "https://ohlgjvenwekpbpkykutz.supabase.co/auth/v1/authorize?provider=google&redirect_to=https://www.elimux.ke/auth/callback"
-```
+- **`/auth/login`** — white lockup logo (`/logo-white.png`) renders above
+  the "Sign In" card. Zoomed in to confirm: clearly visible, correct
+  white-on-dark contrast, not invisible (it just reads small/dim in a
+  full-page screenshot at 64×64px against a large dark card — real logo,
+  correctly rendering).
+- **`/auth/register`** — same logo, clearly sharp above "Create Account".
+- **`/advertiser/login`** — same logo, clearly sharp above "Advertiser
+  Login".
+- Bonus check while already in the browser: scrolled `/auth/login` down
+  to the "Sign in with Google" button (fixed in Cycle 039) — renders
+  correctly with the proper multi-color Google "G" mark. Did not click
+  it through (would submit real saved browser credentials from this
+  machine — out of scope for a visual check).
 
-## First run — confirmed broken
-Supabase's `/authorize` endpoint returned a real `302` to Google with a
-valid `client_id` (proving Google OAuth *is* enabled on the Supabase side,
-resolving half of the open question from Cycle 031). But following that
-redirect landed on Google's error page:
-`accounts.google.com/signin/oauth/error` — `redirect_uri_mismatch`,
-naming the exact missing URI: `https://ohlgjvenwekpbpkykutz.supabase.co/auth/v1/callback`.
-Reported this back with the exact fix needed (add that URI to the OAuth
-client's Authorized redirect URIs in Google Cloud Console) — this part
-required your own Google Cloud Console access, not something fixable
-from this session.
-
-## Second run — after you added the redirect URI
-Same exact curl, re-run. This time the final URL is
-`accounts.google.com/v3/signin/identifier` — Google's real account-picker
-sign-in page, not the error screen. Body contains "Sign in" / "continue
-to", zero trace of `redirect_uri_mismatch`. **The Google sign-in button
-now works end-to-end** from click through to Google's own sign-in screen.
-
-## What this does and doesn't confirm
-Confirmed: the OAuth handshake between this app, Supabase, and Google is
-correctly wired — provider enabled, client ID valid, redirect URI now
-registered. Not confirmed (would need an actual Google account to click
-through): the very last step, where Supabase exchanges the code for a
-session and `app/auth/callback/route.ts` redirects the now-signed-in user
-onward. That part of the code hasn't changed since Cycle 031 and isn't
-new risk — but if you want it fully closed, a real click-through with a
-Google account is the only way to see that last hop.
+## Conclusion
+The concern from Cycle 033/035 — "on dark backgrounds, the wrong logo
+variant could be invisible" — never actually materialized. The
+`logo-white.png` variant was the correct choice for all three pages
+(all `bg-elimux-dark`), exactly as reasoned through in Cycle 033's
+original implementation. No fix needed.
 
 ## Files changed
-None. No code was broken — this was purely a Google Cloud Console
-configuration gap, now closed on your end.
+None.
+
+---
+
+## Summary: all four original priorities now closed
+1. **Share system unified** (Cycle 037) — `ShareModal` deleted, migrated
+   to `ShareButton`.
+2. **PWA icons** (Cycle 038) — confirmed already correct twice over; the
+   Android report was a device-side install-cache issue, not a code bug.
+3. **Google OAuth** (Cycle 039) — was genuinely broken
+   (`redirect_uri_mismatch`), fixed by registering the callback URI in
+   Google Cloud Console, verified working.
+4. **Auth page logos** (this cycle) — checked live in a real browser,
+   correct on all three pages, no bug.
