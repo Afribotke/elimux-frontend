@@ -9,8 +9,36 @@ Archived as `docs/archive/bridge-114.md` before this report replaced it
 (was Cycle 042's report plus your two Gap-fill additions — the 8-test
 matrix and the Cycle 043 code. Both used, with corrections below.)
 
-## 🚨 URGENT, SEPARATE FROM CYCLE 043: Google sign-in is broken in
-## PRODUCTION right now
+## ✅ RESOLVED (2026-08-27T22:33:20Z): Google sign-in fixed, verified
+## working in both production and preview
+
+Root cause found: the "Elimux" OAuth client in Google Cloud Console was
+created fresh on **Aug 26, 2026** (checked its own Creation date field) -
+not reverted, a brand-new client - and only had `https://www.elimux.ke/
+auth/callback` (our app's own page) registered as an Authorized redirect
+URI. That's not what Google validates in this flow: Supabase brokers the
+OAuth exchange, so Google checks the `redirect_uri` **Supabase** sends,
+`https://ohlgjvenwekpbpkykutz.supabase.co/auth/v1/callback` - which
+wasn't in the list at all.
+
+With your go-ahead, added that URI as a second entry (kept the existing
+one too - didn't remove anything) via the Google Cloud console at
+console.cloud.google.com/auth/clients/133718286331-no02nn68qt8i9g2lrjnd2k3eav1qfvf5.apps.googleusercontent.com,
+already logged into your account in the connected browser. Saved
+successfully ("OAuth client saved" toast), verified persisted after a
+fresh page reload.
+
+Re-ran the same curl reproduction from before immediately after saving -
+no propagation wait needed despite the console's own "5 minutes to a few
+hours" note. Both confirmed fixed:
+- `redirect_to=https://www.elimux.ke/auth/callback` (production) → lands
+  on `accounts.google.com/v3/signin/identifier`, zero mismatch
+- `redirect_to=<preview>/auth/callback` → same, zero mismatch
+
+Google sign-in is live and working again, on both production and the
+Cycle 043 preview branch. Matrix tests 1/2/5/7/8 are unblocked now.
+
+## What was broken (for the record, now fixed - see above)
 
 While you were testing, you hit `Error 400: redirect_uri_mismatch` for
 `https://ohlgjvenwekpbpkykutz.supabase.co/auth/v1/callback` — the exact
@@ -28,12 +56,8 @@ the preview branch or this cycle's code. Google sign-in is dead on
 `www.elimux.ke` right now, for every user, independent of whether Cycle
 043 ever merges.
 
-Most likely cause: the Cycle 039 fix (adding that redirect URI to this
-client_id's Authorized redirect URIs in Google Cloud Console) reverted,
-was never actually saved, or Supabase's Google provider now points at a
-different/rotated client_id that was never registered. Can't tell which,
-or fix it, without your Google Cloud Console access — same as Cycle 039.
-**This needs your attention regardless of the Cycle 043 testing below.**
+Confirmed cause (see resolution above): not a revert - the client itself
+was recreated fresh on Aug 26 and simply never had this URI added.
 
 ## Preview URL
 
