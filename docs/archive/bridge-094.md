@@ -1,0 +1,21 @@
+Instant scroll on career card click — STATUS, DECISION NEEDED FROM KIMI
+Status: DONE, verified interactively in a real browser, committed to elimux-frontend main (bd85eef). NOT pushed yet. This refines (not replaces) the auto-scroll fix from the last report - same file, same handleSearch function, no conflict.
+Archive Ref: docs/archive/bridge-093.md (snapshot of this cycle's spec, taken before this report replaced it).
+
+WHAT CHANGED FROM THE LAST SCROLL FIX
+Previous cycle's implementation already scrolled fairly early (a 100ms setTimeout right after hasSearched flipped true, targeting the results container specifically) - not actually "after results arrive" like this cycle's problem statement assumed, but not truly instant either, and it targeted the wrong element (the results box itself, not the search-bar area). This cycle: moved the scroll call to the very first line of handleSearch (before the abort-controller/loading/hasSearched state updates even run), dropped the setTimeout entirely, and retargeted it at a new wrapper ref (searchSectionRef) around the search bar + results zone together, instead of the results container alone - so it's mounted unconditionally and scrolling works with zero delay, no waiting for anything to render.
+Added a scrollFirst parameter (default true) to handleSearch, set to false only for the one caller that shouldn't scroll: the ?q= auto-search on initial page load, per this cycle's own acceptance criteria ("user is already at top"). The search bar submit and CareerPathway card clicks both go through the same handleSearch, so both get the scroll fix from one change - no per-caller duplication needed.
+One correction to the spec, same as the last report: "category cards -> same behavior" doesn't apply - those are still plain <a href> navigations to other pages, not in-page searches, unchanged from before.
+
+VERIFIED - real browser, real clicks, not simulated
+Scrolled to the career-pathway section (y=900), clicked "Doctor": scrollY had already moved to ~335 by the time the very next script line ran, i.e. before any realistic chance of the search API responding - confirms the scroll fires synchronously on click, not after results. Same result via the search bar submit path (900 -> ~335). Loaded /ai-search?q=business+administration directly (the auto-search-on-mount path): scrollY stayed at 0 the whole time, confirming the scrollFirst=false guard works and there's no unwanted jump on initial load.
+Did not manage to directly screenshot the loading spinner mid-flight - the backend's 5-minute intent cache (src/routes/ai-search.ts, from an earlier fix this session) meant repeated test queries resolved faster than my tool round-trip latency. Not a gap in the fix itself: the spinner JSX ({loading ? <spinner> : ...}) is untouched, pre-existing code from the previous cycle, and hasSearched/loading both flip true synchronously in the same handleSearch call before the scroll animation even lands - so the container mounts and shows the spinner before the user's eyes can catch up to the scroll regardless.
+
+DECISION NEEDED FROM KIMI (unchanged - carried forward again, still unanswered across five reports now)
+1. The 7 non-mine dirty files in elimux-sql - still untouched: 202608111905_employer_outreach_crm.sql, 31_employers_invitation_token.sql, 40_scholarship_eligibility_cleanup.sql, 41_scholarship_documents_bucket.sql, 42_scholarship_provider_partner_gate.sql, 52_bursary_provider_admin_invite.sql, rls_fix_institutions.sql, plus a modified 39_scholarship_eligibility_seed.sql.
+2. src/app/institution/dashboard/analytics/page.tsx in elimux-frontend - still untouched.
+3. src/routes/bursary-providers.ts in elimux-backend - still untouched.
+4. The PWA service worker caching question from the last report (public/sw.js cache-first-serves page routes, not tied to deploys) - still unanswered, still not fixed, still means some returning visitors may be running stale JS from before any of this session's fixes.
+
+NEXT
+- Say "push it" for all three unpushed elimux-frontend commits when ready: 29f3256 (reset on clear), 23b5b07 (scroll after results - now superseded in behavior by bd85eef but still a real, correct commit in the history), bd85eef (instant scroll, this cycle).

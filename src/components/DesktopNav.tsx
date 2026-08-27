@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -100,9 +101,7 @@ export default function DesktopNav() {
         <div className="flex items-center h-[52px]">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-white text-sm">
-              🎓
-            </div>
+            <Image src="/icon-128.png" alt="" width={32} height={32} className="w-8 h-8" priority />
             <span className="text-foreground font-bold text-lg tracking-tight">
               ElimuX
             </span>

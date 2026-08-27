@@ -1,11 +1,14 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Footer() {
   return (
     <footer className="py-8 px-4 border-t border-border bg-elimux-dark">
       <div className="max-w-6xl mx-auto text-center space-y-4">
+        <Image src="/logo-white.png" alt="ElimuX" width={96} height={96} className="h-16 w-16 mx-auto opacity-90" />
+
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted">
           <Link href="/about" className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 rounded">About</Link>
           <Link href="/pricing" className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 rounded">Pricing</Link>

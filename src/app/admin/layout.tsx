@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -372,9 +373,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       >
         <div className="h-16 flex items-center px-4 border-b border-gray-100 shrink-0">
           <Link href="/admin" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-amber-600 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
+            <Image src="/icon-128.png" alt="" width={32} height={32} className="w-8 h-8" />
             <span className="font-bold text-lg text-gray-900">ElimuX</span>
             <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">
               ADMIN

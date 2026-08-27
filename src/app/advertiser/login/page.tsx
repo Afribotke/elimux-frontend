@@ -8,6 +8,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Mail, Lock, LogIn } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { advertiserFetch, takePendingAdvertiserRegistration } from '@/lib/advertiserAuth'
@@ -66,6 +67,8 @@ function LoginForm() {
   return (
     <div className="min-h-screen bg-elimux-dark py-12 px-4 flex items-center justify-center">
       <div className="max-w-md w-full">
+        <Image src="/logo-white.png" alt="ElimuX" width={128} height={128} className="h-16 w-16 mx-auto mb-6" priority />
+
         <div className="bg-elimux-card rounded-xl border border-border overflow-hidden">
           <div className="px-8 py-6 border-b border-border">
             <h1 className="text-2xl font-bold text-foreground">Advertiser Login</h1>
