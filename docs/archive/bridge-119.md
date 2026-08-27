@@ -1,35 +1,12 @@
 # Cycle 044 Report — Auth Security Hardening (email verification):
-## SHIPPED to preview branch, build green, toggle CONFIRMED flipped
+## SHIPPED to preview branch, build green
 
 ## Status: Code implemented, committed, pushed to `auth-security-preview`,
-## preview build green (0 TypeScript errors, 0 build errors). Founder
-## flipped "Confirm email" ON in Supabase - verified via API, not just
-## taken on trust. Nothing blocking left on this cycle; still not merged
-## to main, holding for a merge decision.
+## preview build green (0 TypeScript errors, 0 build errors). NOT merged
+## to main. ONE thing still needed from you before this is fully live
+## even after merge - see bottom.
 
 Archived as `docs/archive/bridge-118.md` before this replaced it.
-
-## Confirm email toggle — verified flipped (2026-08-27T23:36:11Z)
-
-Founder flipped it manually (I still can't touch the Supabase dashboard
-myself - same access gap as before). Rather than trust the report alone,
-verified independently via Supabase's public Auth settings endpoint,
-which needed no dashboard login and no test signup:
-
-```
-curl -s "https://ohlgjvenwekpbpkykutz.supabase.co/auth/v1/settings" -H "apikey: $ANON_KEY"
-→ "mailer_autoconfirm": false, "disable_signup": false, "external": {"google": true, "email": true, ...}
-```
-
-`mailer_autoconfirm: false` is the definitive signal - Supabase will no
-longer auto-confirm emails on signup, meaning "Confirm email" is
-genuinely ON now, not just reported as on. Also confirms nothing else
-regressed while in the dashboard: signups still enabled, Google OAuth
-still enabled.
-
-Scenario B is now closed end to end: the code-level gate (this cycle)
-plus the toggle (just confirmed) together mean an unverified account can
-neither get a session at signup nor sign in afterward.
 
 ## Section 0 audit — Scenario B confirmed
 
@@ -88,14 +65,23 @@ too, the natural place is the same two chokepoints identified in Cycle
 worth doing in one pass alongside a future session-marker follow-up
 rather than as a second separate change to the same files.
 
-## ~~Still needed from you~~ — RESOLVED, see toggle confirmation above
+## Still needed from you — this is the one blocking piece
 
-~~Flip "Confirm email" ON in Supabase Dashboard → Authentication →
-Providers → Email.~~ Done and independently verified via API (see top of
-this file). Scenario B is fully closed now.
+**Flip "Confirm email" ON** in Supabase Dashboard → Authentication →
+Providers → Email. I can't do this myself - not logged into the Supabase
+dashboard in the connected browser, the Supabase MCP connector has no
+auth-config write/read endpoint, and no Management API token exists in
+this project's env to do it programmatically (checked all three before
+asking).
 
-## Manual test checklist (per the brief's own Section 4), now that the
-## toggle is confirmed flipped
+Without this, the code shipped above still helps (it'll block sign-*in*
+for anyone whose account somehow lacks `email_confirmed_at`), but it
+does NOT stop the underlying gap at its source: Supabase's own signup
+flow won't require verification in the first place, so this is
+necessary, not optional, to actually close Scenario B end to end.
+
+## Manual test checklist (per the brief's own Section 4), once the
+## toggle is flipped
 
 1. Register with a new email → should see "Check your email" (if a
    register page path exists in your flow - the login page itself has no
