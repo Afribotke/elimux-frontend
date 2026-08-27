@@ -1,58 +1,110 @@
-# Cycle 035 Report — Replace OG Social Share Image
+# Cycle 036 Report — OG Image (already live) + PWA Share System
 
-## Status: DONE, `npm run build` green with zero errors, committed, pushed
+## Status: DONE, `npm run build` green with zero errors, NOT yet committed/pushed (see note below)
 
-Archived as `docs/archive/bridge-106.md` before this report replaced it
-(that was Cycle 034's own report, kept for the record).
+Archived as `docs/archive/bridge-107.md` before this report replaced it.
 
-## File Modified
-- `public/og-image-solid-bg.png` → copied to `public/og-image.png` (new
-  file; no `og-image.png` existed before, so nothing was overwritten).
-  1200×630, matches the dimensions already declared in metadata.
-- `src/app/layout.tsx` — `metadata.openGraph` and `metadata.twitter`
-  updated: new title/description copy (as given in the spec) and image
-  now points at `/og-image.png` instead of the old absolute
-  `https://www.elimux.ke/og-image.jpg`. Everything else in the metadata
-  export (icons, manifest, keywords, robots, alternates, etc.) untouched.
+## Part 1 — already done, no action taken
+Checked before touching anything: `public/og-image.png` already exists and
+is byte-identical to `public/og-image-solid-bg.png` (`cmp` confirms), and
+`layout.tsx`'s `openGraph.images` / `twitter.images` already point at
+`/og-image.png`. This was Cycle 035, pushed and confirmed live on
+`www.elimux.ke` last session. Nothing to redo here.
 
-## Step 3 — hardcoded tag search
-`grep -r "og:image\|twitter:image" src/` — no matches. Nothing to remove.
+## Part 2 — the important finding before writing any code
+Before creating `src/lib/share.ts` and `src/components/ShareButton.tsx` as
+asked, I searched the codebase for existing share infrastructure, because
+the cycle's own rule ("Do NOT remove existing share/OG functionality")
+implied something might already be there. It's more than "something":
 
-## Verification
-`npm run build` — exit 0, zero errors. Ran `next start` and pulled the
-actual rendered `<head>` via curl rather than trusting the code change
-alone: `og:image` resolves to `https://www.elimux.ke/og-image.png` (Next
-auto-resolved the relative path against the existing `metadataBase`),
-width/height/alt tags all present, `/og-image.png` itself serves 200.
-Same for the `twitter:*` tags. Could not do the actual Ctrl+U view-source
-in a live browser this session (Claude-in-Chrome extension not
-connected) — the curl-against-`next start` check covers the same ground
-(same HTML the browser would receive), but flagging the substitution
-rather than claiming a literal browser check happened.
+- **`src/lib/share-utils.ts`** already has everything the spec's
+  `share.ts` wants (Web Share API detection, clipboard fallback,
+  `typeof navigator !== 'undefined'` guards) *plus* UTM tracking,
+  6-platform share links (WhatsApp/Facebook/X/LinkedIn/Telegram/Email),
+  trackable smart links, and share-event analytics (`/api/share-events`).
+- **`src/hooks/useShare.ts`** is the real trigger hook (native share +
+  clipboard, loading/error state).
+- **`src/components/share/ShareButton.tsx`** (+ `ShareBottomSheet.tsx`,
+  `ShareBar.tsx`, `ShareToast.tsx`, barrel-exported from
+  `src/components/share/index.ts`) already does what the spec's new
+  `ShareButton.tsx` wants — `floating` / `inline` / `icon-only` variants,
+  native-share-first with a full multi-platform bottom sheet fallback —
+  and does more (smart-link resolution, analytics).
+- **`src/lib/share-metadata.ts`**'s `generateShareMetadata()` already *is*
+  Step 6 (dynamic OG tags for detail pages) — and it's already wired into
+  `app/programs/[id]/page.tsx`, `app/institutions/[id]/page.tsx`, *and*
+  `app/scholarships/[id]/page.tsx` via each page's own `generateMetadata`.
+  Nothing to add there.
+- The new `ShareButton` (`@/components/share`) is already live on the
+  **scholarship detail page** (icon-only, next to `ShareStats`) and the
+  **search results page** (icon-only, shown once a query is active).
 
-Committed as `feat: update OG social share image with branded banner`
-and pushed to `origin/main`.
+Writing a second, simpler, parallel `share.ts` + `ShareButton.tsx` at this
+point would have meant a *third* share implementation in this codebase
+(there's also an older `ShareModal.tsx`, wired into `DetailActions.tsx` —
+used by the program and institution detail pages — plus `favorites/page.tsx`
+and `CompareDrawer.tsx` via `ShareResultsModal.tsx`), fragmenting the
+existing analytics/tracking and giving future maintainers three
+inconsistent "Share" buttons to reason about. So: no new files. Instead I
+wired the existing `@/components/share` `ShareButton` into the spots that
+actually had nothing:
 
-## Not touched, and why
-- `public/og-image.jpg` (the old file) — now orphaned, nothing in the
-  codebase references it anymore (confirmed via grep before making this
-  change). Left in place rather than deleted — this cycle's own rules
-  didn't ask for cleanup, only the swap, and deleting wasn't requested.
-- `public/og-course.jpg`, `og-institution.jpg`, `og-program.jpg`,
-  `og-scholarship.jpg`, `og-search.jpg`, `og-default.jpg` — these are
-  separate per-page OG images (scholarships/[id], institutions/[id],
-  programs/[id], search) set by their own page-level metadata, not the
-  root default this cycle targeted. Confirmed via grep they're wired up
-  independently and left them alone.
-- Navbar, footer, favicon, PWA icons — untouched, per this cycle's rules.
+## Files Modified
+- `src/components/MobileNav.tsx` — added an icon-only `ShareButton` next
+  to the close (X) button in the full mobile-menu overlay header. Only
+  place in the whole nav (desktop or mobile) that had zero share
+  affordance.
+- `src/components/home/NewHomePage.tsx` — added an icon-only `ShareButton`
+  next to the hero's "AI-Powered Education & Career Hub" badge. The hero
+  is *permanently* dark regardless of the site's light/dark toggle (an
+  explicit, deliberate choice from an earlier cycle — see the comment
+  already in that file), so the button's default light/dark-aware classes
+  would have looked wrong there; overrode with `!` (Tailwind important
+  modifier, available since this project runs Tailwind 3.4) to force a
+  frosted white-on-dark look matching the existing hero badge.
+- `src/components/Footer.tsx` — added an inline "Share ElimuX" button
+  below the copyright line, styled with the footer's own existing design
+  tokens (`bg-elimux-card` / `border-border` / `text-muted`) instead of
+  the component's default light-mode classes, for the same dark-footer
+  contrast reason as the hero.
 
-## Step 5 — your action, once Vercel deploy is confirmed green
-1. https://www.opengraph.xyz/url/https://www.elimux.ke — check the new
-   banner (logo + category icons + URL) renders.
-2. Share https://www.elimux.ke in WhatsApp and confirm the preview card.
-   Note: WhatsApp/Facebook/LinkedIn all cache OG previews aggressively by
-   URL — if an old preview still shows after the deploy is live, that's
-   their cache, not the deploy. opengraph.xyz's scraper is fresh each
-   time, so check there first; for WhatsApp specifically, sending the
-   link to a chat that's never had it shared before avoids their cache
-   entirely.
+All three use `getDefaultShareData('/', 'default')` from the existing
+`share-utils.ts` (title/description/URL/OG-image/hashtags for the app
+itself) rather than hand-typed duplicate strings — that helper already
+existed for exactly this purpose and was previously unused.
+
+## Deliberately not touched, and why
+- **Program and institution detail pages** — already have a working share
+  affordance (`DetailActions` → `ShareModal`). Spec's Step 4A wanted a
+  `ShareButton` "near the Apply button" there; adding a second, different
+  share button next to the existing one would be redundant UI, not new
+  coverage, and the cycle's own rule says not to remove what's there. Left
+  as-is; flagging here in case you want the older `ShareModal` on these
+  two pages migrated to the newer `ShareButton` system in a future cycle
+  (they'd gain the multi-platform bottom sheet and analytics tracking the
+  older modal doesn't have).
+- **Scholarship detail page and search results page** — already have
+  `ShareButton` wired in (see above). Not duplicated.
+- **`DesktopNav.tsx`** — the cycle's own Step 3 said "navbar (mobile) (or
+  mobile nav component)" and the goal section says "navbar (mobile)"
+  specifically; desktop users already have the browser's own address bar
+  to copy/share a URL, so left untouched.
+
+## Build/verify
+`npm run build` (2.5GB heap cap) — exit 0, zero errors or warnings. Ran
+`next start` and curl-checked the homepage — both new hero and footer
+share buttons render server-side (2 `aria-label="Share this content"`
+occurrences on `/`, as expected). The mobile-menu overlay button is
+correctly absent from the initial HTML (that whole overlay only renders
+once `open` state flips true, same as its sibling nav links and the
+existing close button) — couldn't verify the actual tap-to-open behavior
+without a real browser/device (Claude-in-Chrome extension not connected
+this session), so that one specific case is code-reviewed and
+build-verified but not visually confirmed.
+
+## Not yet committed/pushed
+Wanted to flag the "no new files, reused existing infrastructure instead"
+decision before pushing it, since it's a real deviation from the literal
+spec — let me know if this reasoning holds up or if you specifically
+wanted the new parallel `share.ts`/`ShareButton.tsx` files for some reason
+I'm not seeing (e.g. an intent to eventually delete the older systems).

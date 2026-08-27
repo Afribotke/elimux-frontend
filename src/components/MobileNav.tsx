@@ -20,6 +20,8 @@ import {
   FileText,
   Bell,
 } from "lucide-react";
+import { ShareButton } from "@/components/share";
+import { getDefaultShareData } from "@/lib/share-utils";
 
 const navLinks = [
   { href: "/", label: "Home", icon: GraduationCap },
@@ -87,12 +89,19 @@ export default function MobileNav() {
               <GraduationCap className="h-7 w-7 text-blue-600" />
               <span className="text-lg font-bold text-foreground">ElimuX</span>
             </Link>
-            <button
-              onClick={() => setOpen(false)}
-              className="rounded-md p-2 text-muted-foreground hover:bg-muted"
-            >
-              <X className="h-6 w-6" />
-            </button>
+            <div className="flex items-center gap-1">
+              <ShareButton
+                shareData={getDefaultShareData('/', 'default')}
+                variant="icon-only"
+                className="!text-muted-foreground hover:!bg-muted hover:!text-foreground"
+              />
+              <button
+                onClick={() => setOpen(false)}
+                className="rounded-md p-2 text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
           </div>
 
           <div className="space-y-1 px-4 py-4 overflow-y-auto" style={{ maxHeight: "calc(100vh - 3.5rem)" }}>

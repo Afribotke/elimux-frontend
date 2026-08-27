@@ -2,6 +2,8 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { ShareButton } from '@/components/share'
+import { getDefaultShareData } from '@/lib/share-utils'
 
 export default function Footer() {
   return (
@@ -28,6 +30,13 @@ export default function Footer() {
             Are you an institution? List your programs on ElimuX
           </Link>
         </div>
+
+        <ShareButton
+          shareData={getDefaultShareData('/', 'default')}
+          variant="inline"
+          label="Share ElimuX"
+          className="!bg-elimux-card !border !border-border !text-muted hover:!text-foreground mx-auto"
+        />
       </div>
     </footer>
   )

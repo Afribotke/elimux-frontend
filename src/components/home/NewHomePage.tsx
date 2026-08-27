@@ -12,6 +12,8 @@ import { Footer } from '@/components/layout/Footer';
 import AISearchOverlay from '@/components/search/AISearchOverlay';
 import JsonLd from '@/components/seo/JsonLd';
 import { Target, GraduationCap as GradIcon, Award } from 'lucide-react';
+import { ShareButton } from '@/components/share';
+import { getDefaultShareData } from '@/lib/share-utils';
 
 // Cycle 029: homepage-only FAQPage schema. The "compare institutions"
 // answer was reworded from the SEO instruction's literal draft - checked
@@ -161,8 +163,15 @@ export default function NewHomePage() {
         />
 
         <div className="relative max-w-5xl mx-auto px-4 pt-14 pb-12 text-center">
-          <div className="flex items-center gap-2 mx-auto mb-4 w-fit bg-primary-500/20 text-primary-300 border border-primary-500/30 rounded-full px-4 py-1.5 text-sm font-medium">
-            <span>✨ AI-Powered Education & Career Hub</span>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="flex items-center gap-2 w-fit bg-primary-500/20 text-primary-300 border border-primary-500/30 rounded-full px-4 py-1.5 text-sm font-medium">
+              <span>✨ AI-Powered Education & Career Hub</span>
+            </div>
+            <ShareButton
+              shareData={getDefaultShareData('/', 'default')}
+              variant="icon-only"
+              className="!bg-white/10 !text-white hover:!bg-white/20 !rounded-full"
+            />
           </div>
 
           <h1 className="text-5xl md:text-6xl font-extrabold text-white text-center drop-shadow-lg text-balance max-w-3xl mx-auto">
