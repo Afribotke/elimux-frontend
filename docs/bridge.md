@@ -1,74 +1,58 @@
-# Cycle 034 Report — PWA Icon Set Fix (Eliminate Old Yellow "E")
+# Cycle 035 Report — Replace OG Social Share Image
 
 ## Status: DONE, `npm run build` green with zero errors, committed, pushed
 
-Archived as `docs/archive/bridge-105.md` before this report replaced it —
-that snapshot is actually your "Roveya.ai rebrand prep" draft (`lib/brand.ts`,
-rebrand checklist, brand-agnostic placeholder guidance), which you'd dropped
-into bridge.md separately and hadn't asked to be executed yet. It's safe in
-the archive; nothing from it was acted on or lost. Say the word when you
-want that one run.
+Archived as `docs/archive/bridge-106.md` before this report replaced it
+(that was Cycle 034's own report, kept for the record).
 
-## What I found already done
-The 16 new icon files (8 standard sizes + 8 maskable variants, all named
-exactly as the manifest expects) were already sitting in `public/` when I
-started — someone had extracted the zip directly rather than attaching it
-in chat. Confirmed by timestamp (all dropped ~15:18, after last cycle's
-14:35-14:50 work) and visually (Read tool) — genuine circular blue-purple
-badge, no yellow "E" anywhere.
+## File Modified
+- `public/og-image-solid-bg.png` → copied to `public/og-image.png` (new
+  file; no `og-image.png` existed before, so nothing was overwritten).
+  1200×630, matches the dimensions already declared in metadata.
+- `src/app/layout.tsx` — `metadata.openGraph` and `metadata.twitter`
+  updated: new title/description copy (as given in the spec) and image
+  now points at `/og-image.png` instead of the old absolute
+  `https://www.elimux.ke/og-image.jpg`. Everything else in the metadata
+  export (icons, manifest, keywords, robots, alternates, etc.) untouched.
 
-## Step 1 — manifest read (as requested, no changes made yet at this point)
-`public/manifest.json`'s `icons` array, before any edits:
-`/icon-72x72.png` 72x72 · `/icon-96x96.png` 96x96 · `/icon-128x128.png` 128x128 ·
-`/icon-144x144.png` 144x144 · `/icon-152x152.png` 152x152 · `/icon-192x192.png` 192x192 ·
-`/icon-384x384.png` 384x384 · `/icon-512x512.png` 512x512 ·
-`/icon-192x192-maskable.png` 192x192 (maskable) · `/icon-512x512-maskable.png` 512x512 (maskable)
+## Step 3 — hardcoded tag search
+`grep -r "og:image\|twitter:image" src/` — no matches. Nothing to remove.
 
-## Step 2 — file replacement
-Already done (see above) for all 8 standard sizes + the 192/512 maskable
-pair the manifest already referenced. The zip also included maskable
-variants for the other 6 sizes (72/96/128/144/152/384) that the manifest
-doesn't currently list — left the manifest as-is rather than adding 6 more
-maskable entries it doesn't need (Android picks the nearest size; the
-existing 192/512 maskable pair already covers adaptive-icon purposes). The
-files exist on disk if a future cycle wants them wired in.
+## Verification
+`npm run build` — exit 0, zero errors. Ran `next start` and pulled the
+actual rendered `<head>` via curl rather than trusting the code change
+alone: `og:image` resolves to `https://www.elimux.ke/og-image.png` (Next
+auto-resolved the relative path against the existing `metadataBase`),
+width/height/alt tags all present, `/og-image.png` itself serves 200.
+Same for the `twitter:*` tags. Could not do the actual Ctrl+U view-source
+in a live browser this session (Claude-in-Chrome extension not
+connected) — the curl-against-`next start` check covers the same ground
+(same HTML the browser would receive), but flagging the substitution
+rather than claiming a literal browser check happened.
 
-## Step 3 — manifest reference check
-No mismatches. Every path the manifest lists matches a real file in
-`public/` exactly (case included). No edits needed — the manifest's
-structure is fine, only the underlying PNG bytes needed replacing, and
-those were already replaced.
-
-## Step 4 — orphan search
-Searched all of `public/` for icon files not in the new set and not
-referenced by manifest/layout/sw.js. Found none. `public/icon-128.png`
-(singular, no "x") exists but is a different asset entirely — the navbar/
-admin-sidebar icon added last cycle, explicitly protected by this cycle's
-own rule not to touch the navbar/footer logo. No `vercel.svg`/`next.svg`.
-Nothing deleted.
-
-One thing worth flagging, not fixed (out of this cycle's stated scope):
-`public/sw.js` precaches `/icon-192x192.png` and `/icon-512x512.png` by
-URL, and a PWA install caches by that same URL — so a device that already
-installed the app may keep serving the old icon bytes until the cache is
-cleared, matching exactly the manual step you already wrote into Step 6.
-I didn't touch `sw.js` itself (bumping its cache version would force a
-faster refresh) since it wasn't asked for and "don't modify anything
-outside the icon set" was one of this cycle's own rules.
-
-## Step 5 — build & verify
-`npm run build` (2.5GB heap cap, this machine's known RAM limit) — exit 0,
-zero errors. Ran `next start` and curl-checked all 10 manifest-referenced
-icon URLs plus `/manifest.json` itself — every one 200, no 404s. Could not
-do the actual Chrome DevTools → Application → Manifest visual check from
-this session (Claude-in-Chrome extension wasn't connected) — confirmed via
-direct file inspection and HTTP status instead, not a live DevTools panel.
-
-Committed as `fix: replace all PWA icon sizes to eliminate old yellow E icon`
+Committed as `feat: update OG social share image with branded banner`
 and pushed to `origin/main`.
 
-## Step 6 — your action, unchanged from what you already wrote
-After the Vercel deploy is green, clear the PWA cache on the Android device
-that already has the app installed (Chrome → Settings → Privacy → Clear
-browsing data → Cached images and files, or uninstall/reinstall the PWA).
-New installs will get the correct icon immediately, no action needed there.
+## Not touched, and why
+- `public/og-image.jpg` (the old file) — now orphaned, nothing in the
+  codebase references it anymore (confirmed via grep before making this
+  change). Left in place rather than deleted — this cycle's own rules
+  didn't ask for cleanup, only the swap, and deleting wasn't requested.
+- `public/og-course.jpg`, `og-institution.jpg`, `og-program.jpg`,
+  `og-scholarship.jpg`, `og-search.jpg`, `og-default.jpg` — these are
+  separate per-page OG images (scholarships/[id], institutions/[id],
+  programs/[id], search) set by their own page-level metadata, not the
+  root default this cycle targeted. Confirmed via grep they're wired up
+  independently and left them alone.
+- Navbar, footer, favicon, PWA icons — untouched, per this cycle's rules.
+
+## Step 5 — your action, once Vercel deploy is confirmed green
+1. https://www.opengraph.xyz/url/https://www.elimux.ke — check the new
+   banner (logo + category icons + URL) renders.
+2. Share https://www.elimux.ke in WhatsApp and confirm the preview card.
+   Note: WhatsApp/Facebook/LinkedIn all cache OG previews aggressively by
+   URL — if an old preview still shows after the deploy is live, that's
+   their cache, not the deploy. opengraph.xyz's scraper is fresh each
+   time, so check there first; for WhatsApp specifically, sending the
+   link to a chat that's never had it shared before avoids their cache
+   entirely.
