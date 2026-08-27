@@ -22,10 +22,10 @@ interface ShareResultsModalProps {
 }
 
 // Shares a set of programs (a search's top picks, or a comparison) as one
-// link - distinct from ShareModal.tsx, which shares a single program or
-// institution's own page URL. Keeping this as a separate component avoids
-// overwriting ShareModal.tsx, which DetailActions.tsx already relies on for
-// single-item sharing on program/institution detail pages.
+// link, plus a PDF report export - distinct from the single-item
+// ShareButton (@/components/share) used on program/institution detail
+// pages, which has no concept of a multi-program bundle. Kept as a
+// separate component rather than folded into that system.
 export default function ShareResultsModal({ isOpen, onClose, programs, query }: ShareResultsModalProps) {
   const [copied, setCopied] = useState(false)
   const [creating, setCreating] = useState(false)

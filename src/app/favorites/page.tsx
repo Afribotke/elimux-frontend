@@ -6,15 +6,8 @@ import { supabase } from '@/lib/supabase'
 import ProgramCard from '@/components/ProgramCard'
 import InstitutionCard from '@/components/InstitutionCard'
 import FavoriteButton from '@/components/FavoriteButton'
-import ShareModal from '@/components/ShareModal'
-import { GraduationCap, Building2, Bookmark, Share2, ArrowRight } from 'lucide-react'
-
-interface ShareTarget {
-  name: string
-  description: string | null
-  url: string
-  type: 'program' | 'institution'
-}
+import { ShareButton } from '@/components/share'
+import { GraduationCap, Building2, Bookmark, ArrowRight } from 'lucide-react'
 
 function getStoredIds(itemType: 'program' | 'institution'): string[] {
   const stored = localStorage.getItem(`elimux-favorites-${itemType}`)
@@ -25,7 +18,6 @@ export default function FavoritesPage() {
   const [programs, setPrograms] = useState<any[]>([])
   const [institutions, setInstitutions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [shareTarget, setShareTarget] = useState<ShareTarget | null>(null)
 
   useEffect(() => {
     loadFavorites()
@@ -55,15 +47,6 @@ export default function FavoritesPage() {
     setPrograms(programsData || [])
     setInstitutions(institutionsData || [])
     setLoading(false)
-  }
-
-  function openShare(item: any, type: 'program' | 'institution') {
-    setShareTarget({
-      name: item.name,
-      description: item.description ?? null,
-      url: `${window.location.origin}/${type === 'program' ? 'programs' : 'institutions'}/${item.id}/`,
-      type,
-    })
   }
 
   const isEmpty = !loading && programs.length === 0 && institutions.length === 0
@@ -113,13 +96,17 @@ export default function FavoritesPage() {
                   {programs.map((program) => (
                     <div key={program.id} className="relative">
                       <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
-                        <button
-                          onClick={() => openShare(program, 'program')}
-                          className="p-2 rounded-full bg-elimux-card text-muted hover:bg-muted/10 hover:text-foreground transition-all"
-                          title="Share"
-                        >
-                          <Share2 className="w-5 h-5" />
-                        </button>
+                        <ShareButton
+                          shareData={{
+                            title: program.name,
+                            description: program.description ?? `Check out ${program.name} on ElimuX.`,
+                            url: `https://www.elimux.ke/programs/${program.id}`,
+                          }}
+                          variant="icon-only"
+                          contentType="program"
+                          contentId={program.id}
+                          className="!p-2 !rounded-full !bg-elimux-card !text-muted hover:!bg-muted/10 hover:!text-foreground"
+                        />
                         <FavoriteButton itemId={program.id} itemType="program" onToggle={loadFavorites} />
                       </div>
                       <Link href={`/programs/${program.id}/`}>
@@ -141,13 +128,17 @@ export default function FavoritesPage() {
                   {institutions.map((institution) => (
                     <div key={institution.id} className="relative">
                       <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
-                        <button
-                          onClick={() => openShare(institution, 'institution')}
-                          className="p-2 rounded-full bg-elimux-card text-muted hover:bg-muted/10 hover:text-foreground transition-all"
-                          title="Share"
-                        >
-                          <Share2 className="w-5 h-5" />
-                        </button>
+                        <ShareButton
+                          shareData={{
+                            title: institution.name,
+                            description: institution.description ?? `Check out ${institution.name} on ElimuX.`,
+                            url: `https://www.elimux.ke/institutions/${institution.id}`,
+                          }}
+                          variant="icon-only"
+                          contentType="institution"
+                          contentId={institution.id}
+                          className="!p-2 !rounded-full !bg-elimux-card !text-muted hover:!bg-muted/10 hover:!text-foreground"
+                        />
                         <FavoriteButton itemId={institution.id} itemType="institution" onToggle={loadFavorites} />
                       </div>
                       <Link href={`/institutions/${institution.id}/`}>
@@ -161,10 +152,6 @@ export default function FavoritesPage() {
           </>
         )}
       </div>
-
-      {shareTarget && (
-        <ShareModal isOpen={!!shareTarget} onClose={() => setShareTarget(null)} item={shareTarget} />
-      )}
     </main>
   )
 }

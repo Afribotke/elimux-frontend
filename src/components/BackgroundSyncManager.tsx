@@ -28,11 +28,13 @@ async function replayAction(action: QueuedAction): Promise<void> {
       await applyProgram(payload as Parameters<typeof applyProgram>[0])
       return
     default:
-      // share is never queued - ShareModal's three actions (copy link,
-      // WhatsApp, mailto:) don't call the backend at all, so there's no
-      // network mutation to protect. Throw rather than silently drop, so if
-      // that changes before a replay handler is added, the action stays
-      // pending (and visibly unsynced) instead of vanishing.
+      // share is never queued - the share flow's own backend calls (smart
+      // link creation, analytics) are fire-and-forget best-effort pings,
+      // not a mutation whose loss would be user-visible, so there's nothing
+      // here worth protecting with offline replay. Throw rather than
+      // silently drop, so if that changes before a replay handler is
+      // added, the action stays pending (and visibly unsynced) instead of
+      // vanishing.
       throw new Error(`No replay handler for action_type "${action.action_type}"`)
   }
 }

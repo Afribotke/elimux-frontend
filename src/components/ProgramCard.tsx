@@ -1,8 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Clock, DollarSign, MapPin, BookOpen, Check, Share2 } from 'lucide-react'
-import ShareModal from './ShareModal'
+import { Clock, DollarSign, MapPin, BookOpen, Check } from 'lucide-react'
+import { ShareButton } from './share'
 import ProgramVerificationBadge from './ProgramVerificationBadge'
 import TrendingBadge from './trending/TrendingBadge'
 
@@ -50,7 +49,6 @@ export default function ProgramCard({
   trendingClicks24h,
 }: ProgramCardProps) {
   const categoryColor = program.category?.color || '#FFC107'
-  const [shareOpen, setShareOpen] = useState(false)
 
   return (
     <div className="relative bg-elimux-card rounded-xl p-5 border border-border hover:border-primary-500/50 transition-all hover:shadow-lg hover:shadow-primary-500/10">
@@ -61,27 +59,18 @@ export default function ProgramCard({
           e.stopPropagation()
         }}
       >
-        <button
-          type="button"
-          onClick={() => setShareOpen(true)}
-          aria-label="Share this program"
-          title="Share"
-          className="w-6 h-6 rounded-md border border-border bg-elimux-dark text-muted hover:text-foreground hover:border-primary-500/50 flex items-center justify-center transition-colors"
-        >
-          <Share2 className="w-3.5 h-3.5" />
-        </button>
+        <ShareButton
+          shareData={{
+            title: program.name,
+            description: program.description || `Check out ${program.name} on ElimuX.`,
+            url: `https://www.elimux.ke/programs/${program.id}`,
+          }}
+          variant="icon-only"
+          contentType="program"
+          contentId={program.id}
+          className="!w-6 !h-6 !p-0 !rounded-md !border !border-border !bg-elimux-dark !text-muted hover:!text-foreground hover:!border-primary-500/50"
+        />
       </div>
-
-      <ShareModal
-        isOpen={shareOpen}
-        onClose={() => setShareOpen(false)}
-        item={{
-          name: program.name,
-          description: program.description,
-          url: typeof window !== 'undefined' ? `${window.location.origin}/programs/${program.id}/` : '',
-          type: 'program',
-        }}
-      />
 
       {compareMode && (
         <div

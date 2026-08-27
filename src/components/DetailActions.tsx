@@ -1,9 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Share2 } from 'lucide-react'
 import FavoriteButton from './FavoriteButton'
-import ShareModal from './ShareModal'
+import { ShareButton } from './share'
 
 interface DetailActionsProps {
   itemId: string
@@ -13,29 +11,22 @@ interface DetailActionsProps {
 }
 
 export default function DetailActions({ itemId, itemType, name, description }: DetailActionsProps) {
-  const [shareOpen, setShareOpen] = useState(false)
+  const path = itemType === 'program' ? 'programs' : 'institutions'
 
   return (
     <div className="flex items-center gap-2">
-      <button
-        onClick={() => setShareOpen(true)}
-        className="p-2 rounded-full bg-elimux-card border border-border text-muted hover:bg-muted/10 hover:text-foreground transition-all"
-        title="Share"
-      >
-        <Share2 className="w-5 h-5" />
-      </button>
-      <FavoriteButton itemId={itemId} itemType={itemType} />
-
-      <ShareModal
-        isOpen={shareOpen}
-        onClose={() => setShareOpen(false)}
-        item={{
-          name,
-          description,
-          url: typeof window !== 'undefined' ? window.location.href : '',
-          type: itemType,
+      <ShareButton
+        shareData={{
+          title: name,
+          description: description || `Check out ${name} on ElimuX.`,
+          url: `https://www.elimux.ke/${path}/${itemId}`,
         }}
+        variant="icon-only"
+        contentType={itemType}
+        contentId={itemId}
+        className="!p-2 !rounded-full !bg-elimux-card !border !border-border !text-muted hover:!bg-muted/10 hover:!text-foreground"
       />
+      <FavoriteButton itemId={itemId} itemType={itemType} />
     </div>
   )
 }
