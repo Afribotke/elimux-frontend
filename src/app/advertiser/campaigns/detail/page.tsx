@@ -18,6 +18,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Eye, MousePointerClick, Percent, Wallet, ArrowLeft } from 'lucide-react'
 import { advertiserFetch, ADVERTISER_LOGIN_PATH } from '@/lib/advertiserAuth'
 import { supabase } from '@/lib/supabase'
+import { hasValidSessionMarkers } from '@/lib/supabase/client'
 import AdvertiserNav from '@/components/AdvertiserNav'
 import CampaignTrendChart from '@/components/advertiser/CampaignTrendChart'
 
@@ -97,7 +98,7 @@ function CampaignDetailContent() {
         const {
           data: { session },
         } = await supabase.auth.getSession()
-        if (!session) {
+        if (!session || !hasValidSessionMarkers()) {
           router.push(ADVERTISER_LOGIN_PATH)
           return
         }

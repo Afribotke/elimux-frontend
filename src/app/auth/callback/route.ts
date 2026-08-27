@@ -1,17 +1,27 @@
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from '@/lib/supabase/server';
+import { NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url)
-  const code = requestUrl.searchParams.get("code")
+export async function GET(request: Request) {
+  const { searchParams, origin } = new URL(request.url);
+  const code = searchParams.get('code');
+  const next = searchParams.get('redirect') ?? '/dashboard';
 
-  if (code) {
-    const supabase = await createClient()
-    await supabase.auth.exchangeCodeForSession(code)
+  if (!code) {
+    return NextResponse.redirect(
+      `${origin}/auth/login?error=oauth_no_code&message=${encodeURIComponent('Sign-in was cancelled or the authorization code was missing.')}`
+    );
   }
 
-  // Redirect to the intended page or dashboard
-  const redirectTo = requestUrl.searchParams.get("redirect") || "/dashboard"
-  return NextResponse.redirect(new URL(redirectTo, request.url))
+  const supabase = await createClient();
+
+  const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+
+  if (exchangeError) {
+    console.error('[OAuth Callback] exchangeCodeForSession failed:', exchangeError.message);
+    return NextResponse.redirect(
+      `${origin}/auth/login?error=oauth_exchange_failed&message=${encodeURIComponent(exchangeError.message)}`
+    );
+  }
+
+  return NextResponse.redirect(`${origin}${next}`);
 }

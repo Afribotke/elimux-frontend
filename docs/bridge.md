@@ -1,163 +1,218 @@
-# Cycle 041 — Step 0 Audit ONLY (per the cycle's own gate: "Do NOT
-# proceed to Step 1 until this audit is complete and reported")
+# Cycle 042 Report — OAuth Callback Hardening + Session-Expiry-on-Browser-Close +
+## Role-Dashboard Auth Guard Audit
 
-Archived as `docs/archive/bridge-112.md` before this report replaced it.
+## Status: OAuth callback + browser-close session expiry SHIPPED (build green,
+## 0 TypeScript errors). Auth guard audit COMPLETE, found a real gap, fix
+## NOT yet applied — needs a scoping decision before touching 30+ files.
 
-## Headline finding
-This admin dashboard is not "partially implemented." It's a large, mature
-system already covering nearly everything the spec asks for — often in
-more granular, more production-real form than the spec imagines (an
-immutable hash-chained bursary disbursement ledger with a fraud registry
-and M-Pesa/Paystack integration is not what "partially implemented"
-usually means). Executing the spec's 13 steps literally would build
-duplicate, conflicting pages next to ones that already exist, and get
-several steps flat-out wrong because the spec's assumed data model
-doesn't match this database. Stopping here, as instructed, before Step 1.
+Archived as `docs/archive/bridge-113.md` before this report replaced it
+(was mid-flight: an "Admin Users Page: Search, Filter, Sort, Pagination,
+Bulk Actions" cycle brief that had not yet been executed or reported on —
+still there, untouched, ready to pick up after this).
 
-## EXISTING
+## Part 1 — OAuth callback route hardening
 
-**Pages** (`src/app/admin/` — 50 page files, not counted in the spec's
-"partially implemented" framing): `page.tsx` (dashboard home),
-`dashboard`, `users`, `institutions`, `institution-claims`,
-`institutions-performance`, `programs`, `scholarships` (+`/sponsors`),
-`scholarship-providers`, `scholarship-applications`, `bursary-providers`,
-`bursary/funds`, `bursary/applications`, `bursary/disbursements`,
-`bursary/cron`, `advertisers`, `ads`, `ad-pricing`, `campaigns`,
-`major-sponsors`, `revenue`, `payments`, `pricing`, `reviews`, `messages`,
-`analytics`, `searches`, `settings`, `audit`, `approvals`, `reports`,
-`compliance`, `nita`, `accreditation`, `bulk-upload`, `student-assignments`,
-`students`, `internships`, `employers` (+5 sub-pages: discover-names,
-names, outreach, outreach/dashboard, outreach/team, upload),
-`potential-employers`, `scraper` (+`/changes`, `/sources`),
-`tveta-scraper`, `layout.tsx`.
+`app/auth/callback/route.ts` previously called
+`supabase.auth.exchangeCodeForSession(code)` without checking `code` was
+present or that the exchange succeeded — a failed/cancelled OAuth flow
+silently fell through to a redirect as if signed in, with no session and
+no error shown. Fixed:
+- No `code` in the URL → redirect to `/auth/login?error=oauth_no_code&message=...`
+- `exchangeCodeForSession` error → logged server-side, redirect to
+  `/auth/login?error=oauth_exchange_failed&message=<the real error>`
+- Success → redirect honors `?redirect=` (falls back to `/dashboard`)
 
-**Components** (`src/components/admin/`): `StatCard`, `RecentActivity`,
-`VisitorStatsWidget`, `AdminApplications`, `ProviderStatus`,
-`AdminKeyContext`, `AddInstitutionForm`, `AddProgramForm`,
-`AddScholarshipForm`, `AddScholarshipSponsorForm`, `MajorSponsorForm`,
-`PlanForm`, `SponsorAdForm`, plus `charts/LineChart`, `charts/PieChart`,
-`charts/RankedBarList` — a chart library is already integrated and in
-active use (spec's Step 2.4 said "if no chart library exists, skip" —
-one exists).
+`app/auth/login/page.tsx`:
+- Google sign-in now passes `?redirect=` through to the callback URL, so
+  it's honored the same way the password flow already does (previously
+  Google sign-in always landed on `/dashboard`, ignoring the original
+  `?redirect=` on the login page itself).
+- Added a `useEffect` that reads `?error=`/`?message=` on mount and shows
+  them in the existing error banner, so a failed OAuth callback redirect
+  is now actually visible to the user instead of failing silently.
 
-**Navigation** (`src/app/admin/layout.tsx`): explicitly commented "ALL 29
-VERIFIED ADMIN ROUTES — SINGLE SOURCE OF TRUTH", organized into 6
-collapsible sections (Platform, Content, Bursary Engine, Revenue, Users,
-System) covering 40+ nav items — more granular than the spec's flat
-13-item list. Already has: a global admin search box (type-ahead across
-all nav items, not in the spec), notification badges on nav items,
-mobile hamburger toggle with backdrop overlay and slide-in sidebar
-(spec's Step 1.2, already done), breadcrumb header, sign-out.
+## Part 2 — Session expires on browser close, unless "remember this device"
 
-**Dashboard home** (`/admin`, `page.tsx`): a 5-card "Platform Analytics"
-row with week-over-week trend percentages (Users, Revenue, Searches,
-Reviews, Applications) — beyond the spec's flat 4-card ask — plus a
-separate 7-card raw-count row (Countries, Institutions, Programs,
-Reviews, Messages, Institution Types, Categories). A `LineChart` of
-30-day search activity. `RecentActivity` (messages + institutions).
-`AdminApplications` and `ProviderStatus` widgets. Recent Reviews list.
-Most Reviewed Programs list. Three working Quick Actions with real forms
-(Add Institution, Add Program, View Messages) — not stubs.
+Founder wants: close the browser fully → logged out (protects
+students/staff on shared/cyber-cafe computers), unless the user opts in
+to staying signed in on that device for 30 days.
 
-**Supabase access pattern**: two parallel paths, both real. (1) Direct
-client reads via `@/lib/supabase` (`supabase.from('table').select(...)`)
-for public-RLS-readable tables — this is what `admin/page.tsx` uses for
-counts and reference data. (2) A backend-gated path via `@/lib/api`
-wrapper functions (`getAdminDashboardStats`, `getAnalyticsOverview`,
-etc.) that take an `adminKey` param and hit the backend, which uses a
-service-role key — this is how anything RLS would otherwise block (e.g.
-`contact_messages`, which the code comments explicitly say "has no
-public RLS policy by design — submissions contain PII") gets read.
+**Why this isn't just a cookie `maxAge` change:** `lib/supabase/client.ts`
+caches the browser Supabase client as a module-level singleton (documented
+fix from a prior cycle — without it, every re-render spun up its own
+GoTrueClient and `getSession()` intermittently missed a valid session,
+which broke employer registration in production). That singleton's cookie
+options are fixed at construction time, which happens on component mount
+— before a user has touched a "remember me" checkbox. Baking a dynamic
+`maxAge` into it can't react to the checkbox, and hand-rolling a custom
+cookie read/write adapter to make it dynamic risks breaking Supabase's own
+chunked-cookie handling for large JWTs (`sb-*-auth-token.0`, `.1`, etc.).
 
-**Admin auth model — important, and different from what the spec
-assumes**: `/admin/*` is gated by `AdminGate` in `layout.tsx`, which
-posts a key to the backend's `GET /api/admin/verify` (`x-admin-key`
-header) and stores it in React context + sessionStorage — not a Supabase
-session check, not RLS, not `profiles.role`. There is a real `admin_users`
-table in the DB (0 rows currently) but the live gate is the shared
-`ADMIN_KEY` env var compared server-side, per a prior cycle's audit
-(`project_elimux_auth_endpoint_hole` — the same incident that fixed a
-role-escalation hole in this exact area).
+**What shipped instead:** two independent marker cookies, layered on top
+of (not replacing) Supabase's own auth cookie:
+- `elimux_active` — a true browser-session cookie (no `Max-Age`), set on
+  every sign-in. Disappears when the browser fully closes.
+- `elimux_remember` — a 30-day cookie, set only if "Remember this device
+  for 30 days" is checked (new checkbox on the login form).
 
-**Real Supabase tables** (queried live via the Supabase MCP tool against
-the actual `ohlgjvenwekpbpkykutz` project — 120 tables total, listing
-only what's relevant here): `applications` (0 rows — internship/
-attachment/employer flow), `program_applications` (0 rows), `institution_
-applications` (1 row), `scholarship_applications` (2 rows),
-`bursary_applications`/`bursary_applicants`/`bursary_documents`/
-`bursary_disbursements` (immutable hash-chained ledger, per its own
-table comment)/`bursary_fraud_registry`/`bursary_mpesa_transactions`/
-`bursary_paystack_transfers` — a full bursary subsystem far beyond
-anything the spec describes. Also: `tenants`/`tenant_branding`/
-`user_tenant_roles` — a multi-tenant white-label system, not mentioned
-anywhere in the spec, and **no admin page exists for it** (see MISSING).
+`middleware.ts` (which already gated `/dashboard`, `/admin`, and
+`/bursary/provider/dashboard` by checking for presence of the Supabase
+auth cookie) now also requires `elimux_active` OR `elimux_remember` to be
+present. The bursary-subdomain rewrite logic in the same file is
+untouched.
 
-## MISSING or genuinely incomplete (the real gaps)
+`lib/supabase/client.ts` gained `setSessionMarkers(remember)` and
+`clearSessionMarkers()`. Sign-out is handled by wrapping
+`browserClient.auth.signOut` once, at the point the singleton is created,
+rather than editing call sites — there are **nine** of them across the app
+(`AdvertiserNav`, `partner/login`, `nita/login`, `institution/dashboard`,
+`admin/layout`, `bursary/provider/dashboard/layout`,
+`auth/reset-password`, plus the two shared `AuthContext`/`hooks.ts`
+sign-out functions) and editing all nine individually risked missing one.
 
-- **No reusable `DataTable` component** (spec's Step 11) — confirmed via
-  filesystem search, zero matches. This is real and worth building if
-  more table-heavy admin pages get added, but 40+ existing pages
-  currently roll their own table markup inline without it — retrofitting
-  every page onto a new shared component is a large, separate refactor,
-  not something to bundle into "add missing features."
-- **`admin/users/page.tsx` (254 lines) has no search, filter, sort,
-  pagination, or bulk actions** — confirmed via grep, only a plain list
-  with per-row disable. This is the one spec item (3.2) that's a genuine,
-  scoped, real gap.
-- **No admin page for the `applications` table** (internship/attachment/
-  employer applications) — confirmed via grep, this table has real
-  frontend usage (employer portal, internships, student dashboard) but
-  zero admin visibility. This is the closest real match to the spec's
-  Step 4, though shaped around internships/attachments, not "program
-  applications" as the spec imagines.
-- **`program_applications` table exists in the database (0 rows) but is
-  wired into *no* code anywhere** — not the frontend, not any admin page.
-  Either dead/reserved schema from an earlier design, or a genuinely
-  unbuilt feature. Worth asking about before building an admin page for
-  a table nothing else uses yet.
-- **`admin/approvals/page.tsx` runs on hardcoded mock data** — and says so
-  in its own header comment, in detail: the real target table
-  (`university_student_uploads`) exists (0 rows) but has no backend API
-  route at all, and lacks an approval-status column. This is a real,
-  already-self-documented gap — not something this cycle can finish
-  without backend work first (which the spec's own rules say not to do:
-  "do NOT create Supabase tables").
-- **No admin page for the `tenants`/`tenant_branding` white-label
-  system.** Not in the spec at all, but if this multi-tenant feature is
-  live/active, it currently has zero admin oversight.
+Files changed: `app/auth/callback/route.ts`, `app/auth/login/page.tsx`,
+`lib/supabase/client.ts`, `middleware.ts`. `npx tsc --noEmit` clean, 0
+errors.
 
-## Where the spec's assumptions don't match reality
-- **Step 3 and Step 12 both assume a single `profiles` table** with
-  `full_name`, `email`, `role`, `institution_id`, `status` columns.
-  **No such table exists.** Confirmed via a live query of all 120 public
-  tables. User identity here is split across Supabase's built-in
-  `auth.users`, plus `user_roles` (4 rows), `student_profiles` (2 rows),
-  `institution_accounts` (0 rows), `employers` (6 rows), `advertisers`
-  (2 rows), and `admin_users` (0 rows) — a per-role-table model, not a
-  unified profile. A real "Users Management" page has to join across
-  whichever of these tables actually holds a given user's data, which is
-  a materially different (and harder) build than the spec's single-table
-  assumption.
-- **Step 12's RLS assumption** ("Check `profiles.role = 'admin'` on
-  load") doesn't apply — see the admin auth model above. The actual
-  security boundary is the backend's `ADMIN_KEY` check, not client-side
-  RLS keyed on a role column. Flagging rather than inventing a
-  `profiles.role` check against a table that doesn't exist.
+## Part 3 — Auth guard audit (read-only, no code changes yet)
 
-## What I did not do
-Per the cycle's own Step 0 gate, I did not write any code, create any
-pages, or touch the sidebar/dashboard/RLS. This report is the full
-deliverable for Step 0.
+The middleware fix above only covers the 3 path prefixes middleware
+itself gates. Everything else — every employer/student/institution/
+advertiser/partner/nita/bursary page — enforces its own auth client-side,
+and **none of it knows about `elimux_active`/`elimux_remember` yet.**
+Audited every such route. Two patterns cover almost everything:
 
-## Recommendation
-Given how much of the spec is already done or exceeded, and how much of
-the remainder either has a fundamentally different real shape (Users,
-Applications) or isn't safely buildable without backend/schema decisions
-first (Approvals, `program_applications`, RLS), I'd rather scope the next
-step with you than build all 12 remaining steps against these corrected
-assumptions in one uninterrupted pass. My suggested priority order, if
-useful: (1) `admin/users` search/filter/pagination — real, scoped, safe;
-(2) an `applications` admin page for internship/attachment applications;
-(3) everything else, re-scoped once we know if `program_applications`
-and the tenant white-label system are meant to be built out or left
-alone.
+**Pattern A — shared helper, 34 files.** `lib/client-auth.ts`'s
+`getUserWithTimeout()` (explicitly documented in that file as "use in
+EVERY client page that checks auth state"). Covers all of
+`employer/(portal)/*`, `student/dashboard`, `student/profile`,
+`student/trade-test`, `partner/dashboard`, `partner/page.tsx`,
+`ads/self-serve/*`, `bursary/*` (page, provider/dashboard, fund/[id],
+profile, notifications, bookmarks, my-applications),
+`internships/page.tsx`, `internships/my-applications`,
+`internships/[id]/apply`, `scholarships/favorites`.
+
+**Pattern B — ad-hoc `supabase.auth.getSession()` in a `useEffect`, no
+shared helper, 13 files.** `institution/dashboard`, `advertiser/*` (page,
+dashboard, campaigns, campaigns/detail, billing, register — 6 files),
+`nita/*` (dashboard, reports, compliance — 3 files),
+`employer/attachments`, `student/logbook`, `university/placements`.
+
+**Plus `AuthContext.tsx`** — its own `getSession()` call feeds `useAuth()`,
+consumed by `applications/*` and anything else using that hook.
+
+Every route checked DOES redirect an unauthenticated user away — there's
+no "wide open" page in this set. The gap is narrower: they all trust
+Supabase's own session cookie validity, which is unrelated to our new
+markers, so a session that should have died on browser close (no
+"remember me") can still let someone back into these pages if Supabase's
+own cookie happens to still be valid.
+
+**Recommendation, not yet actioned:** patch two chokepoints instead of
+30+ files —`getUserWithTimeout()` in `lib/client-auth.ts` and the session
+effect in `AuthContext.tsx`, both adding the same marker check middleware
+now does. That covers Pattern A and the `applications/*`/`useAuth()`
+surface in one move each. The 13 Pattern-B files have no shared helper, so
+each needs the same one-line check added individually, or a small shared
+`hasValidSessionMarkers()` util pulled out of `lib/supabase/client.ts`
+first.
+
+## What's needed from you (or the founder)
+
+Nothing blocking on Part 1/2 — both are live-ready pending normal
+build/deploy. Part 3 is a decision point: confirm the two-chokepoint plan
+before it touches `client-auth.ts`/`AuthContext.tsx` (shared by dozens of
+pages), and confirm whether the 13 Pattern-B files should get a shared
+util first or be patched inline one by one.
+Gap 1: The 8-Test Matrix (here it is)
+Table
+#	Test	Steps	Expected Result
+1	Google OAuth, no remember me, browser close	Sign in with Google → do NOT check "Remember me" → close all browser windows → reopen → visit preview URL	Redirected to /auth/login
+2	Google OAuth, remember me, browser close	Sign in with Google → CHECK "Remember me" → close all browser windows → reopen → visit preview URL	Still logged in, lands on dashboard
+3	Password login, no remember me, browser close	Sign in with email/password → do NOT check "Remember me" → close all browser windows → reopen → visit preview URL	Redirected to /auth/login
+4	Password login, remember me, browser close	Sign in with email/password → CHECK "Remember me" → close all browser windows → reopen → visit preview URL	Still logged in, lands on dashboard
+5	OAuth cancelled at Google consent screen	Click "Sign in with Google" → click "Cancel" on Google's consent screen	Back to /auth/login with error banner visible
+6	OAuth callback with bad code	Manually visit /auth/callback?code=invalid	Redirected to /auth/login?error=oauth_exchange_failed with error banner
+7	Redirect param honored (Google)	Visit /auth/login?redirect=/scholarships → sign in with Google	Lands on /scholarships
+8	Redirect param honored (password)	Visit /auth/login?redirect=/scholarships → sign in with password	Lands on /scholarships
+Gap 2: Cycle 043 Implementation (complete code for Claude)
+File A: lib/supabase/client.ts — add hasValidSessionMarkers
+Add this function to the existing file (after the createClient function, before exports):
+TypeScript
+export function hasValidSessionMarkers(): boolean {
+  if (typeof document === 'undefined') return true; // SSR — let middleware handle it
+  return document.cookie.includes('elimux_active=') || document.cookie.includes('elimux_remember=');
+}
+File B: lib/client-auth.ts — patch getUserWithTimeout
+Find the function and add the marker check after the Supabase call succeeds but before returning:
+TypeScript
+// After: const { data: { user }, error } = await supabase.auth.getUser();
+// Add this block before the final return:
+
+if (user && !hasValidSessionMarkers()) {
+  return { user: null, error: new Error('Session expired. Please sign in again.') };
+}
+File C: components/auth/AuthContext.tsx — patch session loader
+Find the getSession() call inside the useEffect. After it resolves:
+TypeScript
+// After: const { data: { session } } = await supabase.auth.getSession();
+// Add:
+
+if (session && !hasValidSessionMarkers()) {
+  setSession(null);
+  setUser(null);
+  setLoading(false);
+  return;
+}
+File D: lib/hooks/useRequireAuth.ts — new shared hook (create this file)
+TypeScript
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient, hasValidSessionMarkers } from '@/lib/supabase/client';
+
+export function useRequireAuth(redirectTo: string = '/auth/login') {
+  const router = useRouter();
+
+  useEffect(() => {
+    const check = async () => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session || !hasValidSessionMarkers()) {
+        router.replace(redirectTo);
+      }
+    };
+    check();
+  }, [redirectTo, router]);
+}
+File E: Migrate 13 Pattern-B files to useRequireAuth
+For each of these files, replace their ad-hoc useEffect + getSession auth check with:
+TypeScript
+import { useRequireAuth } from '@/lib/hooks/useRequireAuth';
+
+// Inside the component:
+useRequireAuth();
+Files to migrate:
+app/institution/dashboard/page.tsx
+app/advertiser/page.tsx
+app/advertiser/dashboard/page.tsx
+app/advertiser/campaigns/page.tsx
+app/advertiser/campaigns/[id]/page.tsx
+app/advertiser/billing/page.tsx
+app/nita/dashboard/page.tsx
+app/nita/reports/page.tsx
+app/nita/compliance/page.tsx
+app/employer/attachments/page.tsx
+app/student/logbook/page.tsx
+app/university/placements/page.tsx
+Execution Order for Claude
+Implement all 5 files above (A through E)
+Run npx tsc --noEmit — must be 0 errors
+Create branch: git checkout -b auth-hardening-preview && git push -u origin auth-hardening-preview
+Wait for Vercel preview URL
+Run the 8-test matrix in incognito windows
+Report back results — pass/fail per test
+Only after all 8 pass: merge to main
+Do not proceed to step 3 until step 2 shows 0 TypeScript errors.

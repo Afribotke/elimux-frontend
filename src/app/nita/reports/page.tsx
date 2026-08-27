@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient, hasValidSessionMarkers } from '@/lib/supabase/client';
 
 const supabase = createClient();
 
@@ -13,7 +13,7 @@ export default function NitaReportsPage() {
   useEffect(() => { fetchReports(); }, []);
   async function fetchReports() {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { router.push('/nita/login'); return; }
+    if (!session || !hasValidSessionMarkers()) { router.push('/nita/login'); return; }
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/nita/reports`, { headers: { Authorization: `Bearer ${session.access_token}` } });
     if (res.ok) { const data = await res.json(); setReports(data.data || []); }
     setLoading(false);

@@ -9,6 +9,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Building2, LogOut, Plus, Pencil, Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { hasValidSessionMarkers } from '@/lib/supabase/client'
 import { institutionFetch } from '@/lib/institutionAuth'
 
 type Institution = {
@@ -74,7 +75,7 @@ export default function InstitutionDashboardPage() {
   useEffect(() => {
     ;(async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
+      if (!session || !hasValidSessionMarkers()) {
         router.push('/institution/login')
         return
       }

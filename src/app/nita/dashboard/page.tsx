@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient, hasValidSessionMarkers } from '@/lib/supabase/client';
 
 const supabase = createClient();
 
@@ -25,7 +25,7 @@ export default function NitaDashboardPage() {
 
   async function checkAuth() {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { router.push('/nita/login'); return; }
+    if (!session || !hasValidSessionMarkers()) { router.push('/nita/login'); return; }
 
     const { data: roleRows } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id).in('role', ['nita_admin', 'elimux_admin', 'admin']);
     if (!roleRows || roleRows.length === 0) {

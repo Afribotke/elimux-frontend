@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation'
 import { Megaphone } from 'lucide-react'
 import { advertiserFetch, ADVERTISER_LOGIN_PATH } from '@/lib/advertiserAuth'
 import { supabase } from '@/lib/supabase'
+import { hasValidSessionMarkers } from '@/lib/supabase/client'
 import AdvertiserNav from '@/components/AdvertiserNav'
 
 interface Campaign {
@@ -50,7 +51,7 @@ export default function CampaignsListPage() {
       const {
         data: { session },
       } = await supabase.auth.getSession()
-      if (!session) {
+      if (!session || !hasValidSessionMarkers()) {
         router.push(ADVERTISER_LOGIN_PATH)
         return
       }

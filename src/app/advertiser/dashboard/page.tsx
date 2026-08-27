@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Clock, XCircle, Megaphone } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { hasValidSessionMarkers } from '@/lib/supabase/client'
 import { advertiserFetch, ADVERTISER_LOGIN_PATH } from '@/lib/advertiserAuth'
 import AdvertiserNav from '@/components/AdvertiserNav'
 
@@ -52,7 +53,7 @@ export default function AdvertiserDashboardPage() {
       const {
         data: { session },
       } = await supabase.auth.getSession()
-      if (!session) {
+      if (!session || !hasValidSessionMarkers()) {
         router.push(ADVERTISER_LOGIN_PATH)
         return
       }

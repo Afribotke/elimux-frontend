@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient, hasValidSessionMarkers } from '@/lib/supabase/client';
 
 const supabase = createClient();
 
@@ -50,7 +50,7 @@ export default function UniversityPlacementsPage() {
 
   async function fetchData() {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { router.push('/login'); return; }
+    if (!session || !hasValidSessionMarkers()) { router.push('/login'); return; }
 
     const placementsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/attachments`, {
       headers: { Authorization: `Bearer ${session.access_token}` }

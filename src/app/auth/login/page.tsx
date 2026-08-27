@@ -8,12 +8,12 @@
 // otherwise to the role's default home via getRoleHomePath.
 // ============================================
 
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Mail, Lock, LogIn } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, setSessionMarkers } from '@/lib/supabase/client'
 import { getRoleHomePath, type UserRole } from '@/lib/auth/rbac'
 
 function LoginForm() {
@@ -36,6 +36,20 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
+
+  useEffect(() => {
+    const message = searchParams.get('message')
+    if (message) {
+      setError(message)
+      return
+    }
+    const errorCode = searchParams.get('error')
+    if (errorCode) {
+      setError('Sign-in failed. Please try again.')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,6 +63,8 @@ function LoginForm() {
       setLoading(false)
       return
     }
+
+    setSessionMarkers(rememberMe)
 
     const redirect = searchParams.get('redirect')
     if (redirect) {
@@ -68,9 +84,15 @@ function LoginForm() {
 
   const handleGoogleSignIn = async () => {
     setError('')
+    // The redirect to Google navigates away from this page, so the markers
+    // must be set now rather than after the round trip completes - they're
+    // real cookies on the elimux.ke domain and survive the navigation.
+    setSessionMarkers(rememberMe)
+    const redirectParam = searchParams.get('redirect')
+    const callbackUrl = `${window.location.origin}/auth/callback${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}`
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: callbackUrl },
     })
     if (oauthError) setError(oauthError.message)
   }
@@ -129,6 +151,17 @@ function LoginForm() {
                 className="w-full px-4 py-2 rounded-lg bg-elimux-dark border border-border text-foreground transition-all focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"
               />
             </div>
+
+            <label htmlFor="rememberMe" className="flex items-center gap-2 text-sm text-muted cursor-pointer select-none">
+              <input
+                id="rememberMe"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="rounded border-border"
+              />
+              Remember this device for 30 days
+            </label>
 
             <button
               type="submit"

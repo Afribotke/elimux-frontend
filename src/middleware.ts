@@ -43,9 +43,19 @@ export async function middleware(request: NextRequest) {
 
   // Check for Supabase SSR session cookie
   // @supabase/ssr names cookies: sb-<project-ref>-auth-token, often chunked as sb-<ref>-auth-token.0, .1, etc.
-  const hasSession = request.cookies.has("sb-ohlgjvenwekpbpkykutz-auth-token") ||
+  const hasAuthCookie = request.cookies.has("sb-ohlgjvenwekpbpkykutz-auth-token") ||
                      request.cookies.has("sb-auth-token") ||
                      Array.from(request.cookies.getAll()).some(c => c.name.startsWith("sb-") && c.name.includes("auth-token"))
+
+  // elimux_active is a true browser-session cookie (no Max-Age), set by
+  // lib/supabase/client.ts on sign-in, so it disappears when the browser
+  // fully closes - forcing re-login on shared/cyber-cafe machines even
+  // though the underlying Supabase auth cookie may still be present.
+  // elimux_remember opts a trusted device out of that for 30 days.
+  const hasSessionMarker = request.cookies.get("elimux_active")?.value === "1" ||
+                     request.cookies.get("elimux_remember")?.value === "1"
+
+  const hasSession = hasAuthCookie && hasSessionMarker
 
   if (!hasSession) {
     const loginUrl = new URL("/auth/login", request.url)

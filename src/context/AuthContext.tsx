@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient, hasValidSessionMarkers } from '@/lib/supabase/client';
 import { User } from '@/types';
 import type { Session } from '@supabase/supabase-js';
 
@@ -66,6 +66,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        if (session && !hasValidSessionMarkers()) {
+          // A Supabase session cookie can outlive elimux_active (browser
+          // fully closed, "remember me" wasn't checked) - don't let a
+          // stale-but-technically-valid cookie re-establish the app's
+          // logged-in state.
+          if (mounted) { setSession(null); setUser(null); }
+          return;
+        }
         if (mounted) setSession(session);
         if (session?.user && mounted) {
           const profile = await fetchProfile(session.user.id, session.user.email);
@@ -82,6 +90,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (session && !hasValidSessionMarkers()) {
+          // Same guard as initAuth() above - without it, a background
+          // TOKEN_REFRESHED event would silently re-establish user/session
+          // and undo the browser-close logout initAuth() just enforced.
+          if (mounted) { setSession(null); setUser(null); }
+          return;
+        }
         if (mounted) setSession(session);
         if (session?.user && mounted) {
           const profile = await fetchProfile(session.user.id, session.user.email);
