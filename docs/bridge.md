@@ -9,6 +9,32 @@ Archived as `docs/archive/bridge-114.md` before this report replaced it
 (was Cycle 042's report plus your two Gap-fill additions — the 8-test
 matrix and the Cycle 043 code. Both used, with corrections below.)
 
+## 🚨 URGENT, SEPARATE FROM CYCLE 043: Google sign-in is broken in
+## PRODUCTION right now
+
+While you were testing, you hit `Error 400: redirect_uri_mismatch` for
+`https://ohlgjvenwekpbpkykutz.supabase.co/auth/v1/callback` — the exact
+URI Cycle 039 already fixed and verified working. Reproduced with a raw
+curl straight to Supabase's `/authorize` endpoint, no app/Vercel involved:
+
+```
+curl -sL "https://ohlgjvenwekpbpkykutz.supabase.co/auth/v1/authorize?provider=google&redirect_to=https://www.elimux.ke/auth/callback"
+```
+
+Same `redirect_uri_mismatch`, same client_id
+(`133718286331-no02nn68qt8i9g2lrjnd2k3eav1qfvf5.apps.googleusercontent.com`),
+**using production's own redirect target** — this has nothing to do with
+the preview branch or this cycle's code. Google sign-in is dead on
+`www.elimux.ke` right now, for every user, independent of whether Cycle
+043 ever merges.
+
+Most likely cause: the Cycle 039 fix (adding that redirect URI to this
+client_id's Authorized redirect URIs in Google Cloud Console) reverted,
+was never actually saved, or Supabase's Google provider now points at a
+different/rotated client_id that was never registered. Can't tell which,
+or fix it, without your Google Cloud Console access — same as Cycle 039.
+**This needs your attention regardless of the Cycle 043 testing below.**
+
 ## Preview URL
 
 **https://elimux-frontend-app-git-auth-hardening-preview-afribotke.vercel.app**
