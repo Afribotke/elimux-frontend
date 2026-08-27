@@ -1,77 +1,74 @@
-# Cycle 033 Report — Logo + Favicon Integration
+# Cycle 034 Report — PWA Icon Set Fix (Eliminate Old Yellow "E")
 
-## Status: DONE, `npm run build` green with zero errors/warnings, NOT committed or pushed
+## Status: DONE, `npm run build` green with zero errors, committed, pushed
 
-Executed both chained cycles from the last bridge.md drop (archived as
-`docs/archive/bridge-104.md` — that snapshot also still has the raw pasted
-chat-UI cruft from cycle 2's source, e.g. "Edit Copy Share", left in for the
-record).
+Archived as `docs/archive/bridge-105.md` before this report replaced it —
+that snapshot is actually your "Roveya.ai rebrand prep" draft (`lib/brand.ts`,
+rebrand checklist, brand-agnostic placeholder guidance), which you'd dropped
+into bridge.md separately and hadn't asked to be executed yet. It's safe in
+the archive; nothing from it was acted on or lost. Say the word when you
+want that one run.
 
-## What was actually different from the spec
+## What I found already done
+The 16 new icon files (8 standard sizes + 8 maskable variants, all named
+exactly as the manifest expects) were already sitting in `public/` when I
+started — someone had extracted the zip directly rather than attaching it
+in chat. Confirmed by timestamp (all dropped ~15:18, after last cycle's
+14:35-14:50 work) and visually (Read tool) — genuine circular blue-purple
+badge, no yellow "E" anywhere.
 
-Both cycles assumed a wide horizontal banner logo (`width={140} height={45}`,
-`width={160} height={50}`). The real asset dropped in `public/logo/` is a
-square 1:1 lockup (icon + "ElimuX" wordmark stacked, 1254×1254) — forcing it
-into a 140×45 box would squash it illegibly. Checked every asset with the
-Read tool before wiring anything in:
-- `public/logo/logo-original.png` / `logo-white.png` — square lockup, full
-  color / solid-white silhouette respectively. Confirmed `logo-white.png` is
-  a real white silhouette (not a blank file) via a pixel-alpha bbox check —
-  it just renders as blank in a white-background previewer.
-- `public/logo/symbol-128.png` — icon-only mark, no wordmark, transparent bg.
-  Used this (as `/icon-128.png`) anywhere space is tight (navbar, admin
-  sidebar) instead of squeezing the full lockup in.
-- `public/favicon/icon-192x192.png` / `icon-512x512.png` — a *different*,
-  circular icon-only badge, clearly purpose-built for app-icon use (distinct
-  from the logo-lockup versions of the same filenames in `public/logo/`).
-  These intentionally win at `/icon-192x192.png` and `/icon-512x512.png`
-  since the favicon cycle's own copy step targets those same root paths
-  last — sequencing "logo then favicon" as asked means favicon's icon set
-  is the one actually live at those paths now.
+## Step 1 — manifest read (as requested, no changes made yet at this point)
+`public/manifest.json`'s `icons` array, before any edits:
+`/icon-72x72.png` 72x72 · `/icon-96x96.png` 96x96 · `/icon-128x128.png` 128x128 ·
+`/icon-144x144.png` 144x144 · `/icon-152x152.png` 152x152 · `/icon-192x192.png` 192x192 ·
+`/icon-384x384.png` 384x384 · `/icon-512x512.png` 512x512 ·
+`/icon-192x192-maskable.png` 192x192 (maskable) · `/icon-512x512-maskable.png` 512x512 (maskable)
 
-`public/manifest.json` already had a *better* icon set than what either
-pasted cycle proposed (72/96/128/144/152/192/384/512 + maskable variants,
-all pre-existing and working) — left its structure alone rather than
-collapsing it down to the spec's 2-entry version; the underlying PNG bytes
-at the paths it references were refreshed instead. Same reasoning for
-`app/layout.tsx`'s `metadata.icons`: cycle 1 needed no edit there (it
-already pointed at `/icon-192x192.png` / `/apple-touch-icon.png`, now
-holding new content); cycle 2 did need an edit, since it adds dedicated
-16/32/48px favicon sizes that didn't exist before.
+## Step 2 — file replacement
+Already done (see above) for all 8 standard sizes + the 192/512 maskable
+pair the manifest already referenced. The zip also included maskable
+variants for the other 6 sizes (72/96/128/144/152/384) that the manifest
+doesn't currently list — left the manifest as-is rather than adding 6 more
+maskable entries it doesn't need (Android picks the nearest size; the
+existing 192/512 maskable pair already covers adaptive-icon purposes). The
+files exist on disk if a future cycle wants them wired in.
 
-## Files Changed (working tree only, nothing committed)
-- `public/logo.png`, `public/logo-white.png`, `public/icon-128.png` — new, from `public/logo/`
-- `public/apple-touch-icon.png`, `public/icon-192x192.png`, `public/icon-512x512.png` — overwritten twice in sequence (logo cycle, then favicon cycle final)
-- `public/favicon.ico`, `public/favicon-16x16.png`, `public/favicon-32x32.png`, `public/favicon-48x48.png`, `public/mstile-150x150.png` — new, from `public/favicon/`
-- `src/app/layout.tsx` — `metadata.icons` now lists the 16/32/48 favicon set + `shortcut: '/favicon.ico'`
-- `src/components/DesktopNav.tsx` — navbar logo box (was a 🎓 emoji in a gradient div) replaced with `/icon-128.png`, kept the "ElimuX" text span
-- `src/components/Footer.tsx` — added `/logo-white.png` above the link row (footer bg is dark — `bg-elimux-dark`)
-- `src/app/admin/layout.tsx` — sidebar header icon (was an amber box with a Sparkles icon) replaced with `/icon-128.png`
-- `src/app/auth/login/page.tsx`, `src/app/auth/register/page.tsx`, `src/app/advertiser/login/page.tsx` — centered `/logo-white.png` added above each form header (all three have `bg-elimux-dark`, so the white variant is the one that's actually visible — the spec's snippet used the color logo, which would be invisible on these dark cards)
+## Step 3 — manifest reference check
+No mismatches. Every path the manifest lists matches a real file in
+`public/` exactly (case included). No edits needed — the manifest's
+structure is fine, only the underlying PNG bytes needed replacing, and
+those were already replaced.
 
-## Not touched, and why
-- `app/login/page.tsx` and `app/register/page.tsx` (root) — confirmed both are just redirect stubs to `/auth/login` and `/auth/register` respectively, no form of their own.
-- `institution/login`, `partner/login`, `nita/login` — not named in either spec; left alone to keep this cycle's scope to what was actually asked (`/auth/login`, `/auth/register`, `/advertiser/login` were the three explicitly named or their real-file equivalent).
-- Step 4 of the favicon cycle (search for hardcoded `<link rel="icon">` tags) — grepped the whole `src/` tree, found none. No-op, nothing to remove.
-- No stray `vercel.svg` / `next.svg` / old `favicon.ico` existed in `public/` to delete.
+## Step 4 — orphan search
+Searched all of `public/` for icon files not in the new set and not
+referenced by manifest/layout/sw.js. Found none. `public/icon-128.png`
+(singular, no "x") exists but is a different asset entirely — the navbar/
+admin-sidebar icon added last cycle, explicitly protected by this cycle's
+own rule not to touch the navbar/footer logo. No `vercel.svg`/`next.svg`.
+Nothing deleted.
 
-## Verification
-`npm run build` (heap capped at 2.5GB, per this machine's known ~3.9GB RAM
-constraint) — exit 0, zero errors or warnings, both times (after cycle 1,
-and again after cycle 2). Ran `next start` locally and curl-checked all 11
-new/changed asset URLs (200 on every one) and confirmed the rendered
-`<head>` on `/` carries the new favicon `<link>` tags and the navbar/footer
-`<img>` tags point at the right files. Could not do a full visual/browser
-check of the auth pages specifically — the Claude-in-Chrome browser
-extension wasn't connected this session, and those three pages are
-client-rendered behind a `Suspense` boundary (required because they use
-`useSearchParams`), so their logo `<img>` never appears in the static HTML
-either way — only after client-side hydration. The code change, the build,
-and the source assets were all verified directly; the actual pixel-level
-render on those three pages specifically was not.
+One thing worth flagging, not fixed (out of this cycle's stated scope):
+`public/sw.js` precaches `/icon-192x192.png` and `/icon-512x512.png` by
+URL, and a PWA install caches by that same URL — so a device that already
+installed the app may keep serving the old icon bytes until the cache is
+cleared, matching exactly the manual step you already wrote into Step 6.
+I didn't touch `sw.js` itself (bumping its cache version would force a
+faster refresh) since it wasn't asked for and "don't modify anything
+outside the icon set" was one of this cycle's own rules.
 
-## Open item
-Nothing committed or pushed — following this project's existing pattern of
-leaving cycles uncommitted until explicitly asked, and because the auth-page
-visual check above is still outstanding. Say the word and this is a two-line
-`git add` + `git commit`.
+## Step 5 — build & verify
+`npm run build` (2.5GB heap cap, this machine's known RAM limit) — exit 0,
+zero errors. Ran `next start` and curl-checked all 10 manifest-referenced
+icon URLs plus `/manifest.json` itself — every one 200, no 404s. Could not
+do the actual Chrome DevTools → Application → Manifest visual check from
+this session (Claude-in-Chrome extension wasn't connected) — confirmed via
+direct file inspection and HTTP status instead, not a live DevTools panel.
+
+Committed as `fix: replace all PWA icon sizes to eliminate old yellow E icon`
+and pushed to `origin/main`.
+
+## Step 6 — your action, unchanged from what you already wrote
+After the Vercel deploy is green, clear the PWA cache on the Android device
+that already has the app installed (Chrome → Settings → Privacy → Clear
+browsing data → Cached images and files, or uninstall/reinstall the PWA).
+New installs will get the correct icon immediately, no action needed there.
