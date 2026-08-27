@@ -23,5 +23,13 @@ export async function GET(request: Request) {
     );
   }
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email_confirmed_at) {
+    await supabase.auth.signOut();
+    return NextResponse.redirect(
+      `${origin}/auth/login?error=email_not_verified&message=${encodeURIComponent('Please verify your email before signing in. Check your inbox for the verification link.')}`
+    );
+  }
+
   return NextResponse.redirect(`${origin}${next}`);
 }

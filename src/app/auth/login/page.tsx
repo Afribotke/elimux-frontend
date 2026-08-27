@@ -64,6 +64,13 @@ function LoginForm() {
       return
     }
 
+    if (!data.session.user.email_confirmed_at) {
+      await supabase.auth.signOut()
+      setError('Please verify your email before signing in. Check your inbox for the verification link.')
+      setLoading(false)
+      return
+    }
+
     setSessionMarkers(rememberMe)
 
     const redirect = searchParams.get('redirect')

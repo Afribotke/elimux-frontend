@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { createServerClient } from "@supabase/ssr"
 
 // Protected routes that require authentication
 const PROTECTED_PATHS = ["/dashboard", "/admin", "/bursary/provider/dashboard"]
@@ -63,7 +64,37 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  return NextResponse.next()
+  // Cookie presence only proves a session exists, not that its email is
+  // verified - no Supabase client existed in this file before this check,
+  // so build one here (with cookie forwarding, per @supabase/ssr's
+  // middleware pattern) rather than assuming one was already in scope.
+  const response = NextResponse.next()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value)
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.email_confirmed_at) {
+    const loginUrl = new URL("/auth/login", request.url)
+    loginUrl.searchParams.set("error", "email_not_verified")
+    return NextResponse.redirect(loginUrl)
+  }
+
+  return response
 }
 
 export const config = {
