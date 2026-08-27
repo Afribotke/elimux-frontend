@@ -1,98 +1,88 @@
-# Cycle 037 Report — Unify Share System (ShareModal → ShareButton)
+# Cycle 038 Report — PWA Icon Re-Audit + Cache-Control Headers
 
-## Status: DONE, `npm run build` green with zero errors, one real bug in the
-## drafted spec caught and worked around, committed and pushed
+## Status: DONE, `npm run build` green with zero errors, committed, pushed
+## — but the audit found no bug, so this likely won't fix the reported
+## Android screenshot by itself. Read the "what this doesn't fix" section.
 
-Archived as `docs/archive/bridge-108.md` before this report replaced it.
+Archived as `docs/archive/bridge-109.md` before this report replaced it.
+Note: the `elimux-pwa-icons-complete.zip` mentioned in the cycle brief was
+never actually placed on this filesystem (only referenced via a
+`sandbox://` link from another AI session, which isn't reachable from
+here) — Step 3 (copy files from the zip) could not be executed. Based on
+the audit below, it's very likely a no-op anyway.
 
-## Step 1 audit — corrections to two of the drafted spec's assumptions
-Read all five named files before touching anything. Two things in the
-spec's own analysis didn't hold up:
+## Step 1 — manifest audit
+`public/manifest.json`'s `icons` array is byte-identical to what I audited
+in Cycle 034: all 8 standard sizes (72–512) plus 192/512 maskable, every
+`src` pointing at a file that exists. No missing sizes, no path mismatches.
 
-1. **"The old [ShareModal] doesn't [have analytics]" is wrong.**
-   `ShareModal.tsx` called `trackEvent('share', {platform, url, item_type})`
-   from `@/lib/analytics` on every copy/WhatsApp/email action — a real,
-   already-consumed pipeline (`POST /api/admin/analytics/track`, feeding
-   `analytics_events`). It's a *different* pipeline than the new system's
-   `trackShareEvent` → `/api/share-events`, not an absent one. Net effect
-   of this migration: program/institution shares stop appearing in
-   whatever consumes `analytics_events` with `event_type='share'`, and
-   start appearing in the newer `share_events` table instead (with better
-   data — per-platform, smart-link-aware). Flagging in case anything on
-   the backend/admin side still queries the old table for this.
+## Step 2 — icon file audit
+All 16 files (8 standard + 8 maskable, 72 through 512) exist in `public/`,
+sizes scale sensibly with resolution (72px ≈ 6–11KB up to 512px ≈
+160–294KB — no suspiciously-tiny file that would indicate a leftover old
+icon). Spot-checked five of them directly with the Read tool (72, 192,
+192-maskable, 384, 512-maskable) — all five show the correct circular
+blue-purple badge, none show the old yellow "E". Combined with Cycle 034's
+own verification (which downloaded the live production file and confirmed
+the same), and this session's own earlier re-check against
+`www.elimux.ke` before this cycle even started — there is no code-level
+bug here. Every manifest-referenced icon, in the repo and on production,
+is already correct.
 
-2. **`ShareResultsModal.tsx` is not a second copy of the old system** — it
-   shares a *set* of programs (a comparison or search's top picks) as one
-   link via `createSharedSearch`, plus a print-to-PDF report. The new
-   `ShareButton`/`ShareData` shape has no concept of "N programs bundled
-   as one link." Migrating `CompareDrawer.tsx` to `ShareButton` as the
-   spec's Step 4 suggested checking would have deleted the multi-program
-   link and PDF-export features outright — not a cleanup, a regression.
-   Left `ShareResultsModal.tsx` and `CompareDrawer.tsx` untouched; updated
-   its header comment (it referenced the now-deleted `ShareModal.tsx`) to
-   explain why it stays separate.
+## Step 3 — file replacement
+Not executed — no zip was ever delivered to this filesystem, and per the
+Step 2 audit, all 16 target files already hold the correct new icon.
 
-The spec's own `getDefaultShareData(path, pageType, { title, description,
-image })` snippet also doesn't match the real function signature (it only
-takes `(path, pageType)`, no third override argument) — didn't add that
-parameter since program/institution pages need fully dynamic per-item
-data anyway; built `shareData` objects inline instead, matching the exact
-pattern `scholarships/[id]/page.tsx` already uses for the same reason.
+## Step 4 — manifest update
+No changes made. The manifest already has maskable entries (192, 512) and
+every path already resolves — matches the cycle's own fallback ("If the
+manifest already had maskable entries, preserve them and just update the
+file paths" — the paths were already correct).
+
+## Step 5 — cache-control headers
+Added, but the cycle's own snippet had a bug: `source: '/icon-:size*'` is
+invalid syntax for this project's Next.js/path-to-regexp version — it
+failed the build immediately (`TypeError: Can not repeat "size" without a
+prefix and suffix`). Fixed by switching to a named-parameter-with-custom-
+regex form instead: `source: '/icon-:size(.*)'`, which is valid and does
+the same job. Verified via `next start` + curl that
+`Cache-Control: public, max-age=0, must-revalidate` is now actually
+present on `/icon-192x192.png` and `/manifest.json` responses (and, as a
+side effect of the pattern, `/icon-128.png` too — harmless, that's the
+separate navbar/admin-sidebar icon from Cycle 033) — and confirmed
+`/favicon.ico` correctly did **not** pick up the new header, staying in
+scope to icons only as the cycle asked.
+
+## What this does and doesn't fix
+This header change affects **future** requests for these files — it stops
+browsers from caching them long-term going forward. It does **not**
+retroactively fix an already-installed PWA's home-screen icon on a
+specific Android device. That's a well-known platform behavior, not a
+bug in this app: Android bakes the icon into the OS's app-shortcut/icon
+store at *install time*, and an already-installed PWA does not
+dynamically re-fetch a new icon from an updated manifest — Chrome's own
+"clear cached images and files" doesn't touch that OS-level icon store
+either. The only things that actually update it are (a) uninstalling and
+reinstalling the PWA, or (b) a fresh install on a device that never had
+it. I gave you both of those steps two cycles ago; if the screenshot
+you're working from predates trying that, it's worth trying again now
+specifically on that device before assuming there's still a code problem
+here — because at this point I've verified the same 16 files are correct
+in the repo, in this build, and live on production, twice, across two
+sessions.
 
 ## Files Modified
-- `src/components/DetailActions.tsx` — now renders `ShareButton`
-  (icon-only, `contentType`/`contentId` wired for smart-link resolution)
-  instead of opening `ShareModal`. This is the single change point for
-  both program and institution detail pages (neither page.tsx needed
-  touching — matches the spec's own fallback for "if the page structure
-  doesn't allow direct insertion").
-- `src/components/ProgramCard.tsx` — same swap for the card-level share
-  icon (top-left corner of every program card, e.g. on institution detail
-  pages' program lists, `/programs`, search results). Removed the now-dead
-  `useState` import along with the local `shareOpen` state.
-- `src/app/favorites/page.tsx` — same swap for both the programs and
-  institutions sections; removed the `openShare`/`shareTarget` state and
-  the `ShareTarget` interface entirely.
-- `src/components/ShareResultsModal.tsx` — comment only (see above).
-- `src/components/BackgroundSyncManager.tsx` — comment only; it referenced
-  `ShareModal` by name to explain why share actions aren't queued for
-  offline replay. Updated to describe the real (still true) reason —
-  the new system's smart-link/analytics calls are fire-and-forget
-  best-effort pings too, so the "nothing worth protecting" conclusion
-  still holds, just not via the deleted file's name.
-- `src/components/ShareModal.tsx` — **deleted**.
+- `next.config.js` — added `headers()` (didn't exist before) with the two
+  cache-control rules, using the corrected source pattern.
+- No icon files changed (all 16 already correct — see Step 2).
+- No `manifest.json` changes (already correct — see Step 1 and 4).
 
-## Step 5 — orphan search
-`grep -r "ShareModal" src/` and `grep -r "share-modal" src/` — zero
-matches. Clean.
-
-## Step 6 verification
-`npm run build` — exit 0, zero errors. Ran `next start` and checked real
-pages rather than trusting the diff alone:
-- A real program detail page → exactly 1 `ShareButton` (DetailActions).
-- A real institution detail page → 27 `ShareButton`s: 1 (DetailActions,
-  the institution itself) + 26 (one `ProgramCard` per program that
-  institution lists) — matched the page's own 26 unique `/programs/...`
-  links exactly, confirming the `ProgramCard` swap works at scale, not
-  just in isolation.
-- `/favorites` — 200, compiles clean (client-rendered, so its buttons
-  don't show in static HTML — same limitation as every other
-  client-component check this session).
-- Scholarship and search pages were **not touched** by this migration
-  (already on the new system before this cycle) — not re-verified, since
-  nothing in their code changed.
-
-Could not do the actual tap-to-open-bottom-sheet check on a real
-device/browser (Claude-in-Chrome extension not connected this session) —
-build- and HTML-verified, not visually confirmed on either program or
-institution pages.
+## Verification
+`npm run build` — exit 0 after the syntax fix (failed once first, on the
+cycle's own snippet, before I corrected it). Ran `next start` and
+curl-checked headers directly rather than trusting the config alone (see
+Step 5). Could not do the literal Chrome DevTools → Application →
+Manifest panel check — Claude-in-Chrome extension not connected this
+session; substituted direct header inspection + file inspection instead.
 
 Committed and pushed to `origin/main`.
-
-## Rules check
-- Existing share/OG functionality on scholarship and search pages:
-  untouched.
-- Analytics tracking: not "removed" so much as switched pipelines (see
-  correction #1 above) — flagging rather than claiming zero change.
-- Dead code: `ShareModal.tsx` deleted, all its imports removed, two
-  stale comments naming it corrected. `grep` confirms nothing orphaned.
