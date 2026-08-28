@@ -1241,3 +1241,23 @@ If a mistake is made in any cycle:
   Ran `npm run build` (not just `tsc --noEmit`) as explicitly requested, twice - once for the full route listing, once specifically capturing exit code and grepping for "error"/"Compiled successfully"/"Failed to compile" to give an unambiguous answer rather than inferring success from the absence of visible errors in a truncated tail. Exit code 0, zero errors, all ~160 routes generated. Did not push to origin, per the brief's own explicit instruction - held in bridge.md for review instead, same as Cycle 045's disposition but this time because the instruction said to hold, not because of a mismatch needing resolution first.
 
   Also backfilled an audit-log entry for Cycle 045, which had been reported in bridge.md and committed at the time but never got its own entry in this append-only log - added retroactively rather than leaving a gap in the sequential record.
+
+---
+
+## Cycle 046-FIX - Bridge archive recovery: bridge-121.md was committed empty, restored from git history, ordering guardrail added
+- Date: 2026-08-29
+- Trigger: Founder discovered `docs/archive/bridge-121.md` (Cycle 046's archive snapshot) was empty - 0 bytes, committed that way in d35fcbb. Asked for the file to be opened, confirmed it was genuinely empty on disk (not a Notepad display issue), then asked for root cause and a fix.
+- Archive Ref: N/A - this cycle is itself an archive-integrity fix, not a new bridge.md report.
+- Status: Fixed. Recovered content committed as 905e1d0 ("Fix: restore Cycle 045 archive (bridge-121.md was committed empty)").
+- Files Changed: docs/archive/bridge-121.md (0 bytes -> 4139 bytes).
+- Errors: `git show d35fcbb -- docs/archive/bridge-121.md` confirmed the file was added pre-empty (`0 insertions(+), 0 deletions(-)`), not corrupted afterward. Root cause: there is no script, git hook, or npm command that performs bridge archiving anywhere in this repo (checked `docs/`, repo root for `.ps1`/`.sh`/`.js`, and a repo-wide search for "archive"/"bridge" references) - the archive step is a manual part of the per-cycle commit procedure: copy the outgoing bridge.md content into `docs/archive/bridge-NNN.md` *before* overwriting bridge.md with the new report, then stage both. In Cycle 046 that ordering broke down - the archive file was created/staged before the previous content was actually written into it.
+- Notes: Recovered the lost Cycle 045 content from git history rather than from the (nonexistent) archive - `git show b11a680:docs/bridge.md` (the commit immediately before Cycle 046 overwrote bridge.md) held the real Cycle 045 "held for clarification" report verbatim, matching what the Cycle 045 audit-log entry above already describes. Wrote it into `docs/archive/bridge-121.md` and committed.
+
+  Audited every other archive file for the same failure mode: looped over all of `docs/archive/bridge-*.md` (000 through 121) checking byte size. Result: bridge-121.md was the only zero-byte file; bridge-120.md and every other cycle's archive is intact (sizes ranging ~1KB-65KB). This was an isolated, one-time ordering slip, not a systemic pattern.
+
+  **Guardrail for future cycles** - since the archive step has no script to patch, the fix is procedural: before overwriting `docs/bridge.md` with a new cycle's report,
+  1. Read the current `docs/bridge.md` content in full first.
+  2. Write that content into the new `docs/archive/bridge-NNN.md` file.
+  3. Verify the archive file is non-empty (e.g. check byte size > 0) before proceeding.
+  4. Only then overwrite `docs/bridge.md` with the new report and stage both files together.
+  Skipping straight to creating/staging the archive filename and writing bridge.md's new content first is what produced this bug - the archive file must be populated from the *old* content before bridge.md is touched, not after.
