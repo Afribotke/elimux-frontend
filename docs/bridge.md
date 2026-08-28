@@ -1,122 +1,75 @@
-# Cycle 044 Report — Auth Security Hardening (email verification):
-## SHIPPED to preview branch, build green, toggle CONFIRMED flipped
+# Cycle 045 Report — "Login Page Critical Error Fix": NOT implemented,
+## needs clarification first
 
-## Status: Code implemented, committed, pushed to `auth-security-preview`,
-## preview build green (0 TypeScript errors, 0 build errors). Founder
-## flipped "Confirm email" ON in Supabase - verified via API, not just
-## taken on trust. Nothing blocking left on this cycle; still not merged
-## to main, holding for a merge decision.
+## Status: Audited the brief against the real codebase before touching
+## anything. Found it doesn't match this project closely enough to apply
+## safely - would fail the build outright, revert Cycles 042-044's work,
+## and its own Step 4 skips straight to `git push origin main` with no
+## preview/testing gate, unlike every other change this session.
 
-Archived as `docs/archive/bridge-118.md` before this replaced it.
+Archived as `docs/archive/bridge-120.md` before this replaced it.
 
-## Confirm email toggle — verified flipped (2026-08-27T23:36:11Z)
+## What the brief assumes vs. what's actually here
 
-Founder flipped it manually (I still can't touch the Supabase dashboard
-myself - same access gap as before). Rather than trust the report alone,
-verified independently via Supabase's public Auth settings endpoint,
-which needed no dashboard login and no test signup:
+**Step 1 targets `app/login/page.tsx` (i.e. `src/app/login/page.tsx`),
+not the page we've been hardening.** That file already exists, and it's
+a deliberately thin 30-line redirect shim to `/auth/login` (preserving
+query params) - zero Supabase calls, zero session logic, nothing for a
+"defensive" rewrite to protect against. The brief's version would replace
+it with a 160-line stateful component that:
+- imports `{ supabase }` from `@/lib/supabase/client` - that file exports
+  a `createClient()` function, there is no `supabase` named export
+- imports `@supabase/auth-ui-react` and `@supabase/auth-ui-shared` -
+  **neither is in package.json.** Checked directly: only `@supabase/ssr`
+  and `@supabase/supabase-js` are installed. This alone would fail
+  `npm run build` with unresolved-module errors.
+- Would also functionally collide with the real login page at
+  `src/app/auth/login/page.tsx` this shim redirects to, which already has
+  its own session check, remember-me, and error handling built this
+  session.
 
-```
-curl -s "https://ohlgjvenwekpbpkykutz.supabase.co/auth/v1/settings" -H "apikey: $ANON_KEY"
-→ "mailer_autoconfirm": false, "disable_signup": false, "external": {"google": true, "email": true, ...}
-```
+**Step 2 targets `auth/callback/route.ts` - the exact file Cycles 042 and
+044 hardened.** The brief's version uses `@supabase/auth-helpers-nextjs`
+(also not in package.json - deprecated years ago, superseded by
+`@supabase/ssr`, which is what this project actually uses throughout)
+and calls `cookies()` without `await` (wrong for Next.js 15, confirmed
+this project runs 15.5.22 - our real `server.ts` correctly awaits it).
+Applying it would revert: the no-code check, the exchange-error handling
+with specific `?error=` codes, `?redirect=` passthrough, and the
+`email_confirmed_at` check from Cycle 044 - replacing all of it with a
+version that redirects unconditionally to `/dashboard` and uses a
+different error-param name (`auth_error` vs. this project's established
+`error`/`message`) that the actual login page doesn't even read.
 
-`mailer_autoconfirm: false` is the definitive signal - Supabase will no
-longer auto-confirm emails on signup, meaning "Confirm email" is
-genuinely ON now, not just reported as on. Also confirms nothing else
-regressed while in the dashboard: signups still enabled, Google OAuth
-still enabled.
+**Step 3 proposes creating `global-error.tsx` "if not present."** It's
+present - `src/app/global-error.tsx`, existing since Aug 5 (predates this
+session), functionally equivalent to what's proposed (same "Critical
+Error" messaging, reset button, home link) but already using this
+project's icon system and `error.digest` instead of a raw stack trace.
+Nothing to fix here.
 
-Scenario B is now closed end to end: the code-level gate (this cycle)
-plus the toggle (just confirmed) together mean an unverified account can
-neither get a session at signup nor sign in afterward.
+**Step 4 says `git add -A && git commit && git push origin main`** -
+directly to production, no branch, no preview deploy, no test checklist.
+Every other change this session (Cycles 042/043/044) went through a
+preview branch first specifically because the founder asked for that
+workflow. Given the above, this step would push code that fails to build
+in the first place.
 
-## Section 0 audit — Scenario B confirmed
+## Checked for a real underlying bug before dismissing this
 
-- **0.1** No `signUp` call anywhere in `src/app/auth/login/page.tsx` -
-  only `signInWithPassword` and `signInWithOAuth`.
-- **0.2** You confirmed: Supabase's "Confirm email" toggle is **OFF**.
-- **0.3** Confirmed absent: no `email_confirmed_at` check anywhere in the
-  codebase before this cycle.
+Tried `get_runtime_errors` via the Vercel MCP tool (403 - same
+per-project access gap as every other MCP call on this project this
+session) and `vercel logs www.elimux.ke` via the authenticated CLI
+instead. No errors in recent production traffic - `/login/` and
+`/auth/login/` both returning healthy `304`s. Nothing corroborates an
+actual crash matching this brief's premise.
 
-**→ Scenario B.** Until this ships, any email/password signup anywhere
-in the app gets a live, fully-privileged session with zero email
-verification.
+## What I need from you before doing anything here
 
-## What shipped
-
-**`src/app/auth/login/page.tsx`** - added the check right after
-`signInWithPassword` succeeds. Used `data.session.user.email_confirmed_at`
-directly from the sign-in response rather than the brief's suggested
-extra `getUser()` call - same effect, one fewer network round trip, since
-Supabase's sign-in response already includes the full user object.
-
-**`src/app/auth/callback/route.ts`** (OAuth path - real path corrected
-from the brief's `app/auth/callback/route.ts`) - same check after
-`exchangeCodeForSession` succeeds.
-
-**`src/middleware.ts`** - the brief said "add inside the existing auth
-check," but there was no existing Supabase-client-based check to add
-into - Cycle 043 already established this file only checks cookie
-*presence*, it never called Supabase at all. Built the actual client
-creation (with proper cookie forwarding, per `@supabase/ssr`'s middleware
-pattern) rather than assume it already existed, then added the
-`email_confirmed_at` check on top of that for the 3 paths this
-middleware gates (`/dashboard`, `/admin`, `/bursary/provider/dashboard`).
-
-`npx tsc --noEmit`: 0 errors. Vercel preview build: `✓ Compiled
-successfully in 27.1s`, 0 errors/warnings in the build log.
-
-**Preview URL:** https://elimux-frontend-ptxvaokr9-afribotke.vercel.app
-(deployment hash URL - branch alias should also resolve at
-`elimux-frontend-app-git-auth-security-preview-afribotke.vercel.app`
-once DNS/Vercel routing catches up, same pattern as the last preview)
-
-## Known coverage gap (flagging now, not silently shipping around it)
-
-Exactly like Cycle 043's session-marker work: `middleware.ts` only gates
-3 paths. This email-verification check, scoped exactly as this brief
-asked (login page + OAuth callback + middleware), will **not** reach the
-role-specific dashboards (employer, student, institution, advertiser,
-nita, etc.) that have their own independent auth guards outside this
-middleware - the same structural gap Cycle 043 mapped in full for the
-session markers (34 files via `getUserWithTimeout()`, 13 more ad-hoc).
-Did not expand scope to cover those here without confirming first, since
-it's the same 30+-file blast radius as before. If you want that covered
-too, the natural place is the same two chokepoints identified in Cycle
-043 (`lib/client-auth.ts`'s `getUserWithTimeout()`, `AuthContext.tsx`) -
-worth doing in one pass alongside a future session-marker follow-up
-rather than as a second separate change to the same files.
-
-## ~~Still needed from you~~ — RESOLVED, see toggle confirmation above
-
-~~Flip "Confirm email" ON in Supabase Dashboard → Authentication →
-Providers → Email.~~ Done and independently verified via API (see top of
-this file). Scenario B is fully closed now.
-
-## Manual test checklist (per the brief's own Section 4), now that the
-## toggle is confirmed flipped
-
-1. Register with a new email → should see "Check your email" (if a
-   register page path exists in your flow - the login page itself has no
-   signUp, confirmed in 0.1, so this exercises whatever signup path is
-   actually live in the app)
-2. Try to log in WITHOUT clicking the verification link → should see the
-   "Please verify your email" error, not a successful login
-3. Click the verification link → should then be able to log in normally
-4. Google sign-in → should work as before (Google-verified emails get
-   `email_confirmed_at` set automatically by Supabase, so this check
-   should be a no-op for OAuth users, not a new blocker)
-
-## Git state
-
-Correction to how I first drafted this section: `main` is NOT unaffected
-- this cycle's commit was made on `main` (same commit-then-branch order
-as Cycle 043), so local `main` carries it too, same as `auth-security-
-preview`. Verified directly with git rather than assuming: local `main`
-is now **9 commits ahead of `origin/main`** (Cycle 043's auth-hardening
-commit + its docs commits + this cycle's commit + its docs commits) -
-`origin/main` itself is untouched, still at what production is actually
-running. Your in-progress Admin Users Page work was stashed and restored
-around the auth commit exactly as before - untouched, still uncommitted.
-`auth-security-preview`: pushed to origin, preview build green.
+What's the actual symptom? A screenshot, a Sentry/error-tracking link, a
+user report, a specific reproduction ("clicked X, saw Y") - anything
+concrete. If there's a real bug, I'd rather fix the actual thing that's
+broken in this codebase's real shape than adapt a template that assumes
+a different one. If nothing is actually broken right now, this may be
+worth shelving rather than spending a cycle "fixing" a page that
+currently works and has no error reports behind it.
