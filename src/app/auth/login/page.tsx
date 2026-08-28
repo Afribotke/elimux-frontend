@@ -56,52 +56,68 @@ function LoginForm() {
     setLoading(true)
     setError('')
 
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
-    if (signInError || !data.session) {
-      setError(signInError?.message || 'Invalid email or password.')
+      if (signInError || !data.session) {
+        setError(signInError?.message || 'Invalid email or password.')
+        setLoading(false)
+        return
+      }
+
+      if (!data.session.user.email_confirmed_at) {
+        await supabase.auth.signOut()
+        setError('Please verify your email before signing in. Check your inbox for the verification link.')
+        setLoading(false)
+        return
+      }
+
+      setSessionMarkers(rememberMe)
+
+      const redirect = searchParams.get('redirect')
+      if (redirect) {
+        router.push(redirect)
+        return
+      }
+
+      const { data: roleRow } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.session.user.id)
+        .single()
+
+      const role = (roleRow?.role as UserRole) || 'student'
+      router.push(getRoleHomePath(role))
+    } catch (err) {
+      // Guards against an unexpected throw (e.g. a network failure) from
+      // leaving the button stuck on "Signing in..." with no feedback -
+      // signInWithPassword's own expected failures already return
+      // { error } above rather than throwing, so this only catches the
+      // unexpected case.
+      console.error('[Login] unexpected error during sign-in:', err)
+      setError('Something went wrong. Please try again.')
       setLoading(false)
-      return
     }
-
-    if (!data.session.user.email_confirmed_at) {
-      await supabase.auth.signOut()
-      setError('Please verify your email before signing in. Check your inbox for the verification link.')
-      setLoading(false)
-      return
-    }
-
-    setSessionMarkers(rememberMe)
-
-    const redirect = searchParams.get('redirect')
-    if (redirect) {
-      router.push(redirect)
-      return
-    }
-
-    const { data: roleRow } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', data.session.user.id)
-      .single()
-
-    const role = (roleRow?.role as UserRole) || 'student'
-    router.push(getRoleHomePath(role))
   }
 
   const handleGoogleSignIn = async () => {
     setError('')
-    // The redirect to Google navigates away from this page, so the markers
-    // must be set now rather than after the round trip completes - they're
-    // real cookies on the elimux.ke domain and survive the navigation.
-    setSessionMarkers(rememberMe)
-    const redirectParam = searchParams.get('redirect')
-    const callbackUrl = `${window.location.origin}/auth/callback${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}`
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: callbackUrl },
-    })
-    if (oauthError) setError(oauthError.message)
+    try {
+      // The redirect to Google navigates away from this page, so the markers
+      // must be set now rather than after the round trip completes - they're
+      // real cookies on the elimux.ke domain and survive the navigation.
+      setSessionMarkers(rememberMe)
+      const redirectParam = searchParams.get('redirect')
+      const callbackUrl = `${window.location.origin}/auth/callback${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}`
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: callbackUrl },
+      })
+      if (oauthError) setError(oauthError.message)
+    } catch (err) {
+      console.error('[Login] unexpected error during Google sign-in:', err)
+      setError('Something went wrong. Please try again.')
+    }
   }
 
   return (
