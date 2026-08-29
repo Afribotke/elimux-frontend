@@ -136,6 +136,43 @@ export default function AdminUsersPage() {
     else toast.success(`${ids.length} user${ids.length === 1 ? '' : 's'} ${nextActive ? 'activated' : 'suspended'}`)
   }
 
+  // Same reuse-the-existing-single-user-endpoint pattern as handleBulkStatus
+  // above - no bulk delete endpoint exists on the backend, so this loops
+  // deleteAdminUser via Promise.allSettled instead of a new API route.
+  //
+  // Self-deletion guard note: this admin panel authenticates with one
+  // shared x-admin-key (AdminKeyProvider), not per-admin Supabase sessions -
+  // there is no "current logged-in admin's user ID" anywhere in this
+  // architecture to compare the selection against, since any key holder is
+  // indistinguishable from any other. Guarding against the platform's
+  // primary admin account by email instead, matching this project's
+  // standing policy of never touching admin@elimux.ke.
+  const PROTECTED_ADMIN_EMAIL = 'admin@elimux.ke'
+
+  async function handleBulkDelete(selected: UserRowWithRole[]) {
+    if (!adminKey || selected.length === 0) return
+
+    const protectedSelection = selected.find((u) => u.email === PROTECTED_ADMIN_EMAIL)
+    if (protectedSelection) {
+      toast.error('Cannot delete the primary admin account')
+      return
+    }
+
+    const count = selected.length
+    if (!confirm(`Permanently delete ${count} user(s)? This cannot be undone.`)) return
+
+    const ids = selected.map((u) => u.id)
+    const results = await Promise.allSettled(ids.map((id) => deleteAdminUser(id, adminKey)))
+    const succeeded = results.filter((r) => r.status === 'fulfilled').length
+    const failed = results.filter((r) => r.status === 'rejected').length
+
+    setUsers((prev) => prev.filter((u) => !ids.includes(u.id)))
+    setTotalCount((c) => c - succeeded)
+
+    if (failed > 0) toast.error(`Deleted ${succeeded} of ${count} users - ${failed} failed`)
+    else toast.success(`Deleted ${succeeded} user${succeeded === 1 ? '' : 's'} successfully`)
+  }
+
   function handleExportCsv() {
     const header = ['Email', 'Name', 'Role', 'Status', 'Last Login', 'Joined']
     const csvRows = rows.map((u) => [
@@ -263,6 +300,7 @@ export default function AdminUsersPage() {
         bulkActions={[
           { label: 'Activate', action: (sel) => handleBulkStatus(sel, true) },
           { label: 'Suspend', action: (sel) => handleBulkStatus(sel, false), variant: 'danger' },
+          { label: 'Delete', action: (sel) => handleBulkDelete(sel), variant: 'danger' },
         ]}
         onRowClick={(u) => setDrawerUser(u)}
         emptyMessage="No users match your search/filter."
