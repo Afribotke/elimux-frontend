@@ -193,6 +193,17 @@ self.addEventListener('push', (event) => {
   );
 });
 
+// Manual skip-waiting trigger: install already calls self.skipWaiting()
+// unconditionally, so a new SW activates without waiting on its own. This
+// handler exists for the update-toast flow in usePWAUpdate.ts, which posts
+// SKIP_WAITING to a worker it observes in the 'installed' state as a
+// belt-and-suspenders path if that timing ever changes.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const targetUrl = event.notification.data?.url || '/';

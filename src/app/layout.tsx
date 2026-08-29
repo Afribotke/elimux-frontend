@@ -11,6 +11,8 @@ import { CookieConsent } from "@/components/legal/CookieConsent";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import BackgroundSyncManager from "@/components/BackgroundSyncManager";
 import OfflineIndicator from "@/components/OfflineIndicator";
+import PWAUpdateToast from "@/components/PWAUpdateToast";
+import PWACleanupBanner from "@/components/PWACleanupBanner";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/react";
 
@@ -125,6 +127,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} antialiased bg-background text-foreground`}>
+        <PWACleanupBanner />
         <JsonLd data={ORGANIZATION_SCHEMA} />
         <JsonLd data={WEBSITE_SCHEMA} />
         <Suspense fallback={null}>
@@ -149,6 +152,7 @@ export default function RootLayout({
             <ServiceWorkerRegister />
             <BackgroundSyncManager />
             <OfflineIndicator />
+            <PWAUpdateToast />
             <SiteVisitTracker />
           </AuthProvider>
         </ThemeProvider>
