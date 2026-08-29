@@ -47,6 +47,7 @@ import {
   Landmark,
   ClipboardList,
   Wallet,
+  FileCheck2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -168,6 +169,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Institutions", href: "/admin/institutions", icon: Building2 },
       { label: "Institution Claims", href: "/admin/institution-claims", icon: Shield },
+      { label: "Applications", href: "/admin/applications", icon: FileCheck2 },
       { label: "Programs", href: "/admin/programs", icon: GraduationCap },
       { label: "Scholarships", href: "/admin/scholarships", icon: Award },
       { label: "Scholarship Sponsors", href: "/admin/scholarships/sponsors", icon: Sparkles },
