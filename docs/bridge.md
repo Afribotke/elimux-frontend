@@ -1,109 +1,105 @@
-# Cycle 046 Report — Login Error Diagnostic: build clean, no matching
-## risk pattern found, hardened anyway
+# Cycle 047 Report — Career Pathways Phase 1: foundation shell built,
+## two bugs in the corrected spec fixed, build clean, SQL NOT applied
 
 ## Status: `npm run build` succeeds locally, exit code 0, zero errors.
-## NOT pushed, per instructions - holding for your review.
+## Nothing pushed. No SQL run against any database, per explicit
+## instruction. Holding for your review before Phase 2.
 
-Archived as `docs/archive/bridge-121.md` before this replaced it.
+Archived as `docs/archive/bridge-122.md` before this replaced it.
 
-## The two files, as requested
+## Where the brief actually came from
 
-**`src/app/auth/login/page.tsx`** - the real login page (233 lines
-before this cycle's edit). Full contents were pasted directly into this
-report as read; see the diff in the commit for the pre/post version
-rather than re-pasting 233 lines here twice.
+Heads up on process, not content: the "Corrected Bridge Spec"
+(`Pathways-001-Corrected`) didn't arrive via `docs/bridge.md` - it was
+written directly into `docs/archive/bridge-121.md`, which is an archive
+slot, not a live input file. That file also briefly held the *original*
+(uncorrected, `auth-helpers-nextjs`-based) version of this same brief
+before being overwritten again with the corrected one - so bridge-121.md
+churned through three different contents in one session: the real
+Cycle 045 archive it was supposed to hold, the original Pathways spec,
+then the corrected Pathways spec. The real Cycle 045 content that
+belonged there is preserved at
+`docs/archive/bridge-121-cycle045-recovered.md` so it isn't lost. Going
+forward, please paste new cycle briefs into `docs/bridge.md` itself -
+that's the one this side actually watches; archive files are treated as
+read-only history and generally aren't re-read once superseded.
 
-**`src/app/login/page.tsx`** - the redirect shim (30 lines, unchanged
-this cycle):
-```tsx
-'use client'
+## What was built
 
-// ============================================
-// /login -> /auth/login
-// Short-URL alias, preserves query string (e.g. ?redirect=).
-// ============================================
+- `supabase/migrations/20260829000001_pathways_schema.sql` - the full
+  `pathways` schema (12 tables), indexes, and RLS policies, exactly as
+  specified. **Not run.** File only, per Fix 2 in your brief.
+- `supabase/seeders/pathways_seed.sql` - 3 pathways, 6 tracks, 38
+  subjects, 4 KJSA levels, 7 pathway-requirement rows, 50 career
+  mappings. **Not run.**
+- Five API routes (`/api/pathways`, `/api/combinations`, `/api/schools`,
+  `/api/careers`, `/api/kjsa`) using this project's real
+  `@/lib/supabase/server` helper (`@supabase/ssr`, async `cookies()`,
+  `getAll`/`setAll` - matches how every other route in this codebase
+  already does it) instead of hand-rolling the sync `cookies().get()`
+  pattern your corrected spec's snippets used.
+- `src/app/pathways/{layout,page}.tsx`, `wizard/page.tsx`,
+  `results/page.tsx` - Dream Box, age gate + parental consent, 5-step
+  wizard shell, results placeholder.
+- `scripts/download-school-data.ts` - World Bank Kenya Schools importer,
+  targeted at the `pathways` schema.
 
-import { Suspense, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+## Two bugs found in the spec and fixed rather than pasted as-is
 
-function LoginRedirect() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
+1. **Route group would have collided with the homepage.** The spec's
+   directory structure used `app/(pathways)/page.tsx`. In Next.js, a
+   `(parenthesized)` folder is a route *group* - it does not add a URL
+   segment. `app/(pathways)/page.tsx` resolves to `/`, not `/pathways`,
+   which would have collided directly with the existing
+   `src/app/page.tsx` homepage and failed the build with a duplicate-
+   route error. Built it as a real `src/app/pathways/` segment instead,
+   which is also what the spec's own nav links (`href="/pathways"`,
+   `href="/pathways/wizard"`) already assumed.
 
-  useEffect(() => {
-    const qs = searchParams.toString()
-    router.replace(qs ? `/auth/login?${qs}` : '/auth/login')
-  }, [router, searchParams])
+2. **Schema-qualification mismatch between the migration and the API
+   routes.** The migration correctly creates every table under the
+   `pathways` schema (`pathways.pathways`, `pathways.schools`, etc.),
+   but the API route snippets queried `.from('pathways')`,
+   `.from('schools')` with no schema qualifier - the Supabase JS client
+   defaults to `public`, so every route would have silently queried
+   nonexistent `public.*` tables once the migration actually ran. Added
+   `.schema('pathways')` to every query in all five routes.
 
-  return null
-}
+Also worth flagging for when the SQL is applied: PostgREST only serves
+schemas listed in Supabase's Dashboard -> Project Settings -> API ->
+"Exposed schemas". Added a closing comment to the migration file itself
+as a reminder, but this is a manual dashboard step no SQL file can do -
+without it, all five routes will return a "schema must be one of the
+following..." error even with the migration and seed both applied
+correctly.
 
-export default function LoginRedirectPage() {
-  return (
-    <Suspense fallback={null}>
-      <LoginRedirect />
-    </Suspense>
-  )
-}
-```
-
-## Diagnostic findings
-
-Checked for the specific risk patterns named in the brief:
-
-- **`useSearchParams()` outside Suspense** - not present. Both files
-  correctly wrap the component using `useSearchParams()` in `<Suspense>`
-  at the export boundary.
-- **`useEffect()` with an async session call that could throw during
-  render/hydration** - not present in either file. The only `useEffect`
-  in each is synchronous (`searchParams.get(...)` in the login page,
-  `router.replace(...)` in the shim) - neither awaits a Supabase call
-  during render.
-- **`supabase.auth.getSession()` or `supabase.auth.onAuthStateChange()`
-  calls** - **neither exists anywhere in either file.** This login page
-  authenticates via `signInWithPassword`/`signInWithOAuth` inside
-  button/form event handlers (`handleSubmit`, `handleGoogleSignIn`), not
-  via a session-check on mount. So the specific ask ("add try/catch
-  around getSession/onAuthStateChange calls") had nothing to attach to
-  here - reporting that precisely rather than inventing a call to wrap.
-- **`@supabase/auth-ui-react` import** - not present in either file.
-  Nothing to remove.
-
-None of the four named risk patterns are actually in this codebase's
-login page. If there's a real crash happening, it isn't shaped like any
-of these four hypotheses - worth reconsidering what the actual
-error/stack trace says, if one exists, rather than continuing to guess
-at file structure.
-
-## What I changed anyway
-
-The underlying goal (don't let an unexpected throw leave the UI stuck
-with no feedback) still applies to the calls that *do* exist here, even
-though they're not the ones named. Wrapped both `signInWithPassword` and
-`signInWithOAuth` in `handleSubmit`/`handleGoogleSignIn` in try/catch -
-their own *expected* failures already return `{ error }` rather than
-throwing (already handled above), so this only catches something
-genuinely unexpected (e.g. a network-level failure), showing a generic
-error and clearing the loading spinner instead of leaving "Signing
-in..." stuck forever with no explanation.
-
-Nothing else changed - remember-me, session markers, email verification,
-role-based redirect, `?redirect=` passthrough, all exactly as they were.
+One smaller fix: `/api/careers`'s `q` search param was being
+interpolated directly into a PostgREST `.or()` filter string
+(`career_name.ilike.%${q}%,...`) - a comma or paren in the input could
+break out of the intended filter. Added a strip of `,()` before
+building the filter string.
 
 ## Build result
 
 ```
 npm run build
-✓ Compiled successfully in 39.8s
+✓ Compiled successfully in 71s
 Exit code: 0
 ```
-All ~160 routes generated, zero errors, zero warnings beyond the
-pre-existing benign npm allow-scripts notice seen in every build this
-session.
+New routes confirmed in the route table: `/pathways`,
+`/pathways/wizard`, `/pathways/results`, `/api/pathways`,
+`/api/combinations`, `/api/schools`, `/api/careers`, `/api/kjsa`.
+No existing routes or files were modified - this is purely additive.
 
-## Not pushed, per instructions
+## Not applied, per instructions
 
-Holding here for your review, as asked. If there's an actual error
-report (stack trace, screenshot, user complaint) behind this cycle, that
-would help point at what's really happening - the four hypothesized
-patterns aren't present, and the build is clean.
+Migration and seed SQL were generated as files only - nothing was run
+against Supabase, per Fix 2 in your brief and the founder's explicit
+"do not auto-apply" instruction. To bring this online: paste the
+migration into Supabase Dashboard SQL Editor, run it, add `pathways` to
+the exposed-schemas list, then paste and run the seed file.
+
+## Not proceeding to Phase 2
+
+Founder's instruction was explicit: Phase 1 only. Stopping here pending
+review.
