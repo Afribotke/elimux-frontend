@@ -25,14 +25,14 @@ export default function PathwaysHomePage() {
   if (showAgeGate) {
     return (
       <div className="max-w-2xl mx-auto text-center pt-20 px-4">
-        <h1 className="text-3xl font-bold mb-6">Welcome to ElimuX Pathways</h1>
+        <h1 className="text-3xl font-bold mb-6 text-gray-900">Welcome to ElimuX Pathways</h1>
         <p className="text-gray-600 mb-8">
           This tool helps Grade 9 learners and parents prepare for the KEMIS
           Grade 10 Selection &amp; Placement process.
         </p>
 
         <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm mb-8">
-          <h2 className="text-xl font-semibold mb-4">Are you a parent/guardian or a learner?</h2>
+          <h2 className="text-xl font-semibold mb-4 text-gray-900">Are you a parent/guardian or a learner?</h2>
           <div className="flex gap-4 justify-center">
             <button
               onClick={() => handleAgeGate(true)}
@@ -42,7 +42,7 @@ export default function PathwaysHomePage() {
             </button>
             <button
               onClick={() => handleAgeGate(false)}
-              className="px-8 py-4 border-2 border-gray-200 rounded-xl hover:border-gray-300"
+              className="px-8 py-4 border-2 border-gray-200 rounded-xl text-gray-900 hover:border-gray-300"
             >
               I am a Learner
             </button>
@@ -61,7 +61,7 @@ export default function PathwaysHomePage() {
 
         {isParent === true && (
           <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
-            <h3 className="font-semibold mb-4">Parental Consent Required</h3>
+            <h3 className="font-semibold mb-4 text-gray-900">Parental Consent Required</h3>
             <p className="text-gray-600 mb-4 text-sm">
               Under Kenya&apos;s Data Protection Act, we need your consent to process guidance data
               for your child. We collect only anonymized subject preferences and career interests.

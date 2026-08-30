@@ -42,7 +42,7 @@ function SchoolsPageInner() {
       if (f.gender) sp.set('gender', f.gender);
       if (f.accommodation_type) sp.set('accommodation_type', f.accommodation_type);
       if (f.cluster_type) sp.set('cluster_type', f.cluster_type);
-      if (f.q) sp.set('q', f.q);
+      if (f.q) sp.set('query', f.q);
       sp.set('page', String(f.page || 1));
       sp.set('limit', String(f.limit || 24));
 
