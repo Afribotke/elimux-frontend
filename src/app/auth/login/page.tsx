@@ -57,7 +57,23 @@ function LoginForm() {
     setError('')
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      // Temporary diagnostic timeout + logging around a real, reproduced
+      // production hang: the SDK call below sometimes never resolves (the
+      // raw REST call it wraps succeeds fine), leaving the button stuck on
+      // "Signing in..." forever with no error. This surfaces it instead of
+      // hanging silently, and the console trail pinpoints which step stalls.
+      console.log('[Login] calling signInWithPassword...')
+      const AUTH_TIMEOUT_MS = 10000
+      const { data, error: signInError } = await Promise.race([
+        supabase.auth.signInWithPassword({ email, password }),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error('Login request timed out. Please check your connection and try again.')),
+            AUTH_TIMEOUT_MS
+          )
+        ),
+      ])
+      console.log('[Login] signInWithPassword resolved - error:', signInError?.message ?? 'none')
 
       if (signInError || !data.session) {
         setError(signInError?.message || 'Invalid email or password.')
@@ -72,10 +88,13 @@ function LoginForm() {
         return
       }
 
+      console.log('[Login] session valid, calling setSessionMarkers...')
       setSessionMarkers(rememberMe)
+      console.log('[Login] setSessionMarkers done')
 
       const redirect = searchParams.get('redirect')
       if (redirect) {
+        console.log('[Login] navigating to redirect:', redirect)
         router.push(redirect)
         return
       }
@@ -87,6 +106,7 @@ function LoginForm() {
         .single()
 
       const role = (roleRow?.role as UserRole) || 'student'
+      console.log('[Login] navigating to role home:', role)
       router.push(getRoleHomePath(role))
     } catch (err) {
       // Guards against an unexpected throw (e.g. a network failure) from
