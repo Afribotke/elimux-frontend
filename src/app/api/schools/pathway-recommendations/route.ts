@@ -45,13 +45,21 @@ export async function GET(request: NextRequest) {
     const remainingSlots = Math.max(0, 12 - pinnedSchools.length);
     let dynamicSchools: unknown[] = [];
     if (remainingSlots > 0) {
-      const { data } = await supabase
+      let query = supabase
         .from('senior_schools')
         .select('*')
-        .in('cluster_type', eligibleClusters)
-        .not('id', 'in', `(${pinnedSchools.map((s) => `"${(s as unknown as { id: string }).id}"`).join(',') || 'null'})`)
-        .order('name', { ascending: true })
-        .limit(remainingSlots);
+        .in('cluster_type', eligibleClusters);
+
+      // `.not('id', 'in', '(null)')` (the empty-pinnedSchools case) excludes
+      // every row - SQL's `id IN (NULL)` is NULL, not false, so `NOT (...)`
+      // never becomes true - so only apply the exclusion when there's
+      // something real to exclude.
+      if (pinnedSchools.length > 0) {
+        const pinnedIds = pinnedSchools.map((s) => (s as unknown as { id: string }).id);
+        query = query.not('id', 'in', `(${pinnedIds.map((id) => `"${id}"`).join(',')})`);
+      }
+
+      const { data } = await query.order('name', { ascending: true }).limit(remainingSlots);
       dynamicSchools = data || [];
     }
 
