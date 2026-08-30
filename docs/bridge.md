@@ -1,105 +1,449 @@
-# Cycle 047 Report — Career Pathways Phase 1: foundation shell built,
-## two bugs in the corrected spec fixed, build clean, SQL NOT applied
+# CYCLE 051-CORRECTION — Import Fixes + Pathway Selection UI
 
-## Status: `npm run build` succeeds locally, exit code 0, zero errors.
-## Nothing pushed. No SQL run against any database, per explicit
-## instruction. Holding for your review before Phase 2.
+## DECISION
+- The old `pathways.*` schema (KJSA wizard, subject_combinations, guidance_sessions) is DEPRECATED. Do not read from or write to it.
+- The NEW `career_pathways` / `student_pathway_selections` tables from Cycle 051 are the official replacement.
+- Build the missing pathway selection UI so the "My Pathway" tab is never empty.
 
-Archived as `docs/archive/bridge-122.md` before this replaced it.
+---
 
-## Where the brief actually came from
+## STEP 1: Fix All Import Paths (project-wide find/replace)
 
-Heads up on process, not content: the "Corrected Bridge Spec"
-(`Pathways-001-Corrected`) didn't arrive via `docs/bridge.md` - it was
-written directly into `docs/archive/bridge-121.md`, which is an archive
-slot, not a live input file. That file also briefly held the *original*
-(uncorrected, `auth-helpers-nextjs`-based) version of this same brief
-before being overwritten again with the corrected one - so bridge-121.md
-churned through three different contents in one session: the real
-Cycle 045 archive it was supposed to hold, the original Pathways spec,
-then the corrected Pathways spec. The real Cycle 045 content that
-belonged there is preserved at
-`docs/archive/bridge-121-cycle045-recovered.md` so it isn't lost. Going
-forward, please paste new cycle briefs into `docs/bridge.md` itself -
-that's the one this side actually watches; archive files are treated as
-read-only history and generally aren't re-read once superseded.
+In EVERY file created by Cycle 051, replace:
 
-## What was built
+| Wrong | Correct |
+|---|---|
+| `@/src/lib/` | `@/lib/` |
+| `@/src/components/` | `@/components/` |
+| `@/src/hooks/use-auth` | `@/hooks/useAuth` |
 
-- `supabase/migrations/20260829000001_pathways_schema.sql` - the full
-  `pathways` schema (12 tables), indexes, and RLS policies, exactly as
-  specified. **Not run.** File only, per Fix 2 in your brief.
-- `supabase/seeders/pathways_seed.sql` - 3 pathways, 6 tracks, 38
-  subjects, 4 KJSA levels, 7 pathway-requirement rows, 50 career
-  mappings. **Not run.**
-- Five API routes (`/api/pathways`, `/api/combinations`, `/api/schools`,
-  `/api/careers`, `/api/kjsa`) using this project's real
-  `@/lib/supabase/server` helper (`@supabase/ssr`, async `cookies()`,
-  `getAll`/`setAll` - matches how every other route in this codebase
-  already does it) instead of hand-rolling the sync `cookies().get()`
-  pattern your corrected spec's snippets used.
-- `src/app/pathways/{layout,page}.tsx`, `wizard/page.tsx`,
-  `results/page.tsx` - Dream Box, age gate + parental consent, 5-step
-  wizard shell, results placeholder.
-- `scripts/download-school-data.ts` - World Bank Kenya Schools importer,
-  targeted at the `pathways` schema.
+Files affected:
+- `src/app/schools/page.tsx`
+- `src/app/schools/[id]/page.tsx`
+- `src/app/api/schools/search/route.ts`
+- `src/app/api/schools/pathway-recommendations/route.ts`
+- `src/app/api/schools/selections/route.ts`
+- `src/app/api/schools/[id]/route.ts`
+- `src/components/schools/ai-search-bar.tsx`
+- `src/components/schools/school-card.tsx`
+- `src/components/schools/add-to-shortlist-button.tsx`
+- `src/components/schools/pathway-recommendations.tsx`
+- `src/components/schools/my-school-shortlist.tsx`
+- `src/components/schools/filter-panel.tsx`
+- `src/components/schools/comparison-drawer.tsx`
+- `src/lib/schools-data.ts`
+- `src/lib/school-search-parser.ts`
 
-## Two bugs found in the spec and fixed rather than pasted as-is
+Also in `src/app/schools/page.tsx`, change the `useAuth` import line to:
+```typescript
+import { useAuth } from "@/hooks/useAuth";
+STEP 2: Pathway List API
+Create file: src/app/api/pathways/route.ts
+TypeScript
+import { createClient } from "@/lib/supabase/server";
+import { NextRequest } from "next/server";
 
-1. **Route group would have collided with the homepage.** The spec's
-   directory structure used `app/(pathways)/page.tsx`. In Next.js, a
-   `(parenthesized)` folder is a route *group* - it does not add a URL
-   segment. `app/(pathways)/page.tsx` resolves to `/`, not `/pathways`,
-   which would have collided directly with the existing
-   `src/app/page.tsx` homepage and failed the build with a duplicate-
-   route error. Built it as a real `src/app/pathways/` segment instead,
-   which is also what the spec's own nav links (`href="/pathways"`,
-   `href="/pathways/wizard"`) already assumed.
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("career_pathways")
+      .select("*")
+      .order("name", { ascending: true });
 
-2. **Schema-qualification mismatch between the migration and the API
-   routes.** The migration correctly creates every table under the
-   `pathways` schema (`pathways.pathways`, `pathways.schools`, etc.),
-   but the API route snippets queried `.from('pathways')`,
-   `.from('schools')` with no schema qualifier - the Supabase JS client
-   defaults to `public`, so every route would have silently queried
-   nonexistent `public.*` tables once the migration actually ran. Added
-   `.schema('pathways')` to every query in all five routes.
+    if (error) {
+      return Response.json({ error: error.message }, { status: 500 });
+    }
+    return Response.json({ data: data || [] });
+  } catch (err) {
+    return Response.json({ error: "Internal error" }, { status: 500 });
+  }
+}
+STEP 3: Pathway Selection API
+Create file: src/app/api/pathways/select/route.ts
+TypeScript
+import { createClient } from "@/lib/supabase/server";
+import { NextRequest } from "next/server";
 
-Also worth flagging for when the SQL is applied: PostgREST only serves
-schemas listed in Supabase's Dashboard -> Project Settings -> API ->
-"Exposed schemas". Added a closing comment to the migration file itself
-as a reminder, but this is a manual dashboard step no SQL file can do -
-without it, all five routes will return a "schema must be one of the
-following..." error even with the migration and seed both applied
-correctly.
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-One smaller fix: `/api/careers`'s `q` search param was being
-interpolated directly into a PostgREST `.or()` filter string
-(`career_name.ilike.%${q}%,...`) - a comma or paren in the input could
-break out of the intended filter. Added a strip of `,()` before
-building the filter string.
+    const body = await request.json();
+    const { pathway_id } = body;
+    
+    if (!pathway_id) {
+      return Response.json({ error: "pathway_id required" }, { status: 400 });
+    }
 
-## Build result
+    // Deactivate any existing active selection for this user
+    await supabase
+      .from("student_pathway_selections")
+      .update({ status: "changed" })
+      .eq("user_id", user.id)
+      .eq("status", "active");
 
-```
-npm run build
-✓ Compiled successfully in 71s
-Exit code: 0
-```
-New routes confirmed in the route table: `/pathways`,
-`/pathways/wizard`, `/pathways/results`, `/api/pathways`,
-`/api/combinations`, `/api/schools`, `/api/careers`, `/api/kjsa`.
-No existing routes or files were modified - this is purely additive.
+    // Insert new active selection
+    const { data, error } = await supabase
+      .from("student_pathway_selections")
+      .insert({
+        user_id: user.id,
+        pathway_id,
+        status: "active",
+      })
+      .select("*, pathway:career_pathways(*)")
+      .single();
 
-## Not applied, per instructions
+    if (error) {
+      return Response.json({ error: error.message }, { status: 500 });
+    }
 
-Migration and seed SQL were generated as files only - nothing was run
-against Supabase, per Fix 2 in your brief and the founder's explicit
-"do not auto-apply" instruction. To bring this online: paste the
-migration into Supabase Dashboard SQL Editor, run it, add `pathways` to
-the exposed-schemas list, then paste and run the seed file.
+    return Response.json({ data }, { status: 201 });
+  } catch (err) {
+    return Response.json({ error: "Internal error" }, { status: 500 });
+  }
+}
+STEP 4: Pathway Selection Page
+Create file: src/app/pathways/page.tsx
+TypeScript
+"use client";
 
-## Not proceeding to Phase 2
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { CareerPathway } from "@/lib/schools-data";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight, Sparkles, Loader2, CheckCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 
-Founder's instruction was explicit: Phase 1 only. Stopping here pending
-review.
+export default function PathwaysPage() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const [pathways, setPathways] = useState<CareerPathway[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selecting, setSelecting] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchPathways();
+  }, []);
+
+  const fetchPathways = async () => {
+    try {
+      const res = await fetch("/api/pathways");
+      const json = await res.json();
+      if (json.data) setPathways(json.data);
+    } catch (err) {
+      console.error("Failed to fetch pathways:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelect = async (pathwayId: string) => {
+    if (!user) {
+      router.push("/login?redirect=/pathways");
+      return;
+    }
+    setSelecting(pathwayId);
+    try {
+      const res = await fetch("/api/pathways/select", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pathway_id: pathwayId }),
+      });
+      if (res.ok) {
+        setSelected(pathwayId);
+        setTimeout(() => router.push("/schools?tab=pathway"), 1500);
+      }
+    } catch (err) {
+      console.error("Selection failed:", err);
+    } finally {
+      setSelecting(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-pulse text-lg text-gray-500">Loading pathways...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+          <div className="inline-flex items-center gap-2 bg-purple-50 text-purple-700 px-4 py-1.5 rounded-full text-sm font-medium mb-4">
+            <Sparkles className="w-4 h-4" /> Career Pathways
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Choose Your Path</h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Select the career pathway that matches your interests and strengths. 
+            We'll recommend the best schools for your choice.
+          </p>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {pathways.map((pathway, index) => (
+            <motion.div
+              key={pathway.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <Card
+                className={`cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 border-2 ${
+                  selected === pathway.id 
+                    ? "border-green-500 bg-green-50" 
+                    : "border-transparent hover:border-gray-200"
+                }`}
+                onClick={() => !selecting && handleSelect(pathway.id)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <span className="text-4xl">{pathway.icon}</span>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-gray-900">{pathway.name}</h3>
+                      <p className="text-sm text-gray-600 mt-1">{pathway.description}</p>
+                      <div className="flex items-center gap-2 mt-3 flex-wrap">
+                        <Badge variant="outline" className="text-xs">
+                          Min Cluster: {pathway.required_cluster_min || "Any"}
+                        </Badge>
+                        {pathway.recommended_regions?.slice(0, 3).map((r) => (
+                          <Badge key={r} variant="secondary" className="text-xs">{r}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0">
+                      {selected === pathway.id ? (
+                        <CheckCircle className="w-6 h-6 text-green-600" />
+                      ) : selecting === pathway.id ? (
+                        <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
+                      ) : (
+                        <ArrowRight className="w-5 h-5 text-gray-400" />
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+STEP 5: Update Empty State in PathwayRecommendations
+In src/components/schools/pathway-recommendations.tsx, the empty state CTA currently links to /pathways. This is now CORRECT — the page exists. No change needed.
+STEP 6: Update Schools Page Detail CTA
+In src/app/schools/[id]/page.tsx, the "Next Steps" card links to /pathways. This is now CORRECT. No change needed.
+STEP 7: Navigation Integration
+Add to main navigation (if not already present):
+TypeScript
+{
+  label: "Career Pathways",
+  href: "/pathways",
+  icon: <Sparkles className="w-4 h-4" />,
+  description: "Choose your career direction"
+}
+STEP 8: Build & Verify
+npm run build → 0 errors
+Visit http://localhost:3000/pathways → 8 pathway cards displayed
+Click a pathway (logged in) → green checkmark → auto-redirects to /schools?tab=pathway after 1.5s
+My Pathway tab now shows recommended schools based on the selected pathway
+Old pathways.* tables remain untouched in the database
+plain
+
+### END COPY ← `docs/bridge-051-corrections.md`
+
+---
+
+**What this achieves:**
+
+- The old KJSA wizard stays buried — no integration, no cleanup risk
+- The new 8-pathway system is fully functional: pick a path → see matched schools → save to shortlist
+- Every import path is corrected so builds pass
+- `useAuth` points to the existing hook the app already uses
+- The `/pathways` page replaces the old "Coming Soon" wizard with a clean 8-card selector that takes 10 seconds to use
+
+**Tell Claude:** Execute Cycle 051 bridge.md first, then immediately apply the correction script above. Build once at the end.
+txt
+# CYCLE 051 + 051-CO
+
+TXT
+9.16 KB
+Edit
+Copy
+Share
+Add consent page, redirect unauthenticated users, skip E2E, rely on build checks
+Do not commit or deploy yet. The consent flow deletion is a compliance liability — a platform serving Kenyan minors cannot ship without the Data Protection Act parental consent gate. We fix that first, then commit everything in one go.
+Here is the single instruction block for Claude:
+START COPY → docs/bridge-051-consent-restore.md
+Markdown
+Copy
+Code
+Preview
+# CYCLE 051-CONSENT-RESTORE — Re-add Kenya Data Protection parental consent flow
+
+## PROBLEM
+The new `/pathways` page (8-card pathway selector) overwrote the existing `/pathways` landing page that contained:
+- Age-gate (parent vs. learner selection)
+- Kenya Data Protection Act 2019 parental consent flow for minors
+
+This compliance content must be restored before deployment.
+
+## SOLUTION
+Move the pathway selector to `/pathways/select`. Restore the consent/age-gate landing page at `/pathways`. Flow:
+
+1. Unauthenticated user visits `/pathways` → sees age-gate + consent flow (as before)
+2. Authenticated adult (parent/teacher) → can browse pathways or proceed to `/pathways/select`
+3. Authenticated minor (student) → if consent not on record, sees consent requirement; if consent on record, proceeds to `/pathways/select`
+4. After selecting a pathway at `/pathways/select` → redirects to `/schools?tab=pathway`
+
+## FILES TO CREATE/MODIFY
+
+### 1. Rename existing `/pathways` page
+Rename `src/app/pathways/page.tsx` → `src/app/pathways/select/page.tsx`
+
+Update the export default name from `PathwaysPage` to `PathwaySelectorPage` (optional, for clarity).
+
+In the `handleSelect` function, the redirect stays as:
+```typescript
+setTimeout(() => router.push("/schools?tab=pathway"), 1500);
+2. Restore consent landing page
+Create src/app/pathways/page.tsx with the PREVIOUS consent flow content that was there before Cycle 051 overwrote it.
+If the previous content is not recoverable from git history, build this minimal replacement:
+TypeScript
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Shield, Users, GraduationCap, ArrowRight, CheckCircle } from "lucide-react";
+
+export default function PathwaysLandingPage() {
+  const router = useRouter();
+  const [role, setRole] = useState<"learner" | "parent" | null>(null);
+  const [consentGiven, setConsentGiven] = useState(false);
+
+  const handleProceed = () => {
+    if (role === "parent") {
+      router.push("/pathways/select");
+    } else if (role === "learner" && consentGiven) {
+      router.push("/pathways/select");
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 bg-purple-50 text-purple-700 px-4 py-1.5 rounded-full text-sm font-medium mb-4">
+            <GraduationCap className="w-4 h-4" /> Career Pathways
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">Discover Your Future</h1>
+          <p className="text-gray-600">Choose the career direction that matches your strengths and interests.</p>
+        </div>
+
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Users className="w-5 h-5" /> Who are you?
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <button
+                onClick={() => setRole("learner")}
+                className={`p-4 rounded-xl border-2 text-left transition-all ${
+                  role === "learner" ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <GraduationCap className="w-8 h-8 text-blue-600 mb-2" />
+                <h3 className="font-semibold">I am a Learner</h3>
+                <p className="text-sm text-gray-500">Student exploring career options</p>
+              </button>
+              <button
+                onClick={() => setRole("parent")}
+                className={`p-4 rounded-xl border-2 text-left transition-all ${
+                  role === "parent" ? "border-green-500 bg-green-50" : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <Users className="w-8 h-8 text-green-600 mb-2" />
+                <h3 className="font-semibold">I am a Parent / Guardian</h3>
+                <p className="text-sm text-gray-500">Helping a student choose their path</p>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {role === "learner" && (
+          <Card className="mb-6 border-amber-200">
+            <CardContent className="p-6">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Shield className="w-5 h-5 text-amber-600" /> Parental Consent Required
+              </h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Under the Kenya Data Protection Act 2019, learners under 18 require parental or guardian consent 
+                before using career assessment tools. Please confirm that your parent or guardian has given permission.
+              </p>
+              <label className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={consentGiven}
+                  onChange={(e) => setConsentGiven(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-gray-300"
+                />
+                <span className="text-sm text-gray-700">
+                  I confirm that my parent or guardian has reviewed and consented to my use of this career pathway tool.
+                </span>
+              </label>
+            </CardContent>
+          </Card>
+        )}
+
+        {role && (role === "parent" || consentGiven) && (
+          <div className="text-center">
+            <Button size="lg" onClick={handleProceed} className="gap-2">
+              Continue to Pathway Selection
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+3. Update navigation
+In src/components/layout/UnifiedNavBar.tsx (or wherever nav links live), ensure the "Career Pathways" link points to /pathways (the consent landing), NOT /pathways/select.
+4. Update Schools detail page CTA
+In src/app/schools/[id]/page.tsx, the "Next Steps" card links to /pathways. This should stay as /pathways (so unauthenticated users hit the consent gate first).
+5. Build & verify
+npm run build → 0 errors
+npx tsc --noEmit → 0 errors
+Confirm /pathways renders the consent/age-gate
+Confirm /pathways/select renders the 8 pathway cards
+Confirm selecting a pathway still redirects to /schools?tab=pathway
+DEPLOYMENT CHECKLIST (after this fix)
+[ ] Build passes (0 errors)
+[ ] Typecheck passes (0 errors)
+[ ] /pathways shows consent/age-gate
+[ ] /pathways/select shows 8 pathway cards
+[ ] /schools search works: "girls boarding c1 in nandi"
+[ ] /schools?tab=pathway shows recommendations after pathway selection
+[ ] /schools?tab=shortlist shows saved schools
+[ ] School detail page has Save + Share buttons
+[ ] Supabase has 204 C1 schools + 8 pathways
+[ ] Commit: git add -A && git commit -m "feat: school discovery C1 + career pathways + consent flow"
+[ ] Push: git push origin main
+[ ] Production: https://www.elimux.ke/schools verified

@@ -2,12 +2,18 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Sparkles, Shield, FileText } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
+// Restored from the original committed version (git 06d651a, Cycle 047) after
+// Cycle 051's pathway selector overwrote this route. The age-gate and Kenya
+// Data Protection Act 2019 parental-consent copy below is verbatim from that
+// commit - only the post-consent destination changed: the original routed to
+// /pathways/wizard/ (now deprecated/Coming Soon) via a free-text "dream
+// career" search feeding the old KJSA pipeline; that pipeline no longer
+// exists, so consent now leads straight to /pathways/select, the new
+// 8-pathway picker.
 export default function PathwaysHomePage() {
   const router = useRouter();
-  const [query, setQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [showAgeGate, setShowAgeGate] = useState(true);
   const [isParent, setIsParent] = useState<boolean | null>(null);
   const [consentGiven, setConsentGiven] = useState(false);
@@ -16,25 +22,9 @@ export default function PathwaysHomePage() {
     setIsParent(parent);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim()) return;
-    setIsLoading(true);
-    sessionStorage.setItem('pathways_dream', query);
-    sessionStorage.setItem('pathways_consent', 'true');
-    router.push('/pathways/wizard/');
-  };
-
-  const examples = [
-    'I want to be a lawyer. Show me schools in Nairobi, Nakuru or Nandi.',
-    'My daughter loves computers and art. What should she choose?',
-    'We want a girls boarding school offering STEM in Kiambu.',
-    'My son wants to be a pilot. What subjects does he need?',
-  ];
-
   if (showAgeGate) {
     return (
-      <div className="max-w-2xl mx-auto text-center pt-20">
+      <div className="max-w-2xl mx-auto text-center pt-20 px-4">
         <h1 className="text-3xl font-bold mb-6">Welcome to ElimuX Pathways</h1>
         <p className="text-gray-600 mb-8">
           This tool helps Grade 9 learners and parents prepare for the KEMIS
@@ -104,74 +94,21 @@ export default function PathwaysHomePage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto text-center pt-12 pb-16">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Discover Your Perfect Pathway
-        </h1>
-        <p className="text-lg text-gray-600">
-          Tell us your dream career. We will find the right subjects and schools —
-          all checked against Ministry rules.
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="mb-12">
-        <div className="relative max-w-2xl mx-auto">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="What does your child want to become?"
-            className="w-full px-6 py-4 pr-32 text-lg border-2 border-blue-200 rounded-2xl focus:border-blue-500 focus:outline-none shadow-sm"
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !query.trim()}
-            className="absolute right-2 top-2 bottom-2 px-6 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {isLoading ? 'Thinking...' : <><Search className="w-5 h-5" /> Go</>}
-          </button>
-        </div>
-      </form>
-
-      <div className="mb-16">
-        <p className="text-sm text-gray-500 mb-3">Or try these examples:</p>
-        <div className="flex flex-wrap justify-center gap-2">
-          {examples.map((ex, i) => (
-            <button
-              key={i}
-              onClick={() => setQuery(ex)}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-full text-sm text-gray-600 hover:border-blue-300 hover:text-blue-700 transition-colors"
-            >
-              {ex.length > 50 ? ex.substring(0, 50) + '...' : ex}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-6 text-left">
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <Sparkles className="w-8 h-8 text-blue-600 mb-3" />
-          <h3 className="font-semibold text-gray-900 mb-2">AI-Powered Matching</h3>
-          <p className="text-sm text-gray-600">
-            Type your dream in plain English. Our AI maps it to the right pathway, subjects, and schools.
-          </p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <Shield className="w-8 h-8 text-green-600 mb-3" />
-          <h3 className="font-semibold text-gray-900 mb-2">Ministry-Compliant</h3>
-          <p className="text-sm text-gray-600">
-            Every recommendation follows the official 8-school formula and KEMIS selection rules.
-          </p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <FileText className="w-8 h-8 text-amber-600 mb-3" />
-          <h3 className="font-semibold text-gray-900 mb-2">Printable Worksheet</h3>
-          <p className="text-sm text-gray-600">
-            Generate a Three-Way Comparison Worksheet for you, your parent, and your teacher.
-          </p>
-        </div>
-      </div>
+    <div className="max-w-2xl mx-auto text-center pt-24 pb-16 px-4">
+      <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+        You&apos;re All Set
+      </h1>
+      <p className="text-lg text-gray-600 mb-10">
+        Continue to pick a career pathway - we&apos;ll match it to real senior
+        schools you can shortlist.
+      </p>
+      <button
+        onClick={() => router.push('/pathways/select')}
+        className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700"
+      >
+        Continue to Pathway Selection
+        <ArrowRight className="w-5 h-5" />
+      </button>
     </div>
   );
 }

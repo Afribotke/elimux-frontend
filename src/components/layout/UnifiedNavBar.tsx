@@ -59,6 +59,20 @@ const PILLS: Pill[] = [
     href: "/bursary",
     isActive: (pathname) => pathname.startsWith("/bursary"),
   },
+  {
+    key: "schools",
+    label: "Senior Schools",
+    icon: "🏫",
+    href: "/schools",
+    isActive: (pathname) => pathname.startsWith("/schools"),
+  },
+  {
+    key: "pathways",
+    label: "Career Pathways",
+    icon: "🧭",
+    href: "/pathways",
+    isActive: (pathname) => pathname.startsWith("/pathways"),
+  },
 ];
 
 /**
