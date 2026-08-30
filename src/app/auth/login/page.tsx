@@ -110,6 +110,13 @@ function LoginForm() {
 
       console.log('[Login] session valid, calling setSessionMarkers...')
       setSessionMarkers(rememberMe)
+      // AuthContext's onAuthStateChange listener can fire (and check
+      // hasValidSessionMarkers()) before this line runs, since setSession()
+      // triggers it asynchronously - that race made the nav bar show
+      // "Log In" right after a genuinely successful sign-in until the next
+      // navigation. Firing this after the markers are guaranteed written
+      // forces one more re-check that's no longer racing them.
+      window.dispatchEvent(new Event('elimux:auth:changed'))
       console.log('[Login] setSessionMarkers done')
 
       const redirect = searchParams.get('redirect')

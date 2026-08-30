@@ -62,8 +62,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    
-    const initAuth = async () => {
+
+    const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session && !hasValidSessionMarkers()) {
@@ -78,12 +78,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user && mounted) {
           const profile = await fetchProfile(session.user.id, session.user.email);
           if (mounted) setUser(profile);
+        } else if (mounted) {
+          setUser(null);
         }
       } catch (err) {
-        console.error('Auth init error:', err);
-      } finally {
-        if (mounted) setLoading(false);
+        console.error('Auth check error:', err);
       }
+    };
+
+    const initAuth = async () => {
+      await checkSession();
+      if (mounted) setLoading(false);
     };
 
     initAuth();
@@ -107,9 +112,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
+    // Login re-checks after setSessionMarkers() so this doesn't race
+    // onAuthStateChange (which can fire, and fail the hasValidSessionMarkers()
+    // guard above, before the markers are actually written) - see
+    // src/app/auth/login/page.tsx.
+    window.addEventListener('elimux:auth:changed', checkSession);
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      window.removeEventListener('elimux:auth:changed', checkSession);
     };
   }, [fetchProfile]);
 
