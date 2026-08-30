@@ -57,26 +57,46 @@ function LoginForm() {
     setError('')
 
     try {
-      // Temporary diagnostic timeout + logging around a real, reproduced
-      // production hang: the SDK call below sometimes never resolves (the
-      // raw REST call it wraps succeeds fine), leaving the button stuck on
-      // "Signing in..." forever with no error. This surfaces it instead of
-      // hanging silently, and the console trail pinpoints which step stalls.
-      console.log('[Login] calling signInWithPassword...')
-      const AUTH_TIMEOUT_MS = 10000
-      const { data, error: signInError } = await Promise.race([
-        supabase.auth.signInWithPassword({ email, password }),
-        new Promise<never>((_, reject) =>
-          setTimeout(
-            () => reject(new Error('Login request timed out. Please check your connection and try again.')),
-            AUTH_TIMEOUT_MS
-          )
-        ),
-      ])
-      console.log('[Login] signInWithPassword resolved - error:', signInError?.message ?? 'none')
+      // supabase.auth.signInWithPassword() was confirmed (4/4 reproductions,
+      // live console logs) to hang forever inside the SDK itself - never
+      // resolving or rejecting - while a plain fetch to the same REST
+      // endpoint returns in ~200ms. Bypasses the SDK call for the network
+      // round-trip and hands the resulting tokens to setSession() instead,
+      // which only writes local client state (no network hang risk) so
+      // auto-refresh/RLS/etc. still work exactly as if signInWithPassword
+      // had succeeded normally.
+      console.log('[Login] calling auth endpoint directly...')
+      const authRes = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=password`,
+        {
+          method: 'POST',
+          headers: {
+            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email: email.trim(), password }),
+        }
+      )
+      console.log('[Login] auth endpoint status:', authRes.status)
+
+      if (!authRes.ok) {
+        const errBody = await authRes.json().catch(() => ({}) as Record<string, string>)
+        setError(errBody.error_description || errBody.msg || errBody.message || 'Invalid email or password.')
+        setLoading(false)
+        return
+      }
+
+      const authData = await authRes.json()
+      console.log('[Login] auth endpoint returned tokens')
+
+      const { data, error: signInError } = await supabase.auth.setSession({
+        access_token: authData.access_token,
+        refresh_token: authData.refresh_token,
+      })
+      console.log('[Login] setSession resolved - error:', signInError?.message ?? 'none')
 
       if (signInError || !data.session) {
-        setError(signInError?.message || 'Invalid email or password.')
+        setError(signInError?.message || 'Failed to establish session. Please try again.')
         setLoading(false)
         return
       }
