@@ -1,5 +1,5 @@
-const STATIC_CACHE = 'elimux-static-v4';
-const API_CACHE = 'elimux-api-v4';
+const STATIC_CACHE = 'elimux-static-v5';
+const API_CACHE = 'elimux-api-v5';
 const CURRENT_CACHES = [STATIC_CACHE, API_CACHE];
 
 const STATIC_ASSETS = [
@@ -143,6 +143,14 @@ self.addEventListener('fetch', (event) => {
   } else if (url.origin === self.location.origin) {
     if (event.request.destination === 'document') {
       event.respondWith(navigationHandler(event.request));
+    } else if (url.pathname.startsWith('/api/')) {
+      // Same-origin Next.js Route Handlers (schools/pathways/etc.) - these
+      // are per-user, auth-dependent dynamic data, not deploy-versioned
+      // static assets, so they must never fall into cacheFirst below (that
+      // was silently serving stale JSON from before the newest deploy,
+      // confirmed live: a fixed API response stayed wrong until this cache
+      // was cleared by hand). networkFirst, matching the API_ORIGIN branch.
+      event.respondWith(networkFirst(event.request));
     } else {
       event.respondWith(cacheFirst(event.request));
     }
