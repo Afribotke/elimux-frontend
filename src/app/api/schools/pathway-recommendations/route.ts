@@ -59,7 +59,10 @@ export async function GET(request: NextRequest) {
         query = query.not('id', 'in', `(${pinnedIds.map((id) => `"${id}"`).join(',')})`);
       }
 
-      const { data } = await query.order('name', { ascending: true }).limit(remainingSlots);
+      const { data, error: dynamicError } = await query.order('name', { ascending: true }).limit(remainingSlots);
+      if (dynamicError) {
+        return NextResponse.json({ error: dynamicError.message, stage: 'dynamicSchools' }, { status: 500 });
+      }
       dynamicSchools = data || [];
     }
 
@@ -67,6 +70,7 @@ export async function GET(request: NextRequest) {
       data: selection,
       pathway,
       schools: [...pinnedSchools, ...dynamicSchools],
+      debug: { eligibleClusters, remainingSlots, pinnedCount: pinnedSchools.length },
     });
   } catch {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });

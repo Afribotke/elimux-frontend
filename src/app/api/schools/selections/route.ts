@@ -16,8 +16,8 @@ export async function GET() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ data: data || [] });
+    if (error) return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
+    return NextResponse.json({ data: data || [], debug: { userId: user.id, rawCount: data?.length ?? null } });
   } catch {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
