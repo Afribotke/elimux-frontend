@@ -93,6 +93,23 @@ export function DtbAcademyWizard({ schoolId, schoolName, feeAmount, userName }: 
       </div>
 
       <TrustBar />
+
+      {/* DEMO banner */}
+      <div className="mb-4 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
+        <svg className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <div>
+          <p className="text-sm font-medium text-amber-400">Demo mode — Pilot integration</p>
+          <p className="text-xs text-amber-400/70 mt-0.5">
+            You can walk through the full application flow, but no real data is sent to DTB.
+            This is a preview of how the integration will work when it goes live.
+          </p>
+        </div>
+      </div>
+
       <ProgressDots current={step} />
 
       <div className="border border-border rounded-xl p-5">

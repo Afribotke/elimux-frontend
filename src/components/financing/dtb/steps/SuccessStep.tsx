@@ -16,7 +16,7 @@ export function SuccessStep({ referenceCode }: SuccessStepProps) {
       </div>
       <h3 className="text-xl font-medium mb-1.5">Application submitted!</h3>
       <p className="text-sm text-secondary mb-5">
-        DTB has received your school fees loan application. You&apos;ll get an SMS update within 24 hours.
+        This was a demo walkthrough. In the live version, DTB would receive this application and send you an SMS update within 24 hours.
       </p>
 
       <div className="bg-muted rounded-xl px-4 py-3.5 mb-5">

@@ -5,6 +5,13 @@ import Link from 'next/link';
 export function DtbHomepageBanner() {
   return (
     <section className="w-full px-4 py-10">
+      {/* DEMO badge */}
+      <div className="max-w-3xl mx-auto mb-3 flex justify-end">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[11px] font-semibold tracking-wide uppercase">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+          Demo — Not yet live
+        </span>
+      </div>
       <div className="max-w-3xl mx-auto relative rounded-2xl border border-border overflow-hidden bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#0f0f0f] px-6 py-8 sm:px-10 sm:py-10 text-center">
         {/* Ambient glow */}
         <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-[radial-gradient(circle,rgba(200,16,46,0.12)_0%,transparent_70%)] pointer-events-none" />
@@ -48,7 +55,7 @@ export function DtbHomepageBanner() {
             href="/financing/dtb-academy"
             className="inline-flex items-center gap-2 px-7 py-3 rounded-xl bg-[#c8102e] text-white font-medium text-[15px] hover:bg-[#e01435] hover:-translate-y-px transition-all"
           >
-            Apply now in 3 minutes
+            Try demo application
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="5" y1="12" x2="19" y2="12" />
               <polyline points="12 5 19 12 12 19" />
@@ -58,7 +65,7 @@ export function DtbHomepageBanner() {
             href="/financing/dtb-academy"
             className="px-6 py-3 rounded-xl border border-[#333] text-[#aaa] font-medium text-[15px] hover:border-[#555] hover:text-[#ccc] transition-colors"
           >
-            How it works
+            Learn more
           </Link>
         </div>
 

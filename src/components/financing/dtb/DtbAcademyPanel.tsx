@@ -27,6 +27,18 @@ export function DtbAcademyPanel({ schoolId, schoolName, feeAmount }: DtbAcademyP
       </div>
 
       <div className="p-4 space-y-4">
+        {/* DEMO notice */}
+        <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 mb-3">
+          <svg className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span className="text-xs text-amber-400/90 leading-relaxed">
+            <strong>Demo mode:</strong> This is a pilot integration. No real loan applications are being processed yet.
+          </span>
+        </div>
+
         <div className="flex flex-wrap gap-2">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-green-500/10 text-green-600 text-xs">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -82,7 +94,7 @@ export function DtbAcademyPanel({ schoolId, schoolName, feeAmount }: DtbAcademyP
           href={`/financing/dtb-academy?school=${schoolId}&fee=${feeAmount}`}
           className="block w-full py-3 rounded-xl bg-foreground text-background text-center font-medium text-base hover:opacity-90 transition-opacity"
         >
-          Check eligibility on ElimuX
+          Try demo eligibility check
         </Link>
 
         <div className="flex gap-2 items-start text-xs text-secondary bg-amber-500/10 rounded-lg px-3 py-2.5">

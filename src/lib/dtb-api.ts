@@ -23,7 +23,7 @@ export async function submitDtbApplication(
   const interest = Math.round(fee * 0.10);
   const total = fee + interest;
   const monthly = Math.round(total / app.repayment_months);
-  const referenceCode = `DTB-ELM-${Math.floor(1000000 + Math.random() * 9000000)}`;
+  const referenceCode = `DEMO-ELM-${Math.floor(1000000 + Math.random() * 9000000)}`;
 
   const { data, error } = await supabase
     .from('partner_applications')
