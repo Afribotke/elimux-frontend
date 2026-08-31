@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import CategoryPills from './CategoryPills';
 import CareerSearchDropdown from './CareerSearchDropdown';
 import GradeMatcher from './GradeMatcher';
@@ -14,6 +14,8 @@ import JsonLd from '@/components/seo/JsonLd';
 import { Target, GraduationCap as GradIcon, Award } from 'lucide-react';
 import { ShareButton } from '@/components/share';
 import { getDefaultShareData } from '@/lib/share-utils';
+import { DtbHomepageBanner } from '@/components/financing/dtb/DtbHomepageBanner';
+import { isDtbAcademyEnabled } from '@/lib/dtb-api';
 
 // Cycle 029: homepage-only FAQPage schema. The "compare institutions"
 // answer was reworded from the SEO instruction's literal draft - checked
@@ -145,6 +147,11 @@ const HERO_STATS = [
 
 export default function NewHomePage() {
   const [showGradeMatcher, setShowGradeMatcher] = useState(false);
+  const [dtbEnabled, setDtbEnabled] = useState(false);
+
+  useEffect(() => {
+    isDtbAcademyEnabled().then(setDtbEnabled);
+  }, []);
 
   return (
     <div className="w-full bg-white dark:bg-background min-h-screen">
@@ -324,8 +331,13 @@ export default function NewHomePage() {
       </div>
 
       {/* Sponsor Banner — deliberately full-width, breaks out of the
-          max-w-5xl container the other sections use */}
-      <SponsorBanner />
+          max-w-5xl container the other sections use. Cycle 153: gated
+          behind dtb_academy_enabled so the demo banner can replace it
+          without touching SponsorBanner itself, which stays genuinely
+          data-driven (see its own Cycle 027 comment on why "Afribot" was
+          never hardcoded here - this flag only swaps which section shows,
+          it doesn't reintroduce a fabricated sponsor name as a fallback). */}
+      {dtbEnabled ? <DtbHomepageBanner /> : <SponsorBanner />}
 
       {/* Cycle 027: Footer was previously unused anywhere in the app (see
           docs/audit-log.md) - the old Skolex homepage had none at all. */}
