@@ -6,12 +6,19 @@ import Link from 'next/link';
 import { Loader2, MapPin, Users, Home, ArrowLeft, Hash } from 'lucide-react';
 import type { SeniorSchool } from '@/lib/schools-data';
 import { AddToShortlistButton } from '@/components/schools/add-to-shortlist-button';
+import { DtbAcademyPanel } from '@/components/financing/dtb/DtbAcademyPanel';
+import { isDtbAcademyEnabled } from '@/lib/dtb-api';
 
 export default function SchoolDetailPage() {
   const params = useParams<{ id: string }>();
   const [school, setSchool] = useState<SeniorSchool | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [dtbEnabled, setDtbEnabled] = useState(false);
+
+  useEffect(() => {
+    isDtbAcademyEnabled().then(setDtbEnabled);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,6 +80,17 @@ export default function SchoolDetailPage() {
             </div>
           )}
         </div>
+
+        {dtbEnabled && (
+          // senior_schools has no fee column (it's a KUCCPS placement
+          // dataset, not a fee-paying private school directory), so this
+          // demo panel uses a flat placeholder the user can still edit.
+          <DtbAcademyPanel
+            schoolId={school.id}
+            schoolName={school.name}
+            feeAmount={85000}
+          />
+        )}
 
         <div className="mt-8 pt-6 border-t border-gray-100">
           <h2 className="font-semibold text-gray-900 mb-2">Next Steps</h2>
