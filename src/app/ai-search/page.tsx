@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { runAISearch, type SearchIntent, type InstitutionMode } from '@/lib/aiSearch'
+import { runAISearch, type SearchIntent, type InstitutionMode, type ExtractedLocation } from '@/lib/aiSearch'
 import { awardPoints } from '@/lib/api'
 import AISearchBar from '@/components/AISearchBar'
 import InterestSelector from '@/components/InterestSelector'
@@ -12,7 +12,7 @@ import CareerPathway from '@/components/CareerPathway'
 import ProgramCard from '@/components/ProgramCard'
 import InstitutionCard from '@/components/InstitutionCard'
 import { Footer } from '@/components/layout/Footer'
-import { Sparkles, GraduationCap, Building2, MapPin, DollarSign, BarChart3 } from 'lucide-react'
+import { Sparkles, GraduationCap, Building2, MapPin, DollarSign, BarChart3, X } from 'lucide-react'
 
 // Cycle 030: same 6 categories/hrefs/colors as NewHomePage.tsx's own
 // HERO_CATEGORIES - kept as a local copy rather than importing that
@@ -88,6 +88,11 @@ function AISearchContent() {
   const [programs, setPrograms] = useState<any[]>([])
   const [institutions, setInstitutions] = useState<any[]>([])
   const [resultCount, setResultCount] = useState<number | null>(null)
+  const [locationDetected, setLocationDetected] = useState<ExtractedLocation | null>(null)
+  // Last text actually sent to search - used to re-run without location context
+  // from the "Search all of Kenya" button, independent of whatever the search
+  // bar's own input currently holds.
+  const [lastQuery, setLastQuery] = useState(initialQuery)
 
   useEffect(() => {
     async function loadReferenceData() {
@@ -113,7 +118,7 @@ function AISearchContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function handleSearch(query: string, careerGoalOverride?: string | null, scrollFirst = true) {
+  async function handleSearch(query: string, careerGoalOverride?: string | null, scrollFirst = true, ignoreLocation = false) {
     // Instant feedback, before any state update or async work: both the search bar and
     // the career-pathway cards funnel through here, and either can be clicked from well
     // below the fold (career cards sit lower on the page). Scrolling first - rather than
@@ -135,6 +140,7 @@ function AISearchContent() {
     setLoading(true)
     setHasSearched(true)
     setError(null)
+    setLastQuery(query)
 
     if (query.trim()) {
       router.push(`${pathname}?q=${encodeURIComponent(query)}`, { scroll: false })
@@ -151,6 +157,7 @@ function AISearchContent() {
           level: level || null,
           maxBudget,
           institutionMode: SKILLS_TOGGLE_ENABLED ? institutionMode : null,
+          ignoreLocation,
         },
         controller.signal
       )
@@ -158,11 +165,13 @@ function AISearchContent() {
       setPrograms(result.programs)
       setInstitutions(result.institutions)
       setResultCount(result.programs.length + result.institutions.length)
+      setLocationDetected(result.location_detected ?? null)
       awardPoints('search').catch(() => {})
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return // superseded by a newer search
       setError(err instanceof Error ? err.message : 'AI search failed')
       setResultCount(null)
+      setLocationDetected(null)
     } finally {
       // Only this call's own controller is still current if it wasn't the
       // one just aborted above by a newer search - otherwise clearing
@@ -184,7 +193,12 @@ function AISearchContent() {
     setPrograms([])
     setInstitutions([])
     setResultCount(null)
+    setLocationDetected(null)
     router.push(pathname, { scroll: false })
+  }
+
+  function handleShowAllKenya() {
+    handleSearch(lastQuery, undefined, false, true)
   }
 
   function handleCareerSelect(label: string) {
@@ -239,11 +253,45 @@ function AISearchContent() {
                 </div>
               ) : programs.length === 0 && institutions.length === 0 ? (
                 <div className="text-center py-12 bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50">
-                  <p className="text-xl text-white mb-2">No results found</p>
-                  <p className="text-gray-400">Try adjusting your search or browse categories below</p>
+                  <p className="text-xl text-white mb-2">
+                    {locationDetected ? `No courses found in ${locationDetected.county}` : 'No results found'}
+                  </p>
+                  <p className="text-gray-400 mb-4">
+                    {locationDetected
+                      ? `We couldn't find any matching courses in ${locationDetected.town || locationDetected.county}. Try searching all of Kenya or a different location.`
+                      : 'Try adjusting your search or browse categories below'}
+                  </p>
+                  {locationDetected && (
+                    <button
+                      onClick={handleShowAllKenya}
+                      className="px-5 py-2.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600 font-medium"
+                    >
+                      Search all of Kenya
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
+                  {locationDetected && (
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-primary-500/10 border border-primary-500/30 rounded-xl mb-6">
+                      <MapPin className="w-4 h-4 text-primary-400 shrink-0" />
+                      <span className="text-sm text-gray-200">
+                        Showing results for{' '}
+                        <strong>
+                          {locationDetected.town
+                            ? `${locationDetected.town}, ${locationDetected.county}`
+                            : locationDetected.county}
+                        </strong>
+                      </span>
+                      <button
+                        onClick={handleShowAllKenya}
+                        className="ml-auto flex items-center gap-1 text-xs text-primary-400 hover:text-primary-300 underline"
+                      >
+                        <X className="w-3 h-3" />
+                        Search all of Kenya
+                      </button>
+                    </div>
+                  )}
                   {intent && (
                     <div className="mb-6 px-4 py-3 rounded-xl bg-slate-900/60 border border-slate-700 text-sm text-gray-300 flex flex-wrap items-center gap-2">
                       <Sparkles className="w-4 h-4 text-primary-400 flex-shrink-0" />

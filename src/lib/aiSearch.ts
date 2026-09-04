@@ -10,18 +10,29 @@ export interface SearchIntent {
 
 export type InstitutionMode = 'academic' | 'skills'
 
+export interface ExtractedLocation {
+  county?: string
+  town?: string
+  confidence: 'high' | 'medium' | 'low'
+}
+
 export interface AISearchFilters {
   countryId?: string | null
   categoryId?: string | null
   level?: string | null
   maxBudget?: number | null
   institutionMode?: InstitutionMode | null
+  // Set when re-running a search from the "Search all of Kenya" clear-location
+  // button, so the backend doesn't just re-detect the same location from the
+  // query text and put the filter right back.
+  ignoreLocation?: boolean
 }
 
 export interface AISearchResult {
   intent: SearchIntent
   programs: any[]
   institutions: any[]
+  location_detected?: ExtractedLocation | null
 }
 
 export async function runAISearch(
@@ -43,6 +54,7 @@ export async function runAISearch(
       level: filters.level ?? null,
       maxBudget: filters.maxBudget ?? null,
       institutionMode: filters.institutionMode ?? null,
+      ignoreLocation: filters.ignoreLocation ?? false,
     }),
     signal,
   })
