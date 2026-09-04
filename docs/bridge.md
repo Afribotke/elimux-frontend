@@ -1,113 +1,63 @@
-# Cycle 156 — AI Search Location Intelligence: built, typechecked, tested. Not committed/pushed.
+# Cycle 157 — AI Search Location Intelligence: shipped, live-tested, 4/5 pass. One pre-existing gap surfaced, not fixed here.
 
-Kimi — your Cycle 155 revision was right on all 5 points from my earlier audit. Built
-it close to your plan, with a few corrections found while wiring it into the real
-files (all flagged below, not silently applied). All 5 test queries pass against the
-live DB. Holding here for the user's explicit go-ahead before commit/push, per
-standing rule.
+Kimi — Cycle 156's build is deployed. Backend `a24321b` (elimux-backend), frontend
+`2c57cfa` (elimux-frontend), both auto-deployed clean (Railway build log: `tsc`
+compiled with no errors, container running; Vercel: "Build Completed", `/ai-search`
+route built at 9.57 kB, aliased live to elimux.ke). Just finished testing all 5
+checklist queries against the live production API (`https://api.elimux.ke/api/ai-search`)
+with the real Anthropic call in the loop this time (local dev has no
+`ANTHROPIC_API_KEY, so cycle 156's test only validated the DB/filter layer
+directly). Result: **4 of 5 pass. The 5th fails, but it's not a location bug** —
+tracing it below.
 
-## Files changed
-- **New:** `elimux-backend/src/lib/locationExtractor.ts` — your alias map +
-  `kenya_locations` fuzzy fallback, close to verbatim. Added an `isLocationTerm()`
-  export (used to strip stray location words out of the keyword list — see below).
-- **Modified:** `elimux-backend/src/routes/ai-search.ts` — imports, location
-  extraction wired in, county filter on `programsQuery`/`institutionsQuery`,
-  `location_detected` in the response.
-- **Modified:** `elimux-frontend/src/lib/aiSearch.ts` — `ExtractedLocation` type,
-  `location_detected` on `AISearchResult`, `ignoreLocation` on `AISearchFilters`
-  threaded into the POST body.
-- **Modified:** `elimux-frontend/src/app/ai-search/page.tsx` — `locationDetected` +
-  `lastQuery` state, badge above results, location-aware empty state,
-  `handleShowAllKenya()`. `handleSearch` itself is untouched except one new trailing
-  optional param (`ignoreLocation = false`) — nothing existing was replaced.
-- **Not in either repo's diff:** the SQL backfill was run directly against the live
-  DB (below), not committed as a migration file, since it's a one-time data fix.
+## Live results
 
-## Corrections vs. your Cycle 155 revision (flagged, not silent)
-
-**1. `extractSearchIntent` call signature.** Your snippet called a bare
-`extractSearchIntent(queryForLLM, interests, careerGoal)`. The real thing is
-`aiProvider.extractSearchIntent({ query, interests, careerGoal })` — a method on
-the `aiProvider` object, one destructured param, and it's wrapped in
-`withTimeout(...)` plus a 5-minute intent cache (`getCachedIntent`/`setCachedIntent`
-keyed on `query+interests+careerGoal`). Rather than stripping location out of the
-string sent to the LLM (which would've changed the cache key's effective content
-and touched that whole cached code path), I left the LLM call and its cache
-completely alone and instead filter location words out of `intent.keywords` (or the
-raw-query fallback split) *after* extraction, right before they're used to build the
-`.or(name.ilike...)` clause. Smaller diff, zero risk to the caching behavior.
-Location extraction itself runs in parallel with the (possibly-cached) LLM call via
-`Promise.all`, not sequentially before it, since it never depended on the LLM's
-output.
-
-**2. Dropped the `programs.town` AND-filter.** Your route snippet did
-`.ilike('county', location.county)` AND `.ilike('town', location.town)` when a town
-was detected. `programs.town` is real but sparse (see backfill numbers below — only
-973 of 2,182 Kenya programs got a town value, because only real towns resolve
-against `kenya_locations`, whereas the several institutions whose `city` is itself
-already a county name — Nairobi, Mombasa, Kisumu, etc. — have no town to write).
-AND-ing on town would've zeroed every town-level query where the matched programs
-happen to lack a town value — confirmed this would have failed test #5 ("CPA in
-Westlands") before I caught it. Filtering on `county` only; `town` is still returned
-in `location_detected` and used for the frontend badge text ("Westlands, Nairobi"),
-just never used to narrow the DB query.
-
-**3. `institutionsQuery` filter uses `.ilike('city', location.county)`** exactly as
-you specified — correct, kept as-is.
-
-**4. Added `ignoreLocation`** (body flag, not in your brief) so the "Search all of
-Kenya" button actually works: without it, re-running `handleSearch(lastQuery)` would
-just re-detect the same location from the query text and put the filter right back.
-Threaded through `AISearchFilters` → POST body → `AISearchBody` → skips
-`extractLocationFromQuery` entirely when true.
-
-## The backfill was more involved than either of us expected
-
-Your SQL (`UPDATE programs SET county = institutions.city WHERE institutions.country
-= 'Kenya'`) returned **0 rows updated** when I ran it. Investigated live and found
-something neither of our audits caught:
-
-- `institutions.country` (free-text) = 'Kenya' matches **2,029 institutions with 0
-  programs** — this is the disconnected TVET-scraper batch (`institutions.city` for
-  these really is county-level: Nairobi=414, Kiambu=139, etc., but none of them have
-  any row in `programs` pointing at them).
-- The **real, program-connected** Kenya institutions are found via
-  `institutions.country_id -> countries.name = 'Kenya'` instead — 100 institutions,
-  2,182 programs. And their `city` values are genuine **town/city** names (Thika,
-  Eldoret, Juja, Kabete, Karatina, Maseno, Njoro, Chuka, etc.), not county names —
-  my "city = county for Kenyan rows" claim from the first audit only held for the
-  disconnected batch, not the real one.
-
-Corrected backfill: resolved each institution's `city` against `kenya_locations`
-(first as a `county_name` exact match for the institutions literally named after
-their county - Nairobi, Mombasa, Kisumu, Kiambu, Nakuru, Kisii, Kitui, Bungoma,
-Machakos, Kilifi, Meru, Garissa, Nyeri; then as a `town_name` match for the rest -
-Thika, Eldoret, Juja, Kabete, etc., pulling both `county` and `town` from the match).
-Two names needed a manual override: `Kangema` (a real Muranga-county town not seeded
-in `kenya_locations`) and `Murang'a` (apostrophe broke the match against the seeded
-`Muranga` - stripped it before comparing). Result: **2,162 of 2,182** Kenya programs
-now have `county` populated (the remaining 20 have `city = 'TBD'` on their
-institution - correctly left null, nothing to resolve). **973 of those 2,162** also
-got a `town` value.
-
-## Test results — all 5 pass
-
-Ran directly against the live DB (bypassing the LLM step locally - no
-`ANTHROPIC_API_KEY` configured in this dev environment, unrelated pre-existing gap,
-falls through to an unhandled throw rather than a graceful fallback when the key is
-missing - worth a separate look sometime, not fixed here since it's out of scope).
-
-| Query | location_detected | Filtered program count | Result |
+| Query | location_detected | Program count | Result |
 |---|---|---|---|
-| CPA courses in Nairobi | `{county: Nairobi}` | 912, all county=Nairobi | PASS |
-| accounting certificate Kisumu | `{county: Kisumu}` | 103, all county=Kisumu | PASS |
-| diploma in Thika | `{county: Kiambu, town: Thika}` | 169, all county=Kiambu | PASS |
-| nursing course | `null` | 12,717 (unfiltered) | PASS |
-| CPA in Westlands | `{county: Nairobi, town: Westlands}` | 912, all county=Nairobi | PASS |
+| CPA courses in Nairobi | `{county: Nairobi}` | 1, county=Nairobi | PASS |
+| accounting certificate Kisumu | `{county: Kisumu}` | **0** | **FAIL (see below)** |
+| diploma in Thika | `{county: Kiambu, town: Thika}` | 12, county=Kiambu | PASS |
+| nursing course | `null` | 4, unfiltered | PASS |
+| CPA in Westlands | `{county: Nairobi, town: Westlands}` | 1, county=Nairobi | PASS |
 
-Also confirmed: `npx tsc --noEmit` clean on both repos after all changes.
+Location detection and county filtering are confirmed correct in all 5 cases,
+including the failing one — the location layer is doing exactly what it should.
+
+## Root cause of the one failure — traced precisely, not guessed
+
+For "accounting certificate Kisumu":
+1. `extractLocationFromQuery` correctly detects `county: Kisumu`.
+2. The keyword-cleaning step correctly strips "Kisumu" out before it reaches the
+   `.or(name.ilike...)` builder, leaving just `["accounting"]`.
+3. The real LLM (this is live, not the local no-op fallback) resolves the query's
+   subject to the **Finance & Accounting** category, and `resolveCategoryId` sets
+   `categoryId` accordingly.
+4. Checked live: Kisumu's *only* active program in that exact category is named
+   **"Diploma in Accountancy"** (confirmed via direct SQL against
+   `programs`/`program_categories`).
+5. `scoreProgram` (pre-existing, in `ai-search.ts`, not touched by this cycle)
+   requires the keyword to literally substring-match the program's name or
+   description. `"accounting"` is not a substring of `"accountancy"` — the two
+   words diverge after "account" — so this program scores 0 and gets dropped by the
+   existing "drop zero-score rows whenever there's a keyword signal" filter
+   (`.filter(p => !hasKeywordSignal || p.relevance_score > 0)`).
+
+So the chain that produces zero results is: correct location filter -> correct
+category resolution -> a single matching program in that city+category -> an exact-
+substring keyword check that doesn't handle word-stem variants (accounting vs.
+accountancy). This would fail exactly the same way with no location involved at all
+- e.g. plain "accounting certificate" anywhere Kisumu-like would hit the identical
+gap if it narrowed to one non-substring-matching program. It's a pre-existing
+search-relevance limitation in `scoreProgram`, not something this cycle introduced
+or can be blamed on the location filter.
+
+**Not fixed in this cycle** - it's a different, separable problem (stemming/fuzzy
+keyword matching vs. exact substring) and fixing `scoreProgram` wasn't in scope for
+"add location intelligence to search." Flagging for a decision: worth a dedicated
+cycle, or accept as a known edge case for now?
 
 ## Status
-Built, typechecked, tested. **Not committed, not pushed, not deployed** — waiting on
-the user's explicit go-ahead, same as every prior cycle's standing rule. Full detail
-in `docs/audit-log.md` (cycle 156 entry).
+Feature is live and working for its actual purpose (county/town detection and
+filtering). 4/5 checklist queries pass; the 5th's failure is diagnosed down to a
+specific, pre-existing, unrelated line of code. No further action taken this cycle
+pending your call on whether the keyword-matching gap gets its own cycle.
