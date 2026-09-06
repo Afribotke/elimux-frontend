@@ -1,0 +1,744 @@
+=== CYCLE 048 — CAREER PATHWAYS PHASE 3: PDF + SHARE ===
+
+## AUDIT OF CURRENT STATE
+
+**Phase 2 — COMPLETE (Clean Sweep):**
+- All 6 API endpoints working (`/api/pathways`, `/api/careers/search`, `/api/schools/matcher`, `/api/career/interpreter`, `/api/kjsa/analyze`, `/api/rules/validator`)
+- Wizard Steps 4.1–4.5 all pass live browser verification
+- KJSA green box renders correctly with pathway-specific fit score (not highest overall)
+- Results page shows Pathway Match Score, 3+ ranked subject combinations, confidence badge
+- `pathways.subject_combinations` seeded with 10 rows across 3 tracks
+- `npx tsc --noEmit` clean, `npm run build` clean
+- Files changed: `src/app/pathways/wizard/page.tsx`, `supabase/seeders/pathways_subject_combinations_seed.sql`
+
+**Phase 3 — PENDING:**
+- PDF generation: no code
+- Share system (copy link, social, native): no code  
+- Standalone `/pathways/results` page: placeholder (`"Your Results Are Coming Soon"`)
+- OG meta tags / social preview images: none
+- Print-friendly styling: none
+
+## WHAT CLAUDE MUST DO
+
+### STEP 1: Install dependency
+
+```bash
+npm install jspdf jspdf-autotable
+Verify package.json now lists both. If build fails after install, run npm run build and fix any type issues before proceeding.
+STEP 2: Create PDF generator utility
+New file: src/lib/pathways-pdf.ts
+TypeScript
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+export interface PathwayPDFData {
+  career: string;
+  pathway: string;
+  track: string;
+  fitPercentage: number;
+  confidence: string;
+  combinations: Array<{
+    name: string;
+    subjects: string[];
+    rank?: number;
+    score?: number;
+  }>;
+  schools?: Array<{
+    name: string;
+    location: string;
+    type: string;
+  }>;
+  date: string;
+}
+
+export function generatePathwayPDF(data: PathwayPDFData): string {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  
+  // Header branding
+  doc.setFontSize(20);
+  doc.setTextColor(0, 102, 204);
+  doc.text('ElimuX', 14, 20);
+  doc.setFontSize(12);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Career Pathway Report', 14, 27);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${data.date} | www.elimux.ke`, 14, 33);
+  
+  // Horizontal rule
+  doc.setDrawColor(200, 200, 200);
+  doc.line(14, 37, pageWidth - 14, 37);
+  
+  // Career summary
+  doc.setFontSize(16);
+  doc.setTextColor(0, 0, 0);
+  doc.text(data.career, 14, 48);
+  
+  doc.setFontSize(10);
+  doc.setTextColor(80, 80, 80);
+  doc.text(`Pathway: ${data.pathway}`, 14, 55);
+  doc.text(`Track: ${data.track}`, 14, 61);
+  doc.text(`Match Score: ${data.fitPercentage}% (${data.confidence} confidence)`, 14, 67);
+  
+  // Match score bar
+  const barY = 73;
+  doc.setFillColor(230, 230, 230);
+  doc.roundedRect(14, barY, 80, 6, 2, 2, 'F');
+  const barColor = data.fitPercentage >= 70 ? [0, 150, 100] : data.fitPercentage >= 40 ? [255, 180, 0] : [220, 60, 60];
+  doc.setFillColor(barColor[0], barColor[1], barColor[2]);
+  doc.roundedRect(14, barY, 80 * (data.fitPercentage / 100), 6, 2, 2, 'F');
+  
+  // Subject Combinations table
+  let startY = 88;
+  if (data.combinations && data.combinations.length > 0) {
+    doc.setFontSize(13);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Recommended Subject Combinations', 14, startY);
+    
+    autoTable(doc, {
+      startY: startY + 5,
+      head: [['Rank', 'Combination', 'Subjects', 'Suitability']],
+      body: data.combinations.map((c, idx) => [
+        idx + 1,
+        c.name,
+        c.subjects.join(', '),
+        c.score ? `${c.score}%` : '—'
+      ]),
+      theme: 'striped',
+      headStyles: { fillColor: [0, 102, 204], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [248, 249, 250] },
+      styles: { fontSize: 9, cellPadding: 3 },
+      columnStyles: {
+        0: { cellWidth: 15, halign: 'center' },
+        1: { cellWidth: 55 },
+        2: { cellWidth: 'auto' },
+        3: { cellWidth: 25, halign: 'center' }
+      },
+      margin: { left: 14, right: 14 }
+    });
+    
+    startY = (doc as any).lastAutoTable.finalY + 10;
+  }
+  
+  // Schools table
+  if (data.schools && data.schools.length > 0) {
+    doc.setFontSize(13);
+    doc.text('Recommended Schools', 14, startY);
+    
+    autoTable(doc, {
+      startY: startY + 5,
+      head: [['School', 'Location', 'Type']],
+      body: data.schools.map(s => [s.name, s.location, s.type]),
+      theme: 'striped',
+      headStyles: { fillColor: [0, 150, 100], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [248, 249, 250] },
+      styles: { fontSize: 9, cellPadding: 3 },
+      margin: { left: 14, right: 14 }
+    });
+  }
+  
+  // Footer on all pages
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text(
+      'This report is generated by ElimuX based on KJSA analysis. Consult your school career guidance counselor for final subject selections.',
+      14,
+      doc.internal.pageSize.getHeight() - 10
+    );
+    doc.text(
+      `Page ${i} of ${pageCount}`,
+      pageWidth - 30,
+      doc.internal.pageSize.getHeight() - 10
+    );
+  }
+  
+  return doc.output('bloburl');
+}
+STEP 3: Create Share Results component
+New file: src/components/pathways/ShareResults.tsx
+tsx
+'use client';
+
+import { useState } from 'react';
+
+interface ShareResultsProps {
+  career: string;
+  pathway: string;
+  fitPercentage: number;
+  url?: string;
+}
+
+export default function ShareResults({ career, pathway, fitPercentage, url }: ShareResultsProps) {
+  const [copied, setCopied] = useState(false);
+  const shareUrl = url || (typeof window !== 'undefined' ? window.location.href : '');
+  const shareText = `I just discovered my career pathway on ElimuX! I'm a ${fitPercentage}% match for ${career} (${pathway}). Find yours:`;
+  
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = shareUrl;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+  
+  const handleNativeShare = async () => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: 'My ElimuX Career Pathway',
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch {
+        // User cancelled or share failed silently
+      }
+    }
+  };
+  
+  const waLink = `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+  const twLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+  const fbLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+  
+  const canNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
+  
+  return (
+    <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <h3 className="text-base font-semibold text-gray-900">Share Your Results</h3>
+      <p className="mt-1 text-sm text-gray-500">Let friends and family know about your career discovery.</p>
+      
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          onClick={handleCopy}
+          className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          {copied ? 'Copied!' : 'Copy Link'}
+        </button>
+        
+        {canNativeShare && (
+          <button
+            onClick={handleNativeShare}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            Share
+          </button>
+        )}
+        
+        <a
+          href={waLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-600 transition-colors"
+        >
+          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+          WhatsApp
+        </a>
+        
+        <a
+          href={twLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-lg bg-sky-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-sky-600 transition-colors"
+        >
+          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          X / Twitter
+        </a>
+        
+        <a
+          href={fbLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-800 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-900 transition-colors"
+        >
+          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+          Facebook
+        </a>
+      </div>
+    </div>
+  );
+}
+STEP 4: Rebuild standalone Results page
+The current src/app/pathways/results/page.tsx is a Phase 1 placeholder. Replace it entirely with a server component for metadata + client component for interactivity.
+Replace file: src/app/pathways/results/page.tsx
+tsx
+import { Metadata } from 'next';
+import PathwayResultsClient from './PathwayResultsClient';
+
+interface Props {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const params = await searchParams;
+  const career = typeof params.career === 'string' ? params.career : 'Career Pathway';
+  const pathway = typeof params.pathway === 'string' ? params.pathway : '';
+  const fit = typeof params.fit === 'string' ? params.fit : '0';
+  
+  const title = `${career} — Career Pathway | ElimuX`;
+  const description = `I discovered I'm a ${fit}% match for ${career}${pathway ? ` (${pathway})` : ''} on ElimuX. Find your perfect career pathway!`;
+  
+  return {
+    title,
+    description,
+    openGraph: {
+      title: `${career} — My Career Pathway`,
+      description,
+      type: 'website',
+      url: `https://www.elimux.ke/pathways/results?career=${encodeURIComponent(career)}&pathway=${encodeURIComponent(pathway)}&fit=${fit}`,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${career} — My Career Pathway`,
+      description,
+    },
+  };
+}
+
+export default async function PathwayResultsPage({ searchParams }: Props) {
+  const params = await searchParams;
+  return <PathwayResultsClient searchParams={params} />;
+}
+New file: src/app/pathways/results/PathwayResultsClient.tsx
+tsx
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
+import ShareResults from '@/components/pathways/ShareResults';
+import { generatePathwayPDF, PathwayPDFData } from '@/lib/pathways-pdf';
+
+interface Combination {
+  name: string;
+  subjects: string[];
+  score?: number;
+}
+
+export default function PathwayResultsClient({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
+  const routerSearchParams = useSearchParams();
+  const [loading, setLoading] = useState(true);
+  const [combinations, setCombinations] = useState<Combination[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Read params from either prop (server) or client hook (fallback)
+  const career = (typeof searchParams.career === 'string' ? searchParams.career : routerSearchParams.get('career')) || '';
+  const pathway = (typeof searchParams.pathway === 'string' ? searchParams.pathway : routerSearchParams.get('pathway')) || '';
+  const track = (typeof searchParams.track === 'string' ? searchParams.track : routerSearchParams.get('track')) || '';
+  const fit = parseInt((typeof searchParams.fit === 'string' ? searchParams.fit : routerSearchParams.get('fit')) || '0');
+  const confidence = (typeof searchParams.confidence === 'string' ? searchParams.confidence : routerSearchParams.get('confidence')) || 'low';
+  
+  useEffect(() => {
+    async function loadCombinations() {
+      if (!career) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/career/interpreter?career=${encodeURIComponent(career)}`);
+        if (!res.ok) throw new Error('Failed to load career data');
+        const data = await res.json();
+        setCombinations(data.combinations || []);
+      } catch (err) {
+        setError('Could not load subject combinations. Please try again.');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadCombinations();
+  }, [career]);
+  
+  const handleDownloadPDF = useCallback(async () => {
+    const pdfData: PathwayPDFData = {
+      career,
+      pathway,
+      track,
+      fitPercentage: fit,
+      confidence,
+      combinations,
+      date: new Date().toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' }),
+    };
+    
+    try {
+      const url = generatePathwayPDF(pdfData);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ElimuX-Pathway-${career.replace(/\s+/g, '-')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('PDF generation failed:', err);
+      alert('Failed to generate PDF. Please try again or use Print to PDF.');
+    }
+  }, [career, pathway, track, fit, confidence, combinations]);
+  
+  const handlePrint = useCallback(() => {
+    window.print();
+  }, []);
+  
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto"></div>
+          <p className="mt-3 text-sm text-gray-600">Loading your pathway...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!career) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+        <div className="text-center max-w-md">
+          <h1 className="text-2xl font-bold text-gray-900">No Results Found</h1>
+          <p className="mt-2 text-gray-600">Complete the Career Pathway wizard to see your personalized recommendation.</p>
+          <a href="/pathways/wizard" className="mt-4 inline-block rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">
+            Start Wizard
+          </a>
+        </div>
+      </div>
+    );
+  }
+  
+  const confidenceColor = confidence === 'high' ? 'text-green-700 bg-green-100' : confidence === 'medium' ? 'text-yellow-700 bg-yellow-100' : 'text-red-700 bg-red-100';
+  const barColor = fit >= 70 ? 'bg-green-500' : fit >= 40 ? 'bg-yellow-500' : 'bg-red-400';
+  
+  return (
+    <div className="min-h-screen bg-gray-50 py-8 px-4 print:bg-white print:py-0">
+      <div className="mx-auto max-w-3xl print:max-w-none">
+        {/* Print header (hidden on screen) */}
+        <div className="hidden print:block mb-6 pb-4 border-b border-gray-300">
+          <h1 className="text-2xl font-bold text-blue-900">ElimuX Career Pathway Report</h1>
+          <p className="text-sm text-gray-500">www.elimux.ke | {new Date().toLocaleDateString('en-KE')}</p>
+        </div>
+        
+        {/* Screen header (hidden on print) */}
+        <div className="print:hidden mb-6 text-center">
+          <h1 className="text-3xl font-bold text-gray-900">Your Career Pathway</h1>
+          <p className="mt-2 text-gray-600">Personalized recommendation based on your KJSA analysis</p>
+        </div>
+        
+        {/* Main Results Card */}
+        <div className="rounded-2xl bg-white p-6 md:p-8 shadow-lg print:shadow-none print:p-0 print:rounded-none">
+          {/* Career / Pathway / Track */}
+          <div className="border-b border-gray-100 pb-6 print:border-gray-300">
+            <h2 className="text-2xl font-bold text-blue-900">{career}</h2>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">{pathway}</span>
+              <span className="rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-800">{track}</span>
+            </div>
+          </div>
+          
+          {/* Match Score */}
+          <div className="mt-6">
+            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Pathway Match Score</h3>
+            <div className="mt-3 flex items-center gap-4">
+              <div className="text-4xl font-bold text-blue-600">{fit}%</div>
+              <div className="flex-1">
+                <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200">
+                  <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${fit}%` }} />
+                </div>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${confidenceColor}`}>
+                    {confidence} confidence
+                  </span>
+                </div>
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-gray-500">
+              This score is calculated from your KJSA subject preferences and performance indicators.
+            </p>
+          </div>
+          
+          {/* Subject Combinations */}
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold text-gray-900">Recommended Subject Combinations</h3>
+            <p className="mt-1 text-sm text-gray-500">Ranked KCSE subject groupings for this career pathway.</p>
+            
+            {error ? (
+              <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
+            ) : combinations.length > 0 ? (
+              <div className="mt-4 space-y-3">
+                {combinations.map((combo, idx) => (
+                  <div key={idx} className={`rounded-lg border p-4 ${idx === 0 ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-900">{combo.name}</span>
+                      <div className="flex items-center gap-2">
+                        {idx === 0 && (
+                          <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">Best Match</span>
+                        )}
+                        {combo.score && (
+                          <span className="text-sm font-bold text-gray-700">{combo.score}%</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {combo.subjects.map((subject, sidx) => (
+                        <span key={sidx} className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+                          {subject}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <div className="flex items-start gap-3">
+                  <svg className="h-5 w-5 text-amber-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-medium text-amber-900">Subject combinations still being curated</p>
+                    <p className="mt-1 text-sm text-amber-700">
+                      We are expanding our database. Consult your school career guidance counselor for subject selection advice.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Actions */}
+          <div className="mt-8 flex flex-wrap gap-3 border-t border-gray-100 pt-6 print:hidden">
+            <button
+              onClick={handleDownloadPDF}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Download PDF
+            </button>
+            
+            <button
+              onClick={handlePrint}
+              className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-200 transition-colors"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              Print
+            </button>
+            
+            <a
+              href="/pathways/wizard"
+              className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-200 transition-colors"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Retake Wizard
+            </a>
+          </div>
+        </div>
+        
+        {/* Share Section */}
+        <div className="print:hidden">
+          <ShareResults career={career} pathway={pathway} fitPercentage={fit} />
+        </div>
+        
+        {/* Print footer */}
+        <div className="hidden print:block mt-8 pt-4 border-t border-gray-300 text-xs text-gray-500">
+          This report is generated by ElimuX based on KJSA analysis. Consult your school career guidance counselor for final subject selections. | www.elimux.ke
+        </div>
+      </div>
+    </div>
+  );
+}
+New file: src/app/pathways/results/opengraph-image.tsx
+tsx
+import { ImageResponse } from 'next/og';
+
+export const runtime = 'edge';
+
+export const alt = 'ElimuX Career Pathway';
+export const size = { width: 1200, height: 630 };
+
+export default async function Image({ searchParams }: { searchParams: { career?: string; fit?: string; pathway?: string } }) {
+  const career = searchParams.career || 'Your Career';
+  const fit = searchParams.fit || '0';
+  const pathway = searchParams.pathway || '';
+  
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #0052cc 0%, #003d99 100%)',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontFamily: 'system-ui, sans-serif',
+          padding: '40px',
+        }}
+      >
+        <div style={{ fontSize: 28, opacity: 0.85, marginBottom: 16, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          ElimuX Career Pathway
+        </div>
+        <div style={{ fontSize: 72, fontWeight: 'bold', textAlign: 'center', lineHeight: 1.1, maxWidth: '900px' }}>
+          {career}
+        </div>
+        {pathway && (
+          <div style={{ fontSize: 32, marginTop: 16, opacity: 0.9 }}>
+            {pathway}
+          </div>
+        )}
+        <div style={{ fontSize: 56, marginTop: 24, fontWeight: 600 }}>
+          {fit}% Match
+        </div>
+        <div style={{ fontSize: 22, opacity: 0.7, marginTop: 32 }}>
+          www.elimux.ke/pathways
+        </div>
+      </div>
+    ),
+    { ...size }
+  );
+}
+Also create src/app/pathways/results/twitter-image.tsx with identical content (or import and re-export from opengraph-image). Twitter uses the same dimensions.
+STEP 5: Integrate into Wizard Step 5
+Modify file: src/app/pathways/wizard/page.tsx
+In the Step 5 ("results") render section, add two action buttons below the existing results content:
+"View & Share Full Results" — navigates to the standalone /pathways/results page with all current data as URL query parameters. This is the primary CTA for sharing.
+"Download PDF" — calls generatePathwayPDF directly from the wizard state without navigating, for users who want the file immediately.
+Add this button block inside the Step 5 results container, after the subject combinations section and before the bottom nav:
+tsx
+{/* ADD THIS inside the Step 5 render, after the results content but before the bottom navigation */}
+<div className="mt-8 flex flex-wrap gap-3 border-t border-gray-100 pt-6">
+  <button
+    onClick={() => {
+      const params = new URLSearchParams({
+        career: interpretation?.career || '',
+        pathway: interpretation?.pathway?.name || '',
+        track: interpretation?.track?.name || '',
+        fit: String(
+          kjsaAnalysis?.analysis?.find((a: any) => a.pathway_id === interpretation?.pathway?.id)?.fit_percentage || 0
+        ),
+        confidence: kjsaAnalysis?.analysis?.find((a: any) => a.pathway_id === interpretation?.pathway?.id)?.confidence || 'low',
+      });
+      router.push(`/pathways/results?${params.toString()}`);
+    }}
+    className="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 transition-colors"
+  >
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+    </svg>
+    View & Share Full Results
+  </button>
+  
+  <button
+    onClick={async () => {
+      const { generatePathwayPDF } = await import('@/lib/pathways-pdf');
+      const fit = kjsaAnalysis?.analysis?.find((a: any) => a.pathway_id === interpretation?.pathway?.id)?.fit_percentage || 0;
+      const confidence = kjsaAnalysis?.analysis?.find((a: any) => a.pathway_id === interpretation?.pathway?.id)?.confidence || 'low';
+      const url = generatePathwayPDF({
+        career: interpretation?.career || '',
+        pathway: interpretation?.pathway?.name || '',
+        track: interpretation?.track?.name || '',
+        fitPercentage: fit,
+        confidence,
+        combinations: interpretation?.combinations || [],
+        date: new Date().toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' }),
+      });
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ElimuX-Pathway-${(interpretation?.career || 'Career').replace(/\s+/g, '-')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }}
+    className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-200 transition-colors"
+  >
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+    Download PDF
+  </button>
+</div>
+Important: The router instance must be available in the wizard component. If useRouter from next/navigation is not already imported, add it.
+Also add a print stylesheet to the wizard results step so if the user prints from the wizard directly, it looks clean. Add this to the Step 5 container div:
+tsx
+<div className="... print:bg-white print:shadow-none">
+And add print:hidden to the wizard navigation chrome (step indicators, bottom nav buttons that aren't part of the results).
+STEP 6: Add print-friendly CSS globally
+Modify file: src/app/globals.css (or the main CSS file)
+Add at the bottom:
+css
+@media print {
+  nav, 
+  footer, 
+  .no-print,
+  button:not(.print-allow),
+  a[href]:not(.print-allow) {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .print-break-inside {
+    break-inside: avoid;
+  }
+  
+  .print-break-before {
+    break-before: page;
+  }
+}
+VERIFICATION CHECKLIST
+After Claude applies all steps:
+Build: npm run build — must pass with zero errors.
+Type check: npx tsc --noEmit — must be clean.
+Wizard integration test: Walk through wizard to Step 5. Confirm:
+[ ] "View & Share Full Results" button visible
+[ ] "Download PDF" button visible
+[ ] Clicking "View & Share Full Results" navigates to /pathways/results?career=...&pathway=...&track=...&fit=...&confidence=...
+Standalone Results Page test: Load the results page directly with query params. Confirm:
+[ ] Career name, pathway, track render correctly from URL
+[ ] Match score and confidence badge render correctly from URL
+[ ] Progress bar shows correct percentage
+[ ] Subject combinations load from /api/career/interpreter and render
+[ ] "Download PDF" button generates and downloads a .pdf file
+[ ] "Print" button opens browser print dialog
+[ ] "Retake Wizard" link works
+[ ] Share component shows: Copy Link, WhatsApp, X/Twitter, Facebook buttons
+[ ] "Copy Link" copies the current URL to clipboard
+[ ] No console errors
+OG Image test: Visit /pathways/results?career=Lawyer&fit=88&pathway=Social%20Sciences and check browser dev tools → Elements → <meta property="og:image">. Confirm it points to the dynamic OG image route.
+Print stylesheet test: Press Ctrl+P on the results page. Confirm:
+[ ] Navigation chrome hidden
+[ ] Results content clean and readable
+[ ] Page breaks reasonable
+Mobile test: On a mobile device or responsive mode, confirm:
+[ ] Native Share button appears (if browser supports Web Share API)
+[ ] WhatsApp share link opens correctly
+[ ] Layout is responsive, no horizontal scroll
+Do NOT commit or push until all 7 items are checked.
