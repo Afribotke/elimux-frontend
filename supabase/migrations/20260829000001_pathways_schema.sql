@@ -272,9 +272,11 @@ CREATE INDEX idx_pathways_aggregates_period ON pathways.analytics_aggregates(per
 ALTER TABLE pathways.pathways ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pathways.tracks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pathways.subjects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pathways.kjsa_performance_levels ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pathways.subject_combinations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pathways.schools ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pathways.career_mappings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pathways.pathway_kjsa_requirements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pathways.guidance_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pathways.kjsa_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pathways.kjsa_analysis ENABLE ROW LEVEL SECURITY;
@@ -286,9 +288,11 @@ ALTER TABLE pathways.gov_subscriptions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read pathways" ON pathways.pathways FOR SELECT USING (true);
 CREATE POLICY "Public read tracks" ON pathways.tracks FOR SELECT USING (true);
 CREATE POLICY "Public read subjects" ON pathways.subjects FOR SELECT USING (true);
+CREATE POLICY "Public read kjsa performance levels" ON pathways.kjsa_performance_levels FOR SELECT USING (true);
 CREATE POLICY "Public read combinations" ON pathways.subject_combinations FOR SELECT USING (true);
 CREATE POLICY "Public read schools" ON pathways.schools FOR SELECT USING (true);
 CREATE POLICY "Public read careers" ON pathways.career_mappings FOR SELECT USING (true);
+CREATE POLICY "Public read pathway kjsa requirements" ON pathways.pathway_kjsa_requirements FOR SELECT USING (true);
 
 -- Users can only see their own sessions and KJSA data
 CREATE POLICY "Users own sessions" ON pathways.guidance_sessions FOR ALL USING (auth.uid() = user_id);
