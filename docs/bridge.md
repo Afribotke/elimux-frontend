@@ -1,57 +1,57 @@
-CYCLE 175-B REPORT — Career Pathways Phase 2 WIP archived and removed from main, all gates
-passed, done exactly as specified
+CYCLE 175-C REPORT — all 5 parts resolved, working tree essentially clean
 
-Archived: this cycle's own brief is `docs/archive/bridge-175b.md`.
+Archived: this cycle's own brief is `docs/archive/bridge-175c.md`.
 
-STEP 1 — FILE VERIFICATION
-All 7 target files confirmed present before touching anything: `src/app/api/kjsa/analyze/route.ts`,
-`src/app/api/pathways/interpret/route.ts`, `src/app/api/schools/match/route.ts`,
-`src/app/api/guidance/validate/route.ts`, `src/components/pathways/ShareResults.tsx`,
-`src/lib/pathways-pdf.ts`, `src/app/pathways/results/PathwayResultsClient.tsx`.
-`git diff src/app/pathways/wizard/page.tsx` returned empty - no uncommitted changes, it's still
-the original Phase 1 shell on disk (matches Cycle 175-A's finding) - so the conditional
-wizard-staging in Step 3 and the conditional wizard-revert in Step 5 both correctly didn't apply.
+PART 1 — OG ROUTE: DONE
+Real path was `src/app/api/og/pathway/route.tsx` (nested under `pathway/`, `.tsx` not `.ts`) - the
+brief's Step 1.1 checked a non-existent `src/app/api/og/route.ts`, but Step 1.2's
+`git add src/app/api/og/` targets the whole directory recursively so it wasn't affected. Had to
+stash `docs/bridge.md` itself temporarily to switch branches cleanly (this cycle's own brief was
+sitting uncommitted on `main`, which predates the archive branch) - popped it back after, no data
+lost, confirmed via `git status` before/after. Amended into the existing archive commit
+(`0c07f94`, was `ce5f809`), force-pushed the branch (safe - only I'd pushed it, nobody else based
+work on it). `src/app/api/og/` confirmed gone from `main`.
 
-STEPS 2-4 — ARCHIVE BRANCH
-Created `archive/pathways-second-wave`, staged exactly those 7 files (nothing else - confirmed
-via `git status` before committing), committed (`ce5f809`).
+PART 2 — REMOTE BRANCH DELETION: DONE, on explicit confirmation
+This pushes a deletion to the shared GitHub repo, not just a local ref - asked before running it
+despite the local-delete precedent from Cycle 174, since remote deletion is a more visible, harder
+to reverse action even when the underlying branches are safely merged. Confirmed, then deleted all
+9: `auth-hardening-preview`, `auth-security-preview`, `feat/admin-pricing-portal`,
+`feat/elimux22-ad-billing`, `feat/elimux23-payments`, `feat/skolex-ads`, `feat/skolex-home`,
+`feat/skolex-reference`, `feature/internship-module`. Verified via `git fetch --prune` +
+`git branch -r`. Side finding, not acted on: the fetch surfaced 2 branches that weren't visible
+before, `vercel/install-vercel-web-analytics-q3u5v1` and
+`vercel/install-vercel-web-analytics-y380kk` - auto-created by Vercel's GitHub integration, likely
+explains the "Vercel Web Analytics script failed to load" warning seen in local dev testing back
+in Cycle 169/171. Out of this cycle's scope, flagged not touched.
 
-STEP 5 — RETURN TO MAIN AND DELETE
-`git checkout main` alone already removed all 7 files from the working tree - expected git
-behavior, not a bug: since they were newly tracked (as new-file adds) on the archive branch and
-were never tracked on `main` at all, checkout syncs the working tree to the target branch's
-tracked state, and files that only exist because of the branch you're leaving disappear when you
-leave it. Confirmed via direct `test -f` on all 7 paths, and confirmed the now-empty parent
-directories (`kjsa/analyze`, `pathways/interpret`, `schools/match`, `guidance`,
-`components/pathways`) were cleaned up too - the explicit `Remove-Item` commands in the brief
-were redundant by this point, correctly not needed.
+PART 3 — 2 OF 3 PRE-EXISTING MODIFIED FILES COMMITTED, ALL 3 DECIDED
+Reported all three diffs and stopped, per the brief. Decisions made and executed:
+- `src/app/globals.css` (print stylesheet, 23 lines) - COMMITTED (`2905d6a`).
+- `supabase/migrations/20260829000001_pathways_schema.sql` (4-line RLS sync) - COMMITTED
+  (`bdfb7b9`) - this just makes the file match what Cycle 173 confirmed is already live in
+  production, nothing new applied to the database.
+- `docs/bridge.md` itself - not a real decision point, it's the live protocol file, currently
+  holding this very report.
 
-STEP 6 — LIVE ROUTE VERIFICATION: ALL PASS
-`src/app/pathways/page.tsx`, `layout.tsx`, `results/page.tsx`, `select/page.tsx`, `wizard/page.tsx`,
-and `src/app/api/kjsa/route.ts` all confirmed present and untouched. Gate passed, proceeded.
+PART 4 — 49 ARCHIVE SNAPSHOTS: COMMITTED (`df20355`)
+All 49 uncommitted `docs/archive/bridge-NNN.md` files (Cycles ~049 through 167B) committed in one
+batch - pure documentation, zero code risk, restores git history to match what the bridge protocol
+already assumed existed.
 
-STEP 7 — BUILD & COMMIT
-`npm run build` (2.5GB heap + `NEXT_PRIVATE_SKIP_SOURCEMAPS=1`): exit 0, zero errors. Nothing to
-commit for the removal itself on `main` - since those files were never tracked here, their
-disappearance isn't a "deletion" git needs committed, same as Cycle 174's orphan-file removal.
-Pushed `archive/pathways-second-wave` to origin (new branch on GitHub, PR-creation link offered,
-not opened - no PR asked for).
+PART 5 — THEME-SWEEP STASH: KEPT, NOT TOUCHED, per direct instruction
+Reported the 7-file diff (`package.json`, `package-lock.json`, `src/app/layout.tsx`,
+`DesktopNav.tsx`, `MobileNav.tsx`, a deleted `ThemeToggle.tsx`, a deleted `theme.ts`) and stopped
+for a decision, as instructed. Decision: keep it untouched - `layout.tsx` has changed since this
+stash was made (Cycle 169's favicon fix, at minimum), so popping it now would likely conflict;
+revisit when there's bandwidth to properly audit whether the theme-sweep is still wanted.
 
-STEP 8 — FINAL VERIFICATION
-`git status`: clean of anything this cycle - same 3 pre-existing unrelated modified files as
-every prior report, same pile of uncommitted archive snapshots, plus one item worth flagging (see
-below). `git log --oneline -3`: unchanged from before this cycle (nothing new to commit on
-`main` itself). `git branch -a`: `main`, `feature/skills-toggle`, and the new
-`archive/pathways-second-wave` locally; `archive/pathways-second-wave` now also on
-`remotes/origin/`.
-
-ONE THING NOT COVERED BY THIS CLEANUP, FLAGGED RATHER THAN GUESSED AT
-`src/app/api/og/` (the OG share-image route for pathway results, mentioned in Cycle 173's original
-audit as part of the same second wave) is still sitting untracked on `main` - it wasn't in this
-cycle's target list, so it wasn't touched. If it belongs with the other 7 (same Phase 2/3 body of
-work), it can be added to the archive branch in a follow-up; left alone rather than assumed
-in-scope.
-
-RETRIEVAL, for whenever this is picked back up: exactly as the brief's own retrieval note
-describes - `git checkout archive/pathways-second-wave -- <path>` per file, then wire
-`wizard/page.tsx` to call the four API routes per `docs/archive/bridge-124.md`.
+CURRENT STATE
+`git status` is essentially clean: `docs/bridge.md` itself (this report, about to be committed),
+and the same small residual pile flagged since Cycle 170 that nothing has asked to touch yet - 6
+stray `public/` assets (2 unreferenced images, 2 numeric-named scratch CSVs, 2 rebrand preview
+PNGs) and 2 pathways SQL files (`20260829000002_pathways_rls_fix.sql`,
+`pathways_subject_combinations_seed.sql`) correctly left as manual-paste-into-Supabase material,
+not code to commit the same way. `stash@{0}` remains, on purpose. Local branches: `main` +
+`feature/skills-toggle`. Remote branches: `main`, `archive/pathways-second-wave`,
+`feature/skills-toggle`, plus the 2 newly-noticed Vercel-integration branches.
