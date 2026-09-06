@@ -137,24 +137,23 @@ const HERO_CATEGORIES = [
     ring: 'focus-visible:ring-rose-400',
   },
   {
-    // Cycle 169: this grid is a separate, hardcoded list from
-    // UnifiedNavBar's PILLS (which already had Senior Schools + Career
-    // Pathways since commit fb13ea6) - it was never updated when those two
-    // were added elsewhere, so they were reachable everywhere on the site
-    // except the homepage. Restoring Senior Schools here as a real, live
-    // link - /schools is a shipped, committed feature (see fb13ea6 + a
-    // later fix commit), not a stub.
+    // Cycle 169 made this a real, live link (/schools is a shipped feature).
+    // Cycle 171 shields it again: the live senior_schools registry only has
+    // the 204 C1-tier rows loaded so far (no C2/C3/C4/private data yet, per
+    // Cycle 159's audit), so the route itself now renders a Coming Soon page
+    // until that data is complete - this card just needs to match that.
     label: 'Senior Schools', icon: '🏫', href: '/schools',
     topBorder: 'border-t-teal-500',
     iconBg: 'bg-teal-500',
     glow: 'hover:shadow-[0_10px_40px_-4px_rgba(20,184,166,0.3)]',
     ring: 'focus-visible:ring-teal-400',
+    comingSoon: true,
   },
   {
-    // Career Pathways (/pathways), unlike Senior Schools, has substantial
-    // uncommitted work still in progress (RLS fixes, seed data, the
-    // results page) - genuinely not ready, so this card is disabled with a
-    // "Coming Soon" badge rather than linking out to an unfinished flow.
+    // Career Pathways (/pathways) has substantial uncommitted work still in
+    // progress (RLS fixes, seed data, the results page) - genuinely not
+    // ready, so this card is disabled with a "Coming Soon" badge rather than
+    // linking out to an unfinished flow.
     label: 'Career Pathways', icon: '🧭', href: '/pathways',
     topBorder: 'border-t-cyan-500',
     iconBg: 'bg-cyan-500',
