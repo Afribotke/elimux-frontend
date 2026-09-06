@@ -5,8 +5,8 @@
 // /institution/register
 // ============================================
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, User, Building2, Search } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -17,6 +17,14 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL
 type InstitutionHit = { id: string; name: string; city?: string }
 
 export default function InstitutionRegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <InstitutionRegisterForm />
+    </Suspense>
+  )
+}
+
+function InstitutionRegisterForm() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -24,6 +32,25 @@ export default function InstitutionRegisterPage() {
   const [query, setQuery] = useState('')
   const [hits, setHits] = useState<InstitutionHit[]>([])
   const [selected, setSelected] = useState<InstitutionHit | null>(null)
+  const searchParams = useSearchParams()
+  const preselectedId = searchParams.get('institution_id')
+
+  useEffect(() => {
+    if (preselectedId && !selected) {
+      fetch(`${API_URL}/api/institutions/${preselectedId}`)
+        .then((res) => {
+          if (!res.ok) throw new Error('Institution not found')
+          return res.json()
+        })
+        .then((json) => {
+          const data = json.data || json
+          setSelected({ id: data.id, name: data.name, city: data.city })
+        })
+        .catch((err) => {
+          console.error('Failed to load preselected institution:', err)
+        })
+    }
+  }, [preselectedId, selected])
   const [searching, setSearching] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
