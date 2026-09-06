@@ -164,6 +164,15 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    title: "CRM",
+    icon: Megaphone,
+    items: [
+      { label: "All Contacts", href: "/admin/crm", icon: Megaphone },
+      { label: "CRM Dashboard", href: "/admin/crm/dashboard", icon: BarChart3 },
+      { label: "Templates", href: "/admin/crm/templates", icon: FileText },
+    ],
+  },
+  {
     title: "Content",
     icon: FileText,
     items: [
@@ -215,9 +224,9 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "Employers", href: "/admin/employers", icon: Briefcase },
       { label: "Discover Names", href: "/admin/employers/discover-names", icon: Search },
       { label: "Uploaded Names", href: "/admin/employers/names", icon: List },
-      { label: "Outreach CRM", href: "/admin/employers/outreach", icon: Megaphone },
-      { label: "Outreach Dashboard", href: "/admin/employers/outreach/dashboard", icon: BarChart3 },
-      { label: "Outreach Team", href: "/admin/employers/outreach/team", icon: Users },
+      { label: "Employer Outreach (Legacy)", href: "/admin/employers/outreach", icon: Megaphone },
+      { label: "Legacy Outreach Dashboard", href: "/admin/employers/outreach/dashboard", icon: BarChart3 },
+      { label: "Legacy Outreach Team", href: "/admin/employers/outreach/team", icon: Users },
       { label: "Upload Employers", href: "/admin/employers/upload", icon: Upload },
       { label: "Potential Employers", href: "/admin/potential-employers", icon: Globe },
     ],
