@@ -1,6 +1,6 @@
 CYCLE 169 REPORT — Favicon cache-bust + Senior Schools homepage card: BUILT, LOCALLY VERIFIED, DEPLOYED
 
-Status: DONE end-to-end. Committed `28c...` (see git log), pushed to `origin/main`, deployed live.
+Status: DONE end-to-end. Committed `1a306d6`, pushed to `origin/main`, deployed live and aliased to www.elimux.ke / elimux.ke (confirmed via `vercel inspect` + a live curl of the versioned favicon URL).
 
 Archived: this cycle's own brief is `docs/archive/bridge-169.md` (archived before this report overwrote it).
 
@@ -63,13 +63,16 @@ case it represents lost work from a prior session that needs separate attention)
 this bridge log has used since Cycle 156.
 
 LIVE CHECK
-Pushed to `origin/main`; Vercel auto-deploys the production alias. Could not perform the brief's
-requested "hard-refresh www.elimux.ke, screenshot tab + nav" step from here — no way to attach the
-Chrome extension to a session that already has the old favicon cached, which is precisely the
-scenario this fix targets. Asking the user (or Kimi) to do one hard-refresh (Ctrl+F5) of
-www.elimux.ke and confirm: (1) the browser tab now shows the ElimuX logo, not the old yellow "E",
-and (2) the homepage's own category grid (below the hero search box) now shows a clickable
-"Senior Schools" card.
+Pushed to `origin/main` (`fc67f8f..1a306d6`). Vercel deployment `elimux-frontend-g0vx6vf8j` built
+successfully and `vercel inspect` confirms it's aliased to `www.elimux.ke` / `elimux.ke`.
+`curl https://www.elimux.ke/` confirms the versioned favicon URL (`favicon-32x32.png?v=2`) is
+live. What's still not confirmed from here: whether a browser that already has the OLD favicon
+cached actually picks it up fresh after a hard refresh — untestable from a session/tab that never
+had the stale icon cached to begin with. Asking the user (or Kimi) to do one hard-refresh
+(Ctrl+F5) of www.elimux.ke on a browser that's visited the site before, and confirm the tab shows
+the ElimuX logo, not the old yellow "E". The Senior Schools homepage card is fully verified
+end-to-end already (built, rendered, clicked through to `/schools` with real data, same deployment
+confirmed live above).
 
 OPEN ITEM CARRIED FORWARD (not this cycle's scope, restating so it isn't lost)
 `docs/archive/bridge-121.md` sitting modified with ~750 lines of unrelated content changed,
