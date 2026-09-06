@@ -1,95 +1,168 @@
-// src/app/institution/dashboard/alerts/page.tsx
-// Notifies an institution admin when their content starts trending (Cycle 028)
-
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Bell, Flame, Eye, CheckCircle } from 'lucide-react';
+import { Bell, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
-interface TrendingAlert {
+interface Alert {
   id: string;
-  content_type: string;
-  content_id: string;
-  alert_type: string;
+  type: string;
+  title: string;
   message: string;
-  clicks_at_alert: number;
-  sent_at: string;
+  metadata: Record<string, unknown>;
   read_at: string | null;
+  created_at: string;
 }
 
 export default function InstitutionAlertsPage() {
-  const [alerts, setAlerts] = useState<TrendingAlert[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch('/api/institution/alerts')
-      .then((r) => r.json())
-      .then((res) => { if (res.success) setAlerts(res.data || []); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const fetchAlerts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch('/api/institution/alerts');
+      const json = await res.json();
 
-  const markRead = async (alertId: string) => {
-    await fetch(`/api/institution/alerts/${alertId}/read`, { method: 'POST' });
-    setAlerts((prev) => prev.map((a) => (a.id === alertId ? { ...a, read_at: new Date().toISOString() } : a)));
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Failed to load alerts');
+      }
+
+      setAlerts(json.data || []);
+      setUnreadCount(json.unreadCount || 0);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      setError(message);
+      console.error('Alerts fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (loading) return <div className="p-8">Loading alerts...</div>;
+  const markAsRead = async (id: string) => {
+    try {
+      const res = await fetch(`/api/institution/alerts/${id}/read`, { method: 'POST' });
+      if (!res.ok) {
+        throw new Error('Failed to mark as read');
+      }
+      // Optimistic update
+      setAlerts((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, read_at: new Date().toISOString() } : a))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('Mark read error:', err);
+    }
+  };
 
-  const unreadCount = alerts.filter((a) => !a.read_at).length;
+  useEffect(() => {
+    fetchAlerts();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-64 flex-col items-center justify-center gap-3 text-center">
+        <AlertCircle className="h-10 w-10 text-red-500" />
+        <div>
+          <p className="font-medium text-gray-900">Could not load alerts</p>
+          <p className="text-sm text-gray-500">{error}</p>
+        </div>
+        <button
+          onClick={fetchAlerts}
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-2">
-        <Bell className="text-orange-500" size={24} />
-        <h1 className="text-2xl font-bold text-gray-900">Trending Alerts</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Alerts</h1>
+          <p className="text-sm text-gray-500">
+            {unreadCount > 0
+              ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`
+              : 'All caught up'}
+          </p>
+        </div>
         {unreadCount > 0 && (
-          <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
-            {unreadCount} new
-          </span>
+          <button
+            onClick={() => {
+              // Mark all as read (fire and forget, refresh after)
+              Promise.all(
+                alerts.filter((a) => !a.read_at).map((a) => markAsRead(a.id))
+              ).then(() => fetchAlerts());
+            }}
+            className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            <Check className="h-4 w-4" />
+            Mark all as read
+          </button>
         )}
       </div>
 
       {alerts.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          <Flame size={48} className="mx-auto mb-4 text-gray-300" />
-          <p>No trending alerts yet. When your content starts trending, you will see alerts here.</p>
+        <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 text-center">
+          <Bell className="h-10 w-10 text-gray-300" />
+          <div>
+            <p className="font-medium text-gray-900">No alerts yet</p>
+            <p className="text-sm text-gray-500">
+              Notifications appear here when students apply to your programs.
+            </p>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">
           {alerts.map((alert) => (
             <div
               key={alert.id}
-              className={`p-4 rounded-xl border transition-all ${
-                alert.read_at ? 'bg-gray-50 border-gray-200' : 'bg-white border-orange-200 shadow-sm'
+              className={`flex items-start gap-4 rounded-lg border p-4 transition-colors ${
+                alert.read_at
+                  ? 'border-gray-200 bg-white'
+                  : 'border-primary/20 bg-primary/5'
               }`}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Flame size={16} className={alert.read_at ? 'text-gray-400' : 'text-orange-500'} />
-                    <span className={`text-sm font-medium capitalize ${alert.read_at ? 'text-gray-500' : 'text-gray-900'}`}>
-                      {alert.alert_type}
-                    </span>
-                    <span className="text-xs text-gray-400">{alert.content_type}</span>
+              <div className="mt-0.5 shrink-0">
+                {alert.type === 'new_application' ? (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                    <Bell className="h-5 w-5 text-blue-600" />
                   </div>
-                  <p className="text-sm text-gray-700">{alert.message}</p>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-                    <span className="flex items-center gap-1"><Eye size={12} /> {alert.clicks_at_alert} clicks</span>
-                    <span>{new Date(alert.sent_at).toLocaleDateString()}</span>
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                    <Bell className="h-5 w-5 text-gray-600" />
                   </div>
-                </div>
-                {!alert.read_at && (
-                  <button
-                    type="button"
-                    onClick={() => markRead(alert.id)}
-                    className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
-                    title="Mark as read"
-                  >
-                    <CheckCircle size={18} />
-                  </button>
                 )}
               </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900">{alert.title}</p>
+                <p className="mt-1 text-sm text-gray-600">{alert.message}</p>
+                <p className="mt-2 text-xs text-gray-400">
+                  {formatDistanceToNow(new Date(alert.created_at), { addSuffix: true })}
+                </p>
+              </div>
+              {!alert.read_at && (
+                <button
+                  onClick={() => markAsRead(alert.id)}
+                  className="shrink-0 rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                  title="Mark as read"
+                >
+                  <Check className="h-5 w-5" />
+                </button>
+              )}
             </div>
           ))}
         </div>
