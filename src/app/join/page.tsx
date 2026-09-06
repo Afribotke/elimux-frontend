@@ -145,16 +145,13 @@ export default function JoinPage() {
                       )}
                     </div>
                     <a
-                      href="/institution/register"
+                      href={`/institution/register?institution_id=${result.id}`}
                       className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium shrink-0 transition-colors"
                     >
                       Claim Profile
                     </a>
                   </div>
                 ))}
-                <p className="text-gray-500 text-sm text-center pt-2">
-                  On the next page, search for &quot;{query}&quot; again to select it and finish claiming.
-                </p>
               </div>
             ) : (
               <div className="text-center py-12 bg-gray-900/50 rounded-xl border border-gray-800">
