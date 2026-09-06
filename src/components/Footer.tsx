@@ -26,8 +26,8 @@ export default function Footer() {
 
         <div>
           <p className="text-muted text-sm mb-2">&copy; 2026 ElimuX. AI-powered discovery for universities, TVET, scholarships, internships, attachments, and bursaries.</p>
-          <Link href="/institution-onboarding" className="text-sm text-primary-400 hover:text-primary-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 rounded">
-            Are you an institution? List your programs on ElimuX
+          <Link href="/join" className="text-sm text-primary-400 hover:text-primary-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 rounded">
+            Are you an institution, school, or employer? Join ElimuX
           </Link>
         </div>
 
