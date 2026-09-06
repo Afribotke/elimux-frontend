@@ -11,7 +11,7 @@ import HowItWorks from './HowItWorks';
 import { Footer } from '@/components/layout/Footer';
 import AISearchOverlay from '@/components/search/AISearchOverlay';
 import JsonLd from '@/components/seo/JsonLd';
-import { Target, GraduationCap as GradIcon, Award } from 'lucide-react';
+import { Target, GraduationCap as GradIcon, Award, Clock } from 'lucide-react';
 import { ShareButton } from '@/components/share';
 import { getDefaultShareData } from '@/lib/share-utils';
 import { DtbHomepageBanner } from '@/components/financing/dtb/DtbHomepageBanner';
@@ -136,6 +136,32 @@ const HERO_CATEGORIES = [
     glow: 'hover:shadow-[0_10px_40px_-4px_rgba(244,63,94,0.3)]',
     ring: 'focus-visible:ring-rose-400',
   },
+  {
+    // Cycle 169: this grid is a separate, hardcoded list from
+    // UnifiedNavBar's PILLS (which already had Senior Schools + Career
+    // Pathways since commit fb13ea6) - it was never updated when those two
+    // were added elsewhere, so they were reachable everywhere on the site
+    // except the homepage. Restoring Senior Schools here as a real, live
+    // link - /schools is a shipped, committed feature (see fb13ea6 + a
+    // later fix commit), not a stub.
+    label: 'Senior Schools', icon: '🏫', href: '/schools',
+    topBorder: 'border-t-teal-500',
+    iconBg: 'bg-teal-500',
+    glow: 'hover:shadow-[0_10px_40px_-4px_rgba(20,184,166,0.3)]',
+    ring: 'focus-visible:ring-teal-400',
+  },
+  {
+    // Career Pathways (/pathways), unlike Senior Schools, has substantial
+    // uncommitted work still in progress (RLS fixes, seed data, the
+    // results page) - genuinely not ready, so this card is disabled with a
+    // "Coming Soon" badge rather than linking out to an unfinished flow.
+    label: 'Career Pathways', icon: '🧭', href: '/pathways',
+    topBorder: 'border-t-cyan-500',
+    iconBg: 'bg-cyan-500',
+    glow: 'hover:shadow-[0_10px_40px_-4px_rgba(6,182,212,0.3)]',
+    ring: 'focus-visible:ring-cyan-400',
+    comingSoon: true,
+  },
 ];
 
 const HERO_STATS = [
@@ -206,21 +232,40 @@ export default function NewHomePage() {
           {/* 6 category cards — same destinations as UnifiedNavBar's pills.
               max-w-[560px] targets ~160-180px per card on desktop at
               3 columns + gap-4, per the resize spec. */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-5 max-w-[560px] mx-auto">
-            {HERO_CATEGORIES.map((cat) => (
-              <a
-                key={cat.href}
-                href={cat.href}
-                className={`flex flex-col items-center text-center bg-slate-800 border border-slate-700 hover:border-slate-500 border-t-4 ${cat.topBorder} rounded-2xl p-6 min-h-[160px] justify-center transition-all duration-300 hover:-translate-y-2 hover:bg-slate-700 ${cat.glow} focus-visible:outline-none focus-visible:ring-2 ${cat.ring} focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900`}
-              >
-                <div className={`w-14 h-14 rounded-full ${cat.iconBg} text-white flex items-center justify-center mx-auto mb-3`}>
-                  <span className="text-2xl">{cat.icon}</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 max-w-[760px] mx-auto">
+            {HERO_CATEGORIES.map((cat) =>
+              cat.comingSoon ? (
+                <div
+                  key={cat.href}
+                  aria-disabled="true"
+                  className={`relative flex flex-col items-center text-center bg-slate-800/50 border border-slate-700/50 border-t-4 ${cat.topBorder} rounded-2xl p-6 min-h-[160px] justify-center cursor-not-allowed opacity-60`}
+                >
+                  <span className="absolute -top-2 -right-2 flex items-center gap-1 bg-amber-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg border border-amber-400">
+                    <Clock className="w-3 h-3" />
+                    SOON
+                  </span>
+                  <div className={`w-14 h-14 rounded-full ${cat.iconBg} text-white flex items-center justify-center mx-auto mb-3`}>
+                    <span className="text-2xl">{cat.icon}</span>
+                  </div>
+                  <span className="text-gray-400 font-semibold text-base">
+                    {cat.label}
+                  </span>
                 </div>
-                <span className="text-white font-semibold text-base">
-                  {cat.label}
-                </span>
-              </a>
-            ))}
+              ) : (
+                <a
+                  key={cat.href}
+                  href={cat.href}
+                  className={`flex flex-col items-center text-center bg-slate-800 border border-slate-700 hover:border-slate-500 border-t-4 ${cat.topBorder} rounded-2xl p-6 min-h-[160px] justify-center transition-all duration-300 hover:-translate-y-2 hover:bg-slate-700 ${cat.glow} focus-visible:outline-none focus-visible:ring-2 ${cat.ring} focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900`}
+                >
+                  <div className={`w-14 h-14 rounded-full ${cat.iconBg} text-white flex items-center justify-center mx-auto mb-3`}>
+                    <span className="text-2xl">{cat.icon}</span>
+                  </div>
+                  <span className="text-white font-semibold text-base">
+                    {cat.label}
+                  </span>
+                </a>
+              )
+            )}
           </div>
         </div>
       </div>

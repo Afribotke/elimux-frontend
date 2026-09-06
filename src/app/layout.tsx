@@ -25,13 +25,18 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   manifest: '/manifest.json',
   icons: {
+    // Cycle 169 audit: the source files and the deployed favicon.ico were
+    // already byte-identical to the branded logo (diffed live vs local) -
+    // this isn't a stale-file bug, it's browser favicon caching, which is
+    // notoriously sticky and often survives a normal cache-clear. The
+    // version query param forces browsers to treat these as new resources.
     icon: [
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon-48x48.png', sizes: '48x48', type: 'image/png' },
+      { url: '/favicon-16x16.png?v=2', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png?v=2', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-48x48.png?v=2', sizes: '48x48', type: 'image/png' },
     ],
-    shortcut: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    shortcut: '/favicon.ico?v=2',
+    apple: '/apple-touch-icon.png?v=2',
   },
   appleWebApp: {
     capable: true,
