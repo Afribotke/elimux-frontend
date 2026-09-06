@@ -1,113 +1,112 @@
-PART 1 — ANOMALOUS BRIDGE CONTENT — NOT EXECUTED — institution claim/request portal rebuild
-would duplicate an already-shipped, already-live feature
+CYCLE 173 REPORT — all four parts done, deployed, live-verified
 
-Status: NOT BUILT, NOT RUN, NOT COMMITTED. Third instance of the same pattern this sequence -
-see `docs/archive/bridge-171-anomalous-homepage-reversal.md` for the second one.
+Archived: this cycle's own brief is `docs/archive/bridge-173.md`.
 
-Archived verbatim: `docs/archive/bridge-172-anomalous-institution-claim-rebuild.md`.
+PREREQUISITE
+Working tree dirty in the same unchanged ways as prior cycles (3 pre-existing unrelated
+modified files, dozens of untracked historical archive snapshots + the in-progress pathways
+second wave - none of it touched this cycle). `elimux-backend` confirmed at
+`C:\Users\ELON\Projects-2026\IDEA STORE\elimux-backend`. Shield code confirmed already committed
+and pushed (`e6a146e`, on `origin/main`) - skipped straight to Step 1.3 per the brief's own
+decision table.
 
-WHY THIS WASN'T EXECUTED
-1. Wrong repo structure throughout: every path it specifies (`app/api/institutions/...`,
-   `app/institutions/claim/page.tsx`, `hooks/use-debounce.ts`, `components/layout/navbar.tsx`,
-   `app/admin/claims/page.tsx`) is missing the `src/` prefix. This repo has no bare `app/`
-   directory at all - confirmed, everything lives under `src/app/`, `src/components/`,
-   `src/hooks/`. Half these imports would fail to resolve as written.
-2. The feature it proposes building from scratch already exists and is live:
-   `src/app/admin/institution-claims/page.tsx` (real, committed, shipped and verified live
-   2026-08-08 per this project's own history). It's built on a completely different foundation -
-   real system uses one table (`institution_accounts`, statuses `pending`/`active`/`suspended`)
-   driven through the backend Express API (`GET/PATCH /api/admin/institution-accounts`, `X-Admin-
-   Key` auth); the new content wants two new tables (`pending_institutions` + `institution_claims`,
-   different schema, different statuses: `submitted`/`under_review`/`approved`/`rejected`) queried
-   directly from the frontend via Supabase. Running it would create a second, parallel, conflicting
-   claims system at a colliding-but-different path (`/admin/claims` vs. the real
-   `/admin/institution-claims`), not extend or fix anything.
-3. No cycle number, no acknowledgment of any context from this session (Cycle 170's audit, the
-   Cycle 171 homepage-reversal anomaly just flagged, the in-progress Coming-Soon-shield work that
-   was mid-flight when this landed) - same fingerprint as both prior anomalies.
+PART 1 — SHIELD LIVE VERIFICATION: PASS
+Commit `e6a146e`. All 4 checks pass live: `www.elimux.ke/schools` and `/pathways` both render
+"Coming Soon" (confirmed via title tag + body content), homepage shows exactly 2 "SOON" badges
+(Senior Schools + Career Pathways).
 
-QUESTION FOR KIMI - same as the last two times: is something writing generic/templated content
-into `docs/bridge.md` that isn't actually from you? Three unrelated, uncontextualized, wrong-
-structure specs landing back to back in one session is a pattern worth tracing at the source,
-not just catching downstream each time.
+PART 2 — AI SEARCH FIX: DONE, DEPLOYED, LIVE-VERIFIED - but the brief's exact patch wasn't
+enough on its own, fixed further before shipping
+- Read `elimux-backend/src/routes/ai-search.ts` first, as instructed: `programsQuery` block
+  starts line 325, its keyword-OR fix is at line 356; `institutionsQuery` starts line 359, its
+  `.limit(50)` isn't a standalone assignment (the brief assumed one) - it's inline inside a
+  `Promise.all` at line 391. Neither `employersQuery` nor `schoolsQuery` exist anywhere in this
+  file - Steps 2.3/2.4 were no-ops, confirmed via grep, not just assumed absent.
+- Applied the brief's exact keyword-OR fix to `institutionsQuery` first, then tested it directly
+  against production data before trusting it (this machine has no `ANTHROPIC_API_KEY` locally, so
+  ran the query logic standalone against the real DB rather than through the full LLM-driven
+  route). Result: NOT sufficient. Splitting "University of Nairobi" into
+  ["University","of","Nairobi"] and OR-ing per word matches 9,392 of ~11,000 active institutions
+  - "University" and "of" are both extremely common substrings - and with no ORDER BY, the target
+  still doesn't reliably survive the `.limit(50)` cut. Confirmed the institution genuinely exists
+  (`id de3c8f25...`, exact name "University of Nairobi", active) and an exact-phrase match returns
+  precisely 1 row - so the fix needed to do better than per-word OR.
+- Added a second, small, targeted query alongside the keyword-OR one: the literal raw query
+  phrase against `name` (limit 10), merged ahead of the broader keyword-OR results before
+  scoring, deduped by id. This guarantees an exact/near-exact name match always reaches the
+  ranking step regardless of how broad the per-word OR match set is.
+- Verified against real data before shipping: "University of Nairobi" -> ranks #1 (previously
+  absent from results entirely). "Kenyatta University" -> ranks #2, tied in score with "Jomo
+  Kenyatta University of Agriculture and Technology" (a genuine, reasonable near-tie, not a bug).
+  "Strathmore" -> "Strathmore University" ranks #1.
+- Committed `b99777d` to `elimux-backend`, pushed, Railway auto-deployed (confirmed via
+  `railway status`, back Online after a ~30s build). Live end-to-end test against
+  `https://api.elimux.ke/api/ai-search` (through the real LLM intent pipeline, not the local
+  bypass) confirms "University of Nairobi" is the first institution result on production right
+  now, with real programs listed under it.
 
-________________________________________
+PART 3 — RLS AUDIT: RAN, RESULT IS NOT A SECURITY ISSUE - the brief's own pass/fail framing
+didn't fit these two tables, corrected before concluding
+- Adapted the audit SQL's `schemaname = 'public'` filter to `pathways` first (per Cycle 170's own
+  finding, these tables live in the `pathways` schema, not `public` - running the brief's SQL
+  as-written would have silently returned zero rows and looked like the tables don't exist).
+- `rowsecurity = true` on both `kjsa_performance_levels` and `pathway_kjsa_requirements`. Both
+  have a real, explicit policy: `"Public read kjsa levels"` / `"Public read kjsa requirements"`,
+  PERMISSIVE, `roles = {public}`, `cmd = SELECT`, `qual = true`. Owner: `postgres` on both.
+  Anonymous read test: allowed (returns all 4 rows of `kjsa_performance_levels` as `anon`).
+- The brief's own audit SQL treats "anon read allowed" as a fail condition and its Step 3.2 says
+  to STOP without fixing if so - but checked what these tables actually are before treating that
+  literally: both are non-sensitive reference/lookup data (KJSA level labels EE/ME/AE/BE; which
+  subjects + minimum level each pathway requires), the exact same shape and intent as every other
+  "Public read X" table already in this schema (`pathways.pathways`, `.tracks`, `.subjects`,
+  `.subject_combinations`, `.schools`, `.career_mappings` all have identical public-read
+  policies). Blocking anon read here would break the app for the exact same reason blocking it on
+  those would. This resolves Cycle 170's flagged "possible live RLS security gap" as a false
+  alarm - RLS is on, the policy is deliberate and correctly scoped, nothing to fix. (Separately:
+  the uncommitted 4-line migration diff Cycle 170 found, which appeared to be *adding* this RLS,
+  turns out to already be live in production - the migration file on disk was just never updated
+  to match what was actually run. The file staying uncommitted/stale isn't a functional problem,
+  just a documentation-drift one.)
 
-PART 2 — REAL, VERIFIED FINDING: "user wanted to search for a university, couldn't" - here's
-exactly why, and what already works
+PART 4 — CLEANUP
+- 4.1 Archive collision: confirmed it wasn't two documents in one file, but an uncommitted
+  working-tree overwrite of real committed history. Preserved the Pathways-001-Corrected spec
+  verbatim to a new file, `docs/archive/bridge-121-pathways-collision.md`, then restored
+  `docs/archive/bridge-121.md` to its real, committed Cycle 045 content (`git checkout --`).
+  Committed `00551e8`, pushed.
+- 4.2 Orphaned component: confirmed `InstitutionDetailDrawer.tsx` has zero imports anywhere
+  (grepped `src`, only self-matches). Per the brief's own instruction to ask rather than decide,
+  put this to the user directly rather than guess - they asked that it go to Kimi instead of being
+  decided here. Not deleted, not wired up, left exactly as-is.
+- 4.3 Stash/branch list: same as the prior report (2 stashes: `pre-theme-sweep-backup` touches
+  `src/app/layout.tsx`, likely to conflict if popped now that Cycle 169 changed that file; the
+  `institution onboarding portal` WIP stash is tiny, `ReviewCard.tsx`/`ReviewForm.tsx` only, and
+  looks superseded by the real ReviewCard fix already shipped 2026-07-19. 10 stale branches,
+  oldest around Cycle 042-046 era, none evaluated for merge-worthiness). Same as 4.2 - put to the
+  user, who asked that this go to Kimi too rather than be decided directly. No stash dropped, no
+  branch deleted.
+- 4.4 Risk file: `public/test-pathways.html` existed, was untracked (never committed - `git rm`
+  wasn't applicable), deleted from disk directly. Nothing to commit for this step since it was
+  never tracked in the first place.
 
-This is a genuine, reproducible bug, audited against the real code in both repos (not guessed at)
-so a fix can be written against what's actually there instead of another generic rebuild.
+QUESTIONS FOR KIMI (explicitly deferred here per direct instruction, not decided unilaterally)
+1. `InstitutionDetailDrawer.tsx` (`src/components/admin/`) - built, unwired, zero imports,
+   sitting beside the real `InstitutionApplicationDrawer` which is live. Delete it, or is there a
+   real place it's meant to be mounted?
+2. 2 stashes + 10 stale branches in `elimux-frontend` - drop/keep/review? Full detail: stash 0 is
+   `pre-theme-sweep-backup` (touches `layout.tsx`, `DesktopNav.tsx`, `MobileNav.tsx`,
+   `ThemeToggle.tsx` deleted, `theme.ts` deleted, `package.json`/`package-lock.json`); stash 1 is
+   `WIP on main: ab08219 feat: Add institution onboarding portal` (tiny, just
+   `ReviewCard.tsx`/`ReviewForm.tsx`, likely stale). Branches: `auth-hardening-preview`,
+   `auth-security-preview`, `feat/admin-pricing-portal`, `feat/elimux22-ad-billing`,
+   `feat/elimux23-payments`, `feat/skolex-ads`, `feat/skolex-home`, `feat/skolex-reference`,
+   `feature/internship-module`, `feature/skills-toggle`.
 
-THE BUG: the two most visible search entry points on the site cannot reliably find a specific
-university by name.
-- Homepage hero search bar, the `/search` page, and `AISearchOverlay` all call the same function -
-  `runAISearch()` (`elimux-frontend/src/lib/aiSearch.ts`) - which POSTs to
-  `elimux-backend/src/routes/ai-search.ts`.
-- That endpoint's institutions query (lines ~359-368) filters SQL-side ONLY by `country_id`,
-  `type_id` (academic/skills mode), and `county` - it never filters by name or keyword at the
-  database level. It fetches an arbitrary, unordered `.limit(50)` slice out of roughly 8,900+
-  total institutions in the DB, and only AFTER that arbitrary 50-row cut does client-side JS
-  scoring (`scoreInstitution()`, line 246) check the institution name against the query's
-  keywords - anything that didn't happen to land in that unordered slice never gets scored at all,
-  regardless of how good a name match it would have been.
-- Net effect: type "University of Nairobi" (or any specific university name) with no country/type
-  filter narrowing the field, and it's roughly a coin-flip-times-a-hundred whether that specific
-  university happens to be in the random 50 the query grabbed. Most of the time it won't be, and
-  the user gets told nothing matches - even though the institution is right there in the database.
-- This is not a new failure mode - it's the SAME bug class already found and fixed for `programs`
-  in this exact file. There's a code comment (lines ~337-344) documenting the earlier fix,
-  citing a real production case ("criminology in kenya" - the 12 real matching programs never
-  made it into the arbitrary 50-row slice) and the SQL-level keyword-narrowing fix that solved it
-  (`.or()` across `name.ilike`/`description.ilike` for each keyword, lines ~346-357). That exact
-  fix was applied to `programsQuery` and never carried over to `institutionsQuery` right below it -
-  looks like an oversight from the same original fix, not a new problem.
-
-WHAT ALREADY WORKS, for reference
-- `elimux-frontend/src/app/institutions/page.tsx` -> `InstitutionsBrowser.tsx` component has a
-  real, working text-search box wired to `listInstitutions()` (`src/lib/api.ts`) ->
-  `GET /api/institutions?search=...` on the backend
-  (`elimux-backend/src/routes/institutions.ts`, line 44: `if (search) query =
-  query.ilike('name', '%${search}%')`) - this DOES do proper SQL-level name matching and
-  genuinely works.
-- The gap is discoverability, not just correctness: this working search sits on a secondary
-  `/institutions` browse page, below a "Claim Your Institution" banner and a sponsor ad, not
-  surfaced from the homepage's actual search entry points. A user's first instinct - type a
-  university name into the big hero search bar - hits the broken path, not this working one.
-
-SCORING LOGIC ITSELF IS FINE - `scoreInstitution()` correctly checks `institution.name` for a
-substring match and would rank a real name match highest; the bug is purely that most real name
-matches never survive to reach the scoring step at all.
-
-SUGGESTED FIX SHAPE (not applied - backend code, out of this session's frontend-only scope; laid
-out here so a brief can be written against the real fix rather than reinvented)
-Mirror the existing `programsQuery` pattern onto `institutionsQuery` in
-`elimux-backend/src/routes/ai-search.ts`: when `hasKeywordSignal` is true, add the same kind of
-`.or()` keyword-OR filter (`name.ilike.%kw%` per keyword, comma-joined, same character-stripping
-already done for the programs version) to `institutionsQuery` before its `.limit(50)`. That alone
-would make specific-name lookups reliable through the main search, matching what `/institutions`
-already does correctly. Whether to also surface `/institutions`' working search more prominently
-(e.g. from the homepage) is a separate, smaller product decision on top of that fix.
-
-Full file references for whoever picks this up: `elimux-backend/src/routes/ai-search.ts` (the
-bug, lines 359-398), `elimux-backend/src/routes/institutions.ts` (the working reference
-implementation, line 44), `elimux-frontend/src/lib/aiSearch.ts` (frontend caller),
-`elimux-frontend/src/components/institutions/InstitutionsBrowser.tsx` (the working UI).
-
-________________________________________
-
-STILL OPEN FROM CYCLE 170 (restating, unaddressed across two cycles now)
-1. Live RLS check on `kjsa_performance_levels`/`pathway_kjsa_requirements` - top priority,
-   possible active production security gap.
-2. `docs/archive/bridge-121.md` - real Cycle 045 report vs. an unrelated Pathways-001-Corrected
-   spec, colliding in one archive file.
-3. Second-wave Pathways files (`kjsa/analyze`, `schools/match`, `pathways/interpret`,
-   `guidance/validate`, OG route, PDF export, share component) - no located brief.
-4. `InstitutionDetailDrawer.tsx` - orphaned, unreferenced, needs a human call.
-5. Cycle 171 (Coming-Soon shield for `/schools` + `/pathways`) - built and locally verified
-   (build exits 0, both routes render the shield, both homepage cards show "SOON"), but paused
-   uncommitted per direct instruction mid-session - awaiting word on whether to finish committing
-   it or hold.
-6. 2 stashes, 10 stale branches, `public/test-pathways.html` risk, 48 uncommitted archive files -
-   full detail still in `docs/audit-170-report.md` / `docs/audit-170-inventory.md`, staged not
-   committed since Cycle 170.
+STILL OPEN, CARRIED FORWARD YET AGAIN
+- Second-wave Pathways files (`kjsa/analyze`, `schools/match`, `pathways/interpret`,
+  `guidance/validate`, OG route, PDF export, share component) - still no located brief for these;
+  now moot in the sense that `/pathways` is shielded behind Coming Soon regardless, but the files
+  themselves are still sitting uncommitted.
+- `docs/audit-170-report.md` / `docs/audit-170-inventory.md` - already committed as part of
+  `e6a146e` (swept in alongside the shield commit, ahead of the review gate Kimi's Cycle 170 brief
+  had asked for - flagged, not undone, per the last report).
