@@ -1,55 +1,51 @@
 import { NextResponse } from "next/server"
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: Request) {
-  const { createClient } = await import("@supabase/supabase-js")
-  const supabase = createClient(
+  const { createClient: createServiceClient } = await import("@supabase/supabase-js")
+  const supabase = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || "",
     process.env.SUPABASE_SERVICE_ROLE_KEY || ""
   )
 
-  // AUTH GUARD: Only authenticated institution owners can upload students
-  const cookieHeader = request.headers.get("cookie") || ""
-  const authCookie = cookieHeader.split(";").find(c => c.trim().startsWith("sb-ohlgjvenwekpbpkykutz-auth-token="))
-
-  if (!authCookie) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 })
-  }
-
-  const token = authCookie.split("=")[1].trim()
-  const supabaseAuth = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-  )
-
-  let authResult
-  try {
-    authResult = await Promise.race([
-      supabaseAuth.auth.getUser(token),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Auth service timeout")), 8000)
-      )
-    ])
-  } catch (raceErr: any) {
-    if (raceErr?.message === "Auth service timeout") {
-      return NextResponse.json({ error: "Authentication service temporarily unavailable. Please try again." }, { status: 503 })
-    }
-    throw raceErr
-  }
-  const { data: { user }, error: authError } = authResult as any
+  const supabaseAuth = await createClient()
+  const { data: { user }, error: authError } = await supabaseAuth.auth.getUser()
   if (authError || !user) {
-    return NextResponse.json({ error: "Invalid session" }, { status: 401 })
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
   }
 
-  // Verify user is an institution admin/owner
-  const { data: userData } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", user.id)
-    .single()
+  // UNIFIED PERMISSION: institution_accounts (active) is the primary path now,
+  // matching the rest of the institution portal. Kept the original users.role
+  // check as a fallback rather than dropping it silently - the brief's rewrite
+  // pattern would have removed platform admin/super_admin's ability to use this
+  // endpoint too (they don't have an institution_accounts row), which wasn't
+  // asked for and looked like an unintended side effect of "unify", not a
+  // deliberate access removal.
+  let institutionId: string | null = null
 
-  const role = userData?.role || user.user_metadata?.role || "student"
-  if (role !== "institution_admin" && role !== "institution_owner" && role !== "admin" && role !== "super_admin") {
-    return NextResponse.json({ error: "Institution owner access required" }, { status: 403 })
+  const { data: account } = await supabase
+    .from('institution_accounts')
+    .select('institution_id')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .maybeSingle()
+
+  if (account) {
+    institutionId = account.institution_id
+  } else {
+    const { data: userData } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single()
+
+    const role = userData?.role || user.user_metadata?.role || "student"
+    if (role !== "institution_admin" && role !== "institution_owner" && role !== "admin" && role !== "super_admin") {
+      return NextResponse.json({ error: "Institution owner access required" }, { status: 403 })
+    }
+    // Legacy role-based path: no institution_accounts row to resolve an id
+    // from, same as the original code (institution_id left null below,
+    // "Will be set by trigger or admin").
   }
 
   try {
@@ -108,7 +104,7 @@ export async function POST(request: Request) {
           department: s.department,
           year_of_study: s.year_of_study,
           phone: s.phone,
-          institution_id: null, // Will be set by trigger or admin
+          institution_id: institutionId, // Will be set by trigger or admin if null (legacy role path)
           status: "eligible",
           attachment_status: "not_placed"
         })
