@@ -1,148 +1,112 @@
-CYCLE 177 — PART 0 AUDIT REPORT — Institution Dashboard. Read-only, complete, per the template.
-Mandatory build verification: `npm run build` (2.5GB heap + `NEXT_PRIVATE_SKIP_SOURCEMAPS=1`) ran
-AFTER this audit (confirming the read-only file reads changed nothing) - exit 0, zero errors.
+CYCLE 177-B REPORT — Parts 0-7 done. Build clean, staged with explicit pathspec, NOT committed
+per the brief's own rule. One major finding changes what "success" means for Part 2; several
+smaller corrections applied and documented below. SQL (Part 1) already run live - it's a database
+change, not a file to stage/hold, and was independently verified safe before running.
 
-Archived: this cycle's own brief is `docs/archive/bridge-177.md`.
+Archived: this cycle's own brief is `docs/archive/bridge-177b.md`.
 
-## AUDIT REPORT — Institution Dashboard
+MAJOR FINDING, found before writing any code - the alerts table doesn't exist anywhere
+Checked `information_schema.tables` across all schemas before touching `route.ts`: neither
+`alerts` (the brief's assumed name) nor `trending_alerts` (the *original* code's real table name,
+confirmed by re-reading the file before rewriting it) exists anywhere in this database. Also
+checked both repos for any migration file or backend code that creates or writes to either name -
+nothing. This means the "Trending Alerts" feature (Cycle 028) has almost certainly returned a 500
+on every real call since it shipped - the frontend's own empty `.catch(() => {})` on the fetch
+masks that as "no alerts yet" rather than a real error. **Unifying the permission-resolution logic
+cannot fix this** - the data layer itself doesn't exist. Applied the permission fix anyway (real
+value for consistency, matches the "one source of truth" goal, and is forward-compatible), using
+the *real* original table name (`trending_alerts`) rather than the brief's `alerts`, and the real
+order column (`sent_at`, matching what the frontend renders) - but the build-verification
+checklist's "Alerts page loads data (not permanently empty)" cannot be satisfied by this cycle's
+scope. That needs a separate, explicit decision: create `trending_alerts` (and a real data source
+for it - nothing currently populates trending content), or retire the alerts feature.
 
-### Dashboard Structure
+PART 1 — SQL: RUN, verified, one syntax correction
+`CREATE POLICY IF NOT EXISTS` is not valid PostgreSQL syntax (unlike `CREATE TABLE`/`INDEX`) -
+hit a real syntax error on first attempt, removed `IF NOT EXISTS` and ran plain `CREATE POLICY`
+(safe since Cycle 177's own audit had already confirmed zero existing policies on this table).
+Backfill step: ran clean, affected 0 rows - checked why rather than assuming success silently:
+`institution_accounts` currently has 0 rows with `status='active'` in production (nobody has
+completed a real claim yet), so there was nothing to backfill. Not a failure, just confirms this
+is genuinely a forward-looking safety net, not fixing existing broken data. Verify query confirms
+both policies exist: `"Users can update own institution account"` (UPDATE),
+`"Users can view own institution account"` (SELECT).
 
-**Main dashboard (`/institution/dashboard`)** - `src/app/institution/dashboard/page.tsx`, 442
-lines. Client component. On load: checks `supabase.auth.getSession()` + `hasValidSessionMarkers()`,
-redirects to `/institution/login` if absent. Then calls `institutionFetch('/api/institution-portal/
-profile')` - on a 403 shows a "Claim pending approval" screen (sign-out only); on success loads the
-institution, programs, and analytics in sequence. Three tabs, all inline in this one file:
-- **Profile tab**: editable fields (description, city, website_url, email, phone, logo_url,
-  cover_image_url) via a form bound to `PUT /api/institution-portal/institution`. Name/type
-  explicitly read-only ("managed by ElimuX").
-- **Programs tab**: **a full program manager already exists here** - a table of the institution's
-  programs (name/level/duration/fees/status/actions) plus an add/edit form, wired to the real
-  `GET/POST/PUT/DELETE /api/institution-portal/programs[/:id]` CRUD endpoints. Soft-delete
-  (confirms via `window.confirm`, sets `is_active: false`, doesn't hard-delete). This is a real,
-  working feature, not a stub - important given this cycle's own title is "... + Program Manager."
-- **Analytics tab**: profile views/applications/conversion-rate/reviews (30d) + a views-trend bar
-  chart + top-programs-by-views + regional interest, via `GET /api/institution-portal/analytics`.
+PART 2 — Alerts API: rewritten with corrections, see MAJOR FINDING above
+Real table name (`trending_alerts`) and order column (`sent_at`) used instead of the brief's
+`alerts`/`created_at`. The `[id]/read/route.ts` rewrite also needed a real Next.js 15 fix the
+brief's snippet didn't have: this project's dynamic route params are `Promise<{ id: string }>`
+(confirmed against the original file's own working code, and against this exact same lesson from
+Cycle 176-C-A's Suspense-boundary fix) - the brief's synchronous `{ params }: { params: { id:
+string } }` would have been a type error. Fixed to `await params`.
 
-**Alerts page** (`/institution/dashboard/alerts`) - `src/app/institution/dashboard/alerts/page.tsx`,
-99 lines, Cycle 028. Fetches `GET /api/institution/alerts` (a *different*, Next.js-native API
-route, not the external backend), lists trending-content alerts with a "mark read" action
-(`POST /api/institution/alerts/:id/read`). **Not linked from the main dashboard anywhere** -
-confirmed via grep, zero references to this path in `dashboard/page.tsx`.
+PART 3 — Attachment upload: rewritten, one judgment call flagged rather than silently applied
+The brief's rewrite pattern would have dropped `admin`/`super_admin` platform-role access to this
+endpoint entirely (those roles have no `institution_accounts` row to resolve). Read the original
+file's real role check before rewriting: it explicitly allowed `institution_admin`,
+`institution_owner`, `admin`, AND `super_admin` - four values, not just the two institution-
+specific ones. Preserved the `admin`/`super_admin` role path as a fallback alongside the new
+`institution_accounts`-active check, rather than remove a capability that wasn't asked to be
+removed and looked like an unintended side effect of "unify" rather than a deliberate decision.
+Business logic (student parsing, auth-user creation, `attachment_eligible_students` insert)
+otherwise untouched, per the brief's own "preserve" instruction - only the `institution_id: null`
+placeholder now uses the resolved `institutionId` when the institution_accounts path is taken.
 
-**Analytics page** (`/institution/dashboard/analytics`) - `src/app/institution/dashboard/
-analytics/page.tsx`, 124 lines. **A second, different "analytics" surface** from the dashboard's
-own Analytics tab - this one tracks smart-link (shareable listing) click performance via
-`GET /api/analytics/overview?days=`, scoped to links `created_by` the signed-in user. Its own code
-comment flags a real gap: no `institution_id` column on `content_performance` to join against yet,
-so it can only show links the current user personally created, not the whole institution's.
-**Also not linked from the main dashboard anywhere.**
+PART 4 — Layout: built as specified
+`cn` utility confirmed to exist (`src/lib/utils.ts`) before use. Step 4.2 ("remove duplicate
+headers from child pages") turned out to be a no-op for both `alerts/page.tsx` and the old
+`analytics/page.tsx` - neither actually has a `<header>`, `<nav>`, or sign-out button; their own
+`<h1>` titles are page content, not layout chrome, so nothing needed stripping per the rule's own
+literal wording. Left both content-wise untouched. Main `dashboard/page.tsx` correctly left alone
+entirely, per the brief's own explicit instruction.
 
-**Layout/Sidebar**: none exists. No `institution/dashboard/layout.tsx`, no `institution/layout.tsx`
-anywhere in the tree - confirmed both are absent. Each of the three pages (dashboard, alerts,
-analytics) is fully self-contained with its own header; there is no shared nav connecting them.
-Given neither sub-page is linked from the main dashboard, both are currently reachable only by
-typing the URL directly.
+PART 5 — Analytics renamed to Link Performance: done as specified
+Copied, retitled (`<h1>Content Analytics</h1>` -> `<h1>Link Performance</h1>`, function renamed to
+`InstitutionLinkPerformancePage`), old path now redirects. Step 0.2's grep found only the file's
+own self-referencing path comment (updated) - nothing else in the codebase linked to the old path,
+confirmed both before and after.
 
-**Login** (`/institution/login`) - `src/app/institution/login/page.tsx`. `supabase.auth.
-signInWithPassword`; on success, completes any interrupted claim registration saved in
-`sessionStorage` (for the email-confirmation-required path), then `router.push('/institution/
-dashboard')`. No role/permission check happens in this file - the dashboard page itself is what
-gates access (via the 403-on-`/profile` -> "pending" branch).
+PART 6 — Build & local verification
+Build flags: used this machine's own confirmed-safe recipe (2.5GB heap +
+`NEXT_PRIVATE_SKIP_SOURCEMAPS=1`) instead of the brief's `--max-old-space-size=4096` - this
+machine has ~3.9GB physical RAM and 4GB+ heaps have reliably OOM'd here in past cycles (documented
+in this project's own memory). `npm run build`: exit 0, zero errors. Confirmed every route
+(`dashboard`, `dashboard/alerts`, `dashboard/link-performance`, `dashboard/analytics` redirect,
+`login`, `register`) actually present in `.next/server/app/institution/`, not just trusted the
+exit code alone.
 
-### API Routes
+Browser verification: **could not complete the brief's full checklist** (log in, see sidebar,
+click through nav, sign out) - every one of those needs a real authenticated session, and entering
+a password into any field, even a test account, is a hard rule in this session that isn't mine to
+waive (same wall hit in Cycle 176-C-BD's Part D). What was verified instead, unauthenticated:
+`/institution/login` renders correctly; the new layout's session gate correctly redirects all
+three dashboard sub-routes (`/alerts`, `/link-performance`, and the old `/analytics` path) *and*
+the main `/dashboard` page itself to `/institution/login` with no crash, no infinite-redirect
+loop, and a clean console (checked specifically for "Maximum update depth" given the page now has
+two independent session checks stacked - the layout's new one and the main dashboard page's
+existing one - confirmed they don't conflict). Sidebar rendering, active-state highlighting, and
+sign-out itself are unverified pending a real logged-in test - flagged plainly rather than assumed
+working from a clean build.
 
-**`GET /api/institution/alerts`** - Next.js route (`src/app/api/institution/alerts/route.ts`).
-Auth: cookie-based Supabase session (`@/lib/supabase/server`), then resolves the caller's
-institution via `institutions.admin_user_id = user.id` (**not** `institution_accounts` - see
-Database Schema section below for why this matters). Returns `{success, data: []}` if no
-institution row has `admin_user_id` set for this user, rather than an error - looks like a normal
-empty state but is actually silently gated on a column nothing in the real claim flow currently
-populates.
+PART 7 — Staged, NOT committed, per the brief's own explicit rule
+```
+ src/app/api/institution/alerts/[id]/read/route.ts  |  77 ++++++------
+ src/app/api/institution/alerts/route.ts            |  83 +++++++------
+ .../api/institutions/attachment/upload/route.ts    |  82 ++++++-------
+ src/app/institution/dashboard/analytics/page.tsx   | 121 ++----------------
+ src/app/institution/dashboard/layout.tsx           | 136 +++++++++++++++++++++
+ .../dashboard/link-performance/page.tsx            | 126 +++++++++++++++++++
+ 6 files changed, 393 insertions(+), 232 deletions(-)
+```
+Staged with explicit pathspec (each file named individually, no `git add -A`). This report
+(`docs/bridge.md`) is being committed and pushed as usual - that's this session's established
+communication channel with Kimi, distinct from the 6 code files above, which stay staged-only
+until told "commit and push it."
 
-**`POST /api/institution/alerts/:id/read`** - same auth/resolution pattern, 404s if no institution
-found for the caller, otherwise updates `read_at`.
-
-**`POST /api/institutions/attachment/upload`** - a *third*, separate auth mechanism: reads a raw
-`sb-ohlgjvenwekpbpkykutz-auth-token` cookie directly (rather than the `@/lib/supabase/server`
-helper the alerts routes use), verifies the session, then checks `users.role` for
-`institution_admin`/`institution_owner`/`admin`/`super_admin` - **a third permission source**,
-independent of both `institution_accounts.status` and `institutions.admin_user_id`. Creates auth
-users + `attachment_eligible_students` rows for a bulk student upload.
-
-**Auth middleware/helpers**: `src/lib/institutionAuth.ts` (frontend) - `institutionFetch()` wraps
-calls to the external backend with a Bearer token from the current Supabase session; also holds
-`savePendingInstitutionRegistration`/`takePendingInstitutionRegistration` (sessionStorage, for the
-email-confirmation-interrupted claim flow). Backend-side: `institutionAuth` middleware
-(`elimux-backend/src/middleware/institution-auth.ts`, already read in full in Cycles 176-A/176-C-A)
-- JWT -> `institution_accounts` row lookup -> requires `status === 'active'`.
-
-**Net finding: three parallel, inconsistent institution-permission systems coexist** -
-`institution_accounts.status='active'` (the one the real, live claim/dashboard/programs flow
-actually uses and the one this whole session's Cycles 176-A through 176-C-BD have been building
-against), `institutions.admin_user_id` (used only by the two alerts routes), and `users.role`
-(used only by attachment upload). A real institution admin who successfully claims via
-`/institution/register` gets `institution_accounts.status='active'` set - nothing in that flow
-sets `institutions.admin_user_id` or `users.role`, so the same admin could fully use the
-dashboard's profile/programs/analytics tabs while getting a permanently-empty Alerts page and a
-403 on attachment upload, unless something else (not found in this audit) reconciles these three
-independently.
-
-### Database Schema
-
-**`institutions` columns** (33 total, key ones): `id` (uuid, default `uuid_generate_v4()`), `name`
-(not null), `slug`, `type_id`, `country_id`, `city`, `website_url`, `email`, `phone`,
-`description`, `logo_url`, `cover_image_url`, `is_verified` (default false), `is_active` (default
-true), `is_featured` (default false), `accreditation_status` (default `'pending'`), `embedding`
-(vector), `search_text`, `country` (free text - the disconnected TVET-scraper column, see
-[[project_elimux_disconnected_kenya_institutions]]), `tveta_registration_number`/
-`tveta_accredited`/`tveta_status`, and **`admin_user_id`** (uuid, nullable, no default - the
-column the alerts routes gate on).
-
-**`institution_accounts` columns** (9 total): `id` (uuid, default `uuid_generate_v4()`),
-`institution_id` (not null), `user_id` (not null), `contact_name`, `email` (not null), `role`
-(not null, default `'admin'`), `status` (not null, default `'pending'`), `created_at`/
-`updated_at` (default `now()`).
-
-**Programs/courses table exists?** YES - `programs` (the main one, columns match everything
-already seen in `institution-portal.ts`'s CRUD: name, category_id, description, duration_months,
-tuition_fees, currency, level, requirements, is_active), plus `program_categories`,
-`program_applications`, `program_changes`, `program_views`. No separate "courses" table - programs
-is the one and only unit.
-
-**RLS policies**: `institutions` has 2 - `"Allow public read on institutions"` (SELECT, `qual:
-true`) and `"Allow admin full access on institutions"` (ALL, gated on `auth.uid()` being in
-`admin_users` with `role='admin'`). **`institution_accounts` has zero policies returned** -
-confirmed via a separate query that RLS *is* enabled on it (`rowsecurity: true`), meaning it's
-fully deny-all for any client that isn't using the service-role key. Harmless today only because
-every real access path to this table goes through the backend's service-role `supabaseAdmin`
-client (`institution-portal.ts`, confirmed) - no direct client-side Supabase query against
-`institution_accounts` was found anywhere in the frontend. Flagging because this exact
-enabled-but-policy-less shape is the same class of issue Cycle 048/173/175-A already found and
-explained once for the `kjsa_*` tables in this project (silent empty results if anything ever
-queries it as an authenticated/anon client directly) - not an active bug today, but a specific,
-recognizable trap if this table is ever queried a new way.
-
-### What's Missing (gap analysis)
-
-- **Nothing** for basic profile/program management - it's built, live, and matches what a
-  "Program Manager" cycle would otherwise be asked to build from scratch. If Part 1 of this
-  cycle's original brief was going to build a program manager, that work already exists in
-  `institution/dashboard/page.tsx`'s Programs tab.
-- **Discoverability**: Alerts and Analytics sub-pages are both built and functional but have zero
-  navigation path from the main dashboard - same "built but invisible" pattern already found and
-  fixed once this session for the institution claim flow itself (Cycle 169/176-B).
-- **Permission-system fragmentation**: an admin can be fully claimed-and-active
-  (`institution_accounts`) yet see a permanently empty Alerts page and get denied on attachment
-  upload, because those two features check different, unreconciled fields
-  (`institutions.admin_user_id`, `users.role`) that the real claim flow never populates.
-- **Duplicate "analytics" naming**: two different features are both called "analytics" (the
-  dashboard's own tab vs. the separate `/dashboard/analytics` page) and track different things
-  (institution-wide profile/program metrics vs. one user's own smart-link clicks) - a real source
-  of confusion if surfaced together without renaming one of them.
-- **`institution_accounts` RLS**: zero policies (deny-all for non-service-role clients) - not
-  broken today, but worth a deliberate policy (even a narrow "own row" SELECT policy) before
-  anything ever needs to query this table client-side.
-
-STOPPING HERE per the brief's own rule - not proceeding to Part 1 until this report is reviewed
-and "proceed" is given.
+WAITING ON
+1. A real decision on `trending_alerts` (create the table + a data source, or retire the alerts
+   feature) - permission unification alone doesn't fix it.
+2. Explicit "commit and push it" for the 6 staged code files.
+3. Someone with real login credentials to complete the authenticated portion of Part 6's browser
+   checklist (sidebar, nav clicks, sign-out) - the one thing this session genuinely cannot verify
+   itself.
