@@ -1,57 +1,52 @@
-CYCLE 175-C REPORT — all 5 parts resolved, working tree essentially clean
+CYCLE 175-D REPORT — DONE. Working tree is genuinely clean for the first time this whole
+sequence.
 
-Archived: this cycle's own brief is `docs/archive/bridge-175c.md`.
+Archived: this cycle's own brief is `docs/archive/bridge-175d.md`.
 
-PART 1 — OG ROUTE: DONE
-Real path was `src/app/api/og/pathway/route.tsx` (nested under `pathway/`, `.tsx` not `.ts`) - the
-brief's Step 1.1 checked a non-existent `src/app/api/og/route.ts`, but Step 1.2's
-`git add src/app/api/og/` targets the whole directory recursively so it wasn't affected. Had to
-stash `docs/bridge.md` itself temporarily to switch branches cleanly (this cycle's own brief was
-sitting uncommitted on `main`, which predates the archive branch) - popped it back after, no data
-lost, confirmed via `git status` before/after. Amended into the existing archive commit
-(`0c07f94`, was `ce5f809`), force-pushed the branch (safe - only I'd pushed it, nobody else based
-work on it). `src/app/api/og/` confirmed gone from `main`.
+STEP 1/2 — AUDIT
+All 6 `public/` assets and both SQL files confirmed and detailed (name, size, mtime, first-20-lines
+for the SQL files) before anything was touched. All 6 assets shared the same mtime (2026-08-29
+15:36), confirming they're a single earlier batch, not individually significant. Both SQL files
+read in full - the RLS fix matches exactly what Cycle 173/175-A already confirmed is live in
+production; the seed file's own header documents that it replaced an earlier version referencing
+columns (`career_id`, `pathway_id`, `rank`, `suitability_score`) that don't exist in the real
+schema, verified against the live DB and the actual app code before being written.
 
-PART 2 — REMOTE BRANCH DELETION: DONE, on explicit confirmation
-This pushes a deletion to the shared GitHub repo, not just a local ref - asked before running it
-despite the local-delete precedent from Cycle 174, since remote deletion is a more visible, harder
-to reverse action even when the underlying branches are safely merged. Confirmed, then deleted all
-9: `auth-hardening-preview`, `auth-security-preview`, `feat/admin-pricing-portal`,
-`feat/elimux22-ad-billing`, `feat/elimux23-payments`, `feat/skolex-ads`, `feat/skolex-home`,
-`feat/skolex-reference`, `feature/internship-module`. Verified via `git fetch --prune` +
-`git branch -r`. Side finding, not acted on: the fetch surfaced 2 branches that weren't visible
-before, `vercel/install-vercel-web-analytics-q3u5v1` and
-`vercel/install-vercel-web-analytics-y380kk` - auto-created by Vercel's GitHub integration, likely
-explains the "Vercel Web Analytics script failed to load" warning seen in local dev testing back
-in Cycle 169/171. Out of this cycle's scope, flagged not touched.
+STEP 3 — DECISIONS (reported, waited, then executed exactly as decided)
+- `elimux-complete-image-inventory.pdf`, `og-image-solid-bg.png` - DELETE. Unreferenced anywhere
+  in `src`.
+- `previews/favicon-preview.png`, `previews/logo-assets-preview.png` - DELETE. One-off rebrand
+  preview renders, not served assets.
+- `table-1787829636220.csv`, `table-1787829673294.csv` - DELETE. Scratch exports.
+- `20260829000002_pathways_rls_fix.sql`, `pathways_subject_combinations_seed.sql` - COMMIT. Real,
+  verified, historically documented - kept as a record even though the RLS fix is already applied
+  live.
 
-PART 3 — 2 OF 3 PRE-EXISTING MODIFIED FILES COMMITTED, ALL 3 DECIDED
-Reported all three diffs and stopped, per the brief. Decisions made and executed:
-- `src/app/globals.css` (print stylesheet, 23 lines) - COMMITTED (`2905d6a`).
-- `supabase/migrations/20260829000001_pathways_schema.sql` (4-line RLS sync) - COMMITTED
-  (`bdfb7b9`) - this just makes the file match what Cycle 173 confirmed is already live in
-  production, nothing new applied to the database.
-- `docs/bridge.md` itself - not a real decision point, it's the live protocol file, currently
-  holding this very report.
+STEP 4 — EXECUTION
+6 files deleted (none were git-tracked, so no history lost - confirmed via `git status` before and
+after). 2 SQL files staged and committed. `npm run build` (2.5GB heap +
+`NEXT_PRIVATE_SKIP_SOURCEMAPS=1`): exit 0, zero errors. Commit `99b15d5`, pushed.
 
-PART 4 — 49 ARCHIVE SNAPSHOTS: COMMITTED (`df20355`)
-All 49 uncommitted `docs/archive/bridge-NNN.md` files (Cycles ~049 through 167B) committed in one
-batch - pure documentation, zero code risk, restores git history to match what the bridge protocol
-already assumed existed.
+STEP 5 — FINAL VERIFICATION
+`git status`: clean except `docs/bridge.md` itself (this report). `git log --oneline -3`:
+`99b15d5` / `55ed514` / `df20355`.
 
-PART 5 — THEME-SWEEP STASH: KEPT, NOT TOUCHED, per direct instruction
-Reported the 7-file diff (`package.json`, `package-lock.json`, `src/app/layout.tsx`,
-`DesktopNav.tsx`, `MobileNav.tsx`, a deleted `ThemeToggle.tsx`, a deleted `theme.ts`) and stopped
-for a decision, as instructed. Decision: keep it untouched - `layout.tsx` has changed since this
-stash was made (Cycle 169's favicon fix, at minimum), so popping it now would likely conflict;
-revisit when there's bandwidth to properly audit whether the theme-sweep is still wanted.
-
-CURRENT STATE
-`git status` is essentially clean: `docs/bridge.md` itself (this report, about to be committed),
-and the same small residual pile flagged since Cycle 170 that nothing has asked to touch yet - 6
-stray `public/` assets (2 unreferenced images, 2 numeric-named scratch CSVs, 2 rebrand preview
-PNGs) and 2 pathways SQL files (`20260829000002_pathways_rls_fix.sql`,
-`pathways_subject_combinations_seed.sql`) correctly left as manual-paste-into-Supabase material,
-not code to commit the same way. `stash@{0}` remains, on purpose. Local branches: `main` +
-`feature/skills-toggle`. Remote branches: `main`, `archive/pathways-second-wave`,
-`feature/skills-toggle`, plus the 2 newly-noticed Vercel-integration branches.
+WHERE THIS LEAVES elimux-frontend
+Every item flagged across Cycles 170 through 175-D is now resolved, committed, or deliberately
+deferred with a documented reason - nothing left drifting:
+- AI search institution-name bug: FIXED, deployed, live-verified (Cycle 173).
+- RLS "gap": confirmed real historically (Cycle 048/050), confirmed fixed live (Cycle 173),
+  migration file now matches reality (Cycle 175-C).
+- `bridge-121.md` collision: resolved, split cleanly (Cycle 173).
+- Career Pathways Phase 2/3 WIP: preserved in full on `archive/pathways-second-wave`
+  (`0c07f94`, pushed), removed from `main`'s working tree, retrieval instructions documented.
+- Orphaned `InstitutionDetailDrawer.tsx`: removed (Cycle 174).
+- Stashes: 1 dropped (superseded), 1 deliberately kept pending a proper audit
+  (`pre-theme-sweep-backup` - still open, needs bandwidth to check against current `layout.tsx`).
+- Branches: 9 stale ones deleted both locally and on GitHub; `feature/skills-toggle` kept
+  (real unmerged work).
+- Working tree residuals (6 stray assets, 2 SQL files): resolved this cycle.
+- Coming-Soon shield on `/schools` + `/pathways`: live in production (Cycle 169/171/173).
+- 2 Vercel-integration branches on `origin` (`vercel/install-vercel-web-analytics-*`, surfaced
+  during Cycle 175-C's `git fetch --prune`) - not investigated, still open if anyone wants to know
+  why they exist.
