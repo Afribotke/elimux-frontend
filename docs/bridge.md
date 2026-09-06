@@ -1,78 +1,104 @@
-CYCLE 176-B REPORT — /join page built, deployed, live-verified. Built correctly against real
-infrastructure per the brief's own instruction, but the literal code needed real fixes before it
-would have compiled or worked - documented below.
+CYCLE 176-C — MANDATORY AUDIT COMPLETE. STOPPING HERE, PER THE BRIEF'S OWN REPEATED
+INSTRUCTION, BEFORE TOUCHING ANY CODE. Two of the four parts are bigger than the brief assumed -
+reporting that plainly rather than building around it silently.
 
-Archived: this cycle's own brief is `docs/archive/bridge-176b.md`.
+Archived: this cycle's own brief is `docs/archive/bridge-176c.md`.
 
-STEP 1 — SEARCH PAGE: BUILT, with corrections
-`src/app/join/page.tsx` created, scoped to institution search only (the brief's own "FUTURE
-ENHANCEMENTS" section already acknowledged employers/schools have no search endpoint yet - didn't
-fake it). Four real bugs found and fixed before this would have worked, all checked against the
-actual code rather than assumed:
-1. `useDebounce` (`@/hooks/use-debounce`) didn't exist anywhere in this codebase - confirmed via
-   `git ls-files`/`find` before creating it.
-2. `InstitutionRow.type` and `.country` are objects (`{name, icon}` / `{name, flag_emoji}`), not
-   strings (confirmed in `src/lib/api.ts`'s own type definition) - the brief's literal
-   `{result.type || result.industry...}` would have thrown "Objects are not valid as a React
-   child" the first time a result actually had a `type`. Fixed to `.name` accessors.
-3. `institutions` has no `website` column, only `website_url` (confirmed via the live schema
-   query from Cycle 176-A) - the domain-filter and the results-list "website" line both silently
-   fail against a field that doesn't exist. Fixed throughout.
-4. `getApplyUrl('employer')` pointed at `/employer/activate`, which requires an invitation `token`
-   query param and errors for a cold visitor with none - read that file before trusting the brief's
-   assumption; the real general-purpose employer signup page is `/employer/register`. Fixed.
+FILE 1 — `src/app/institution/register/page.tsx`: already fully read in Cycle 176-B (223 lines),
+not re-read this cycle since nothing about it has changed since. Confirms the brief's own
+"Expected File Structure" note exactly: has its own self-contained search-and-select UI, does
+NOT read `institution_id` from the URL anywhere. Ready for Part A as described.
 
-One thing deliberately NOT silently smoothed over: the real `/institution/register` page (read in
-full before building) has its own self-contained name-search-and-select UI and does not read an
-`institution_id` query param at all - so "Claim Profile" currently lands there without the match
-pre-selected, and the user has to search again. Said this plainly in the page's own copy ("search
-for X again to select it") rather than imply a seamless handoff that doesn't exist. Flagging as an
-open enhancement, not fixed this cycle (would mean modifying `institution/register/page.tsx`,
-outside this cycle's stated file list).
+FILE 2 — `src/routes/employers.ts`: does not exist. There is no single file by that name.
+Employer-related routes are scattered: `employer-names.ts`/`admin-employer-names.ts` (CRM
+outreach data - `employer_names` table, unrelated to the real `employers` table used by
+`/employer/register`), `employer-evaluations.ts`, `admin-employer-outreach.ts`. The real
+`employers` table's actual CRUD/registration logic lives inside `src/routes/internships.ts`
+(mounted at `app.use('/api', internshipsRouter)`), not a dedicated employers file.
 
-STEP 2 — FOOTER LINK: DONE, per direct instruction
-Asked which of the brief's two offered options - the old apply-only link replaced entirely with
-the unified "Are you an institution, school, or employer? Join ElimuX" -> `/join`, or both links
-kept side by side. Chose: replace. Done exactly that.
+FILE 3 — `src/routes/schools.ts`: does not exist, and neither does any file that touches the
+`schools` table - confirmed via `grep -rln "from('schools')" src` returning nothing at all across
+the entire backend. Zero backend infrastructure exists for this table in any form, not even a
+non-search version.
 
-STEP 3 — EXISTING CLAIM FLOW VERIFICATION: PASS, without creating real test data
-Did not sign up a throwaway Supabase Auth user or create a real `institution_accounts` row to
-test end-to-end - that pollutes production auth/data for a flow whose code path was already
-verifiable more precisely: (1) read `institution-portal.ts`'s `POST /register` handler and
-`institution/register/page.tsx`'s submit handler side by side - the request body shape
-(`institution_id`, `contact_name`) matches exactly; (2) live-curled an unauthenticated
-`POST https://api.elimux.ke/api/institution-portal/register` - correctly returned 401, confirming
-the route is live and enforces auth as coded; (3) live-curled the shared search endpoint both
-`/join` and `/institution/register` depend on - `GET /api/institutions?search=University of
-Nairobi` correctly returns the real institution with `website_url` populated, confirming the field
-name fix was right and the underlying search both pages need actually works.
+FILE 4 — `src/routes/institution-portal.ts`: already fully read in Cycle 176-A/176-B (428 lines),
+not re-read (unchanged). The exact insert Part D would modify, `POST /register`
+(lines 93-103 in the last-read version):
+```
+const { data: account, error: insertError } = await supabaseAdmin
+    .from('institution_accounts')
+    .insert({
+        institution_id,
+        user_id: user.id,
+        contact_name: contact_name || null,
+        email: user.email,
+        status: 'pending'
+    })
+    .select()
+    .single();
+```
+No `role` field is set on insert at all currently (the brief's Part D snippet adds
+`role: 'admin'` - `institution_accounts.role` is `NOT NULL` per Cycle 176-A's schema read, so
+whatever this currently inserts as either has a DB default or is failing silently in a way worth
+checking before trusting the table works today - flagging, not chasing further this cycle since it's
+pre-existing behavior, not something Part D introduces).
 
-STEP 4 — BUILD & TEST: PASS
-`npm run build` (2.5GB heap + `NEXT_PRIVATE_SKIP_SOURCEMAPS=1`): exit 0, zero errors, `/join`
-built at 2.9 kB. Browser-tested locally against real production data (Chrome extension recovered
-after one transient non-response, screenshot capture stayed broken for this window so used
-`get_page_text`/`find`/`form_input` instead - functionally equivalent verification): searching
-"University of Nairobi" correctly rendered `type.name` ("University"), `country.name` ("Kenya"),
-and `website_url` ("uonbi.ac.ke") with zero console errors - confirms all three object/field-name
-fixes actually work, not just compile. Searching a nonsense string correctly showed both fallback
-CTAs (apply as new institution, employer register link). Footer link confirmed present with the
-correct `/join` href on the homepage.
+`listEmployers`/`listSchools` IN `src/lib/api.ts`: confirmed absent, grep returns nothing for
+either.
 
-Commit `d9275e3`, pushed.
+________________________________________
 
-STEP 5 — LIVE VERIFICATION: PASS
-Vercel deployment `elimux-frontend-jmsp05pqg` built and confirmed aliased to `www.elimux.ke` /
-`elimux.ke` via `vercel inspect`. `curl https://www.elimux.ke/join` renders the page (title +
-"Join ElimuX" heading present in the initial HTML). `curl https://www.elimux.ke/` confirms the
-footer now shows the new unified link text. Didn't re-run the interactive search test against
-production specifically - the local test already exercised the exact same production API/database
-end to end, re-testing through a second UI would confirm the same thing twice.
+PART A — READY TO BUILD AS SPECIFIED, no surprises
+File and behavior match the brief's own expectation exactly. The only real decision: after
+pre-selecting via `institution_id`, should the page skip straight past its own search UI to the
+contact/email/password form, or just pre-fill+lock the "Selected: X" state so the rest of the
+existing form still runs unchanged? The brief's snippet only sketches the fetch, not the UI branch
+- recommend the latter (smaller diff, reuses the existing `selected` state exactly as the form
+already expects it) unless a bigger UI change is wanted.
 
-OPEN ITEMS, restated so they don't get lost
-1. `/institution/register` doesn't pre-select a match from `/join` - genuinely separate follow-up
-   work if a seamless single-click claim is wanted.
-2. Employer and school search still don't exist server-side - `/join` correctly says so via static
-   links rather than faking a search that isn't there, per the brief's own acknowledged scope.
-3. Everything still open from Cycles 170-175: `bridge-121.md`... already resolved; remaining:
-   `feature/skills-toggle` branch (real unmerged work, untouched), `pre-theme-sweep-backup` stash
-   (kept, still needs a proper audit), 2 unexplained Vercel-integration branches on `origin`.
+PART B — BIGGER THAN THE BRIEF ASSUMED: the only real "list employers" endpoint is auth-gated to
+STUDENTS, not public
+`GET /api/employers` exists (in `internships.ts`, line 107) but requires `requireUser` - a logged-
+in *student* session, not a public visitor. It also has no `search` param (returns every active+
+approved employer, unpaginated) and its `.select()` doesn't include `website_url` at all (only
+`id, company_name, location_county, industry`). Using this for `/join` as specified would mean an
+HR person trying to claim their own company first has to be logged in as a *student* - wrong
+audience, not just a missing search param. Real options: (1) add a genuinely public,
+unauthenticated search endpoint (new route, not a modification of the student-facing one -
+`GET /api/employers` already means something else and reusing it would either break the student
+feature or require splitting behavior by auth state), or (2) skip employer search in `/join` for
+now and keep the static "Are you an employer? Register here" link `/join` already has (which
+already works, per Cycle 176-B). Needs a call before writing any code.
+
+PART C — SCHOOLS HAS ZERO BACKEND INFRASTRUCTURE, not just a missing search param
+Nothing to modify - there is no existing `GET /` for the `schools` table to add a `search` param
+to. This is new backend work from scratch: a new route file, a new mount in `index.ts`, and
+(same shape of question as Part B) a decision on whether it's public or auth-gated. Given the
+table has 0 rows (already known, restated by the brief itself) and no self-service UI exists on
+the frontend either (confirmed in Cycle 176-A), this is building a complete, currently-unused
+feature end to end, not extending something partial. Worth confirming this is actually wanted now
+versus building the employer search first (which at least has real live data behind it) or holding
+schools for a later cycle.
+
+PART D — REAL CODE, REAL DECISION, FLAGGING BEFORE BUILDING RATHER THAN JUST BUILDING IT
+This one isn't a wrong-path problem like B/C - the file, the insert location, and the field names
+(`institution.website_url`, matching Cycle 176-A/B's confirmed real column) are all exactly right.
+But auto-approving a claim - skipping human review and granting immediate write access to an
+institution's public page and program listings based solely on an email-domain string match - is
+a real trust decision, not a technical one, and this whole bridge log's established practice
+(Cycle 158's RLS-policy question, among others) has been to get an explicit human confirmation
+before shipping something that changes who gets access to what, not just report it after the fact.
+Concretely: `institution.website_url` values in this DB include things like
+`https://www.uonbi.ac.ke` - a domain check would need to correctly handle subdomains, multiple
+listed domains (none of these institutions have more than one on file, but worth naming as a
+known limitation), and free-mail domains an institution might have accidentally entered as their
+"website" (not spot-checked this cycle - would want to before flipping this on for real, given the
+downside of a wrong auto-approve is a stranger getting edit access to a real institution's page).
+Ready to build the moment this is confirmed - not blocked on any unknown, just wanted this
+explicitly agreed to before writing it, per the brief's own repeated instruction.
+
+________________________________________
+
+WAITING FOR CONFIRMATION ON ALL FOUR PARTS BEFORE WRITING ANY CODE, exactly as instructed. Once
+confirmed (all four, or a subset - happy to build only what's approved), will proceed in the
+brief's stated order.
