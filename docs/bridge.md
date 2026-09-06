@@ -1,83 +1,69 @@
-CYCLE 174 REPORT — Parts 1-3 + 5 done exactly as directed (with one live human override on
-Part 2); Part 4 NOT executed - its target paths don't match this repo and would have deleted a
-live, shipped route
+CYCLE 175-A REPORT — investigation only, nothing edited/committed, per the brief
 
-Archived: this cycle's own brief is `docs/archive/bridge-174.md`.
+Archived: this cycle's own brief is `docs/archive/bridge-175a.md`.
 
-PART 1 — ORPHAN REMOVAL: DONE
-`src/components/admin/InstitutionDetailDrawer.tsx` deleted. Re-verified zero imports right before
-deleting (only self-matches in its own file). No barrel export file exists at
-`src/components/admin/index.ts` - Step 1.3 was a no-op, confirmed rather than assumed. The file
-was never git-tracked in the first place (confirmed via `git status --short` before and after),
-so there's nothing for `git add`/`git commit` to do here - Step 1.4's commit step doesn't apply.
+1. WHAT THE FILE DOES
+`src/app/api/kjsa/analyze/route.ts` is a POST endpoint, the "KJSA Analyzer": takes a learner's
+KJSA subject results (`{subject, level}[]`, level one of EE/ME/AE/BE) plus an optional
+`target_pathway_id`, fetches every row from `pathways.pathways` (schema-qualified) joined with
+`tracks` and `pathway_kjsa_requirements`, and for each pathway computes a weighted fit percentage
+against that pathway's subject requirements (critical-subject pass rate, EE/ME/AE/BE mapped to
+4/3/2/1, weighted by each requirement's `weight`). Returns pathways sorted by fit %, the top
+match, up to 3 recommended subject combinations for the target pathway (if given), and a plain
+strongest/weakest-subjects breakdown. No writes, read-only against `pathways.*`.
 
-PART 2 — STASH CLEANUP: PARTIAL, on direct human instruction overriding the brief
-Dropping a stash is irreversible, and this session's own auto-mode classifier declined to run
-`git stash drop` without an explicit human confirmation - correctly, given what was actually in
-`stash@{0}`. Asked the user directly rather than proceed on the brief's word alone. Result:
-`stash@{1}` (`WIP on main: ab08219 feat: Add institution onboarding portal` - just
-`ReviewCard.tsx`/`ReviewForm.tsx`) dropped, since it's clearly superseded by the real ReviewCard
-fix already shipped 2026-07-19. `stash@{0}` (`pre-theme-sweep-backup` - real, non-trivial WIP
-touching `layout.tsx`, `DesktopNav.tsx`, `MobileNav.tsx`, a deleted `ThemeToggle.tsx`, a deleted
-`theme.ts`, `package.json`/`package-lock.json`) was explicitly kept, not dropped - the user's own
-words: "Destroying it permanently without knowing if we need it is wrong. We keep it for now...
-audit its contents in a future cycle when we have bandwidth to decide if the theme-sweep is still
-relevant post-Cycle 169." Restating that open question here so it isn't lost: is the theme-sweep
-still wanted, and does it still apply cleanly given how much `layout.tsx` has changed since
-(Cycle 169's favicon fix, at minimum)?
+2. WAS IT EVER COMMITTED?
+No. `git log --all --oneline -- src/app/api/kjsa/analyze/route.ts` returns empty - never
+committed on any branch, ever. Same for the creation-commit check (`--diff-filter=A`) - empty.
+It has existed only as an uncommitted working-tree file this entire time.
 
-PART 3 — BRANCH CLEANUP: DONE, exactly as reviewed and approved
-Reported the full merged/unmerged split before deleting anything, per direct instruction to
-review first rather than auto-delete per the brief's own script. 9 branches confirmed fully
-merged into `main` (git's own `-d` - the safe delete that refuses on unmerged content - was used,
-not `-D`) and deleted on explicit go-ahead: `auth-hardening-preview`, `auth-security-preview`,
-`feat/admin-pricing-portal`, `feat/elimux22-ad-billing`, `feat/elimux23-payments`,
-`feat/skolex-ads`, `feat/skolex-home`, `feat/skolex-reference`, `feature/internship-module`.
-`feature/skills-toggle` (last commit 2026-07-20, "University/Skills & Trades toggle UI +
-placeholder modes") is NOT merged into main and was explicitly kept, per direct instruction. Note:
-only LOCAL branch refs were deleted (`git branch -d`) - the corresponding `remotes/origin/*`
-copies of those same 9 branches still exist on GitHub; deleting those is a more visible, separate
-action nobody asked for this cycle, flagged rather than done unprompted.
+3. IS IT REFERENCED ANYWHERE IN src?
+No. `Select-String`/grep for both `kjsa/analyze` and `/api/kjsa` across `src` returns nothing -
+not imported, not fetched, not called from any page or component currently in the tree. (Its
+intended caller, `src/app/pathways/wizard/page.tsx`, is real and tracked, but the currently-live
+version of that file is the original Phase 1 shell, not the Phase 2 version that calls this route
+- see point 4.)
 
-PART 4 — NOT EXECUTED - target paths don't match this repo, would have deleted a live route
-Checked the actual paths before running anything, same discipline as every prior cycle this
-session, and this one has the same structural problem already caught three times before in this
-bridge log: it targets `src/app/pathways` (whole directory), `src/app/kjsa`, `src/app/guidance`,
-`src/app/schools/match` for deletion.
-- `src/app/pathways/` is NOT purely second-wave WIP - it contains the entire base Pathways route:
-  `layout.tsx`, `page.tsx` (now the Coming-Soon shield, committed and live per Cycle 173's own
-  verification), `results/page.tsx`, `select/page.tsx`, `wizard/page.tsx` - all git-tracked,
-  committed, currently deployed. `Remove-Item -Recurse -Force` on this directory, followed by
-  Part 5's own `git add -A && git commit && git push`, would have committed the deletion of the
-  live, working `/pathways` route - not cleaned up abandoned work, broken a shipped one.
-- `src/app/kjsa`, `src/app/guidance`, and `src/app/schools/match` don't exist as page directories
-  at all - the real untracked second-wave files live at `src/app/api/kjsa/analyze/route.ts`,
-  `src/app/api/guidance/validate/route.ts`, and `src/app/api/schools/match/route.ts`
-  respectively (under `api/`, a different tree entirely). The one genuinely second-wave file that
-  IS inside `src/app/pathways/` is a single file, `results/PathwayResultsClient.tsx`, sitting
-  alongside the real, tracked `results/page.tsx` - the brief's whole-directory delete doesn't
-  distinguish the one from the other.
-Given the last direct instruction moved straight from Part 3 to Part 5 without addressing this,
-treated that as "not this cycle" rather than silently skip or silently improvise a rewrite of
-someone else's plan. The corrected target list, if/when wanted: `src/app/api/kjsa/analyze/`,
-`src/app/api/guidance/validate/`, `src/app/api/pathways/interpret/`, `src/app/api/schools/match/`,
-`src/components/pathways/ShareResults.tsx`, `src/lib/pathways-pdf.ts`,
-`src/app/pathways/results/PathwayResultsClient.tsx` (this last one only - not its sibling
-`results/page.tsx`, `results/PathwayResultsClient.tsx`'s neighbor which is real and tracked) -
-none of these overlap with anything live.
+4. IS IT MENTIONED IN BRIDGE ARCHIVES? YES - full, coherent origin story, not orphaned/mystery
+work:
+- `docs/archive/bridge-123.md` - the actual brief: "Career Pathways Phase 2: AI Engine + School
+  Matching," Cycle 048.
+- `docs/archive/bridge-124.md` - Cycle 048's execution report. This file, plus 3 siblings
+  (`pathways/interpret`, `schools/match`, `guidance/validate`) and a modified
+  `src/app/pathways/wizard/page.tsx` (Phase 1 shell -> Phase 2 API-calling version, never
+  committed either) were all built together, build-tested clean (`npm run build`, exit 0), and
+  deliberately staged-not-committed per that cycle's own "Rule 0" and the founder's instruction.
+  Explicitly stopped before "Phase 3" (PDF + Share), per that report's last line.
+- Cycle 048 also found a real bug at the time: `pathways.pathway_kjsa_requirements` and
+  `pathways.kjsa_performance_levels` had RLS enabled with **zero** SELECT policies (confirmed live
+  against `pg_policies` at the time), so `/api/kjsa/analyze` returned 0% fit for every pathway
+  despite the seed data being present - an omission in the original Phase 1 RLS spec, not this
+  cycle's bug. Cycle 048 wrote the fix (the same 2 `CREATE POLICY` statements that later showed up
+  as an uncommitted diff to `20260829000001_pathways_schema.sql`, plus the standalone
+  `20260829000002_pathways_rls_fix.sql`) but explicitly did NOT run it - per this project's
+  standing manual-paste-into-Supabase-Dashboard workflow.
+- `docs/archive/bridge-130.md` (Cycle 050) confirms that fix STILL hadn't been pasted in as of
+  that cycle - explicitly excluded Career Pathways Phase 2 from a production PWA deploy that same
+  cycle specifically because of this unresolved RLS gap.
+- This closes a loop from two cycles ago: Cycle 170's audit found the same migration diff still
+  sitting uncommitted and flagged a "possible live RLS security gap"; Cycle 173's live query found
+  RLS enabled *with* a working public-read policy already in place. Given Cycle 048/050's account,
+  the policy genuinely was missing for a while (confirmed broken, not a false alarm from day one)
+  and was fixed by someone manually pasting the SQL into the Supabase Dashboard at some point
+  between Cycle 050 and Cycle 170 - the migration *file* on disk just never caught up to match
+  what was actually run, which is why `git diff` kept showing it as "pending" long after it wasn't.
 
-PART 5 — FINAL VERIFICATION: DONE
-`git status`: clean of anything this cycle touched - only the same 3 pre-existing unrelated
-modified files as every prior report (`docs/bridge.md` itself, `src/app/globals.css`,
-`supabase/migrations/20260829000001_pathways_schema.sql`) plus the same untouched pile of
-uncommitted archive snapshots and second-wave pathways files from Part 4 (not deleted, see
-above). `git log --oneline -3`: `15b2184`/`00551e8`/`d178370` (Cycle 173's commits, unchanged -
-nothing new to commit from Parts 1-3, since an orphan-file delete on an untracked file and
-git-metadata operations (stash drop, branch delete) don't produce working-tree changes to commit).
-`git stash list`: `stash@{0}: On main: pre-theme-sweep-backup` only. `git branch -a`: `main` +
-`feature/skills-toggle` locally, remotes unchanged. `npm run build` (2.5GB heap +
-`NEXT_PRIVATE_SKIP_SOURCEMAPS=1`): exit 0, zero errors - confirms the orphan removal broke
-nothing, consistent with it having had zero imports to begin with.
+5. WHAT ELSE SITS IN src/app/api/kjsa/
+Two files total: this one (`analyze/route.ts`) and `src/app/api/kjsa/route.ts` (the Phase 1 base
+endpoint - POST manual KJSA result entry - which IS committed and tracked, part of the base
+Pathways feature that shipped in August).
 
-Nothing to push from Parts 1-3/5 themselves (no working-tree changes were produced); this report
-is the only new commit this cycle.
+SUMMARY FOR THE NEXT DECISION
+This isn't abandoned/mystery code - it's real, working, previously-tested Phase 2 work that
+stopped short of Phase 3 on explicit instruction and was never committed. The RLS blocker that
+made it return 0% at the time is now resolved (confirmed live in Cycle 173). If Phase 2 is wanted,
+the remaining step is wiring `src/app/pathways/wizard/page.tsx` to actually call these 4 routes
+(per bridge-124's account, that wiring was already built once - whether the current on-disk
+`wizard/page.tsx` still has it wasn't checked this cycle, out of the read-only/no-edits scope
+given). `/pathways` itself is currently shielded behind Coming Soon regardless (Cycle 171), so
+none of this is user-facing either way until that's lifted.
