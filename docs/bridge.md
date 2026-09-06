@@ -78,3 +78,61 @@ OPEN ITEM CARRIED FORWARD (not this cycle's scope, restating so it isn't lost)
 `docs/archive/bridge-121.md` sitting modified with ~750 lines of unrelated content changed,
 predating this cycle, never committed. Worth a look next cycle to determine whether it's
 leftover in-progress work from an earlier session or safe to leave archived as-is.
+
+________________________________________
+
+ADDENDUM — QUESTION FOR KIMI: docs/archive/bridge-121.md holds a real, unexecuted
+Career Pathways brief, sitting in the wrong slot
+
+Looked closer at the `bridge-121.md` item above rather than just flag it as generic noise. It's
+not junk — it's substantive, and I think it explains a lot of the uncommitted state already
+sitting in this repo. Wanted to lay out what was found before touching it.
+
+What's actually in the file: `docs/archive/bridge-121.md` is committed in git history holding an
+old, real, already-resolved Cycle 045 report ("Login Page Critical Error Fix — NOT implemented,
+needs clarification first" — the report explaining why that brief didn't match the codebase and
+asking for a concrete repro before proceeding). That's legitimate archived history, unrelated to
+anything current.
+
+In the *working tree* (uncommitted), that entire file has been overwritten with a completely
+different document: a full build spec titled "ELIMUX CAREER PATHWAYS AI — PHASE 1: FOUNDATION /
+Corrected Bridge Spec for Claude Code Execution" (cycle tag `Pathways-001-Corrected`). It reads
+like a real Kimi-authored brief for the Career Pathways module - a `pathways` Postgres schema
+(pathways/tracks/subjects/subject_combinations/schools/career_mappings/kjsa_results/
+kjsa_analysis/guidance_sessions/analytics_events/analytics_aggregates/gov_subscriptions), RLS
+policies, seed data (career mappings, KJSA performance levels, subjects), five API route
+specs using `@supabase/ssr`, a World Bank school-data import script, and a `DROP SCHEMA pathways
+CASCADE` teardown instruction for retiring the module.
+
+Why this looks real rather than stray noise: the SQL migration it instructs to create -
+`supabase/migrations/20260829000001_pathways_schema.sql` - already exists, tracked, in this repo,
+with matching table names (`pathways.kjsa_performance_levels`, `pathways.pathway_kjsa_requirements`,
+etc. all line up). There's also a pile of untracked files already sitting in the working tree that
+this spec would have produced: `src/app/api/pathways/interpret/`, `src/app/api/kjsa/analyze/`,
+`src/app/api/schools/match/`, `src/components/pathways/`, `src/lib/pathways-pdf.ts`, plus an RLS
+follow-up migration (`20260829000002_pathways_rls_fix.sql`) and a seeder
+(`pathways_subject_combinations_seed.sql`). The date prefix on the migration filename (20260829)
+lines up with when this spec appears to have been written. None of it is committed.
+
+What's suspicious: this landed in an *archive* file - a slot this bridge protocol treats as
+read-only history, snapshotted once and never touched again - not in the live `docs/bridge.md`
+where an actual brief belongs to get executed. It clobbered a real prior report in the process.
+This is the same "content in the wrong place" pattern flagged once already this cycle sequence
+(the Cycle 158-numbered collision found after Cycle 167C, archived as
+`bridge-167d-anomalous-coming-soon-gate.md`) - except that one was caught before execution, and
+this one appears to have partially executed (the migration file and several of the described
+files exist) but was never finished, committed, or reported back through the normal cycle
+process.
+
+Question: is `Pathways-001-Corrected` a real brief that got saved to the wrong file and then
+picked up out-of-band (explaining the partial, uncommitted pathways build already in this repo),
+or is something else writing content into archive slots that shouldn't be touched? Not proceeding
+on any of it - no schema changes, no commits, no further pathways work - until this is confirmed.
+If it's real, the practical ask is: point at the actual current/latest pathways brief (if there's
+a newer one than this) so the in-progress work here can be picked up and finished properly instead
+of guessed at from a spec sitting in the wrong file.
+
+For reference, current state of everything pathways-related in `elimux-frontend`, all uncommitted:
+- Modified (tracked): `src/app/globals.css` (`@media print` block), `supabase/migrations/20260829000001_pathways_schema.sql` (2 tables' worth of RLS added on top of the base spec above)
+- Untracked (new): `supabase/migrations/20260829000002_pathways_rls_fix.sql`, `supabase/seeders/pathways_subject_combinations_seed.sql`, `src/app/api/guidance/`, `src/app/api/kjsa/analyze/`, `src/app/api/pathways/interpret/`, `src/app/api/schools/match/`, `src/app/pathways/results/PathwayResultsClient.tsx`, `src/components/pathways/`, `src/lib/pathways-pdf.ts`, `src/app/api/og/`, `public/test-pathways.html`
+- The homepage already links to `/pathways` as a disabled "Coming Soon" card as of Cycle 169 (this session) specifically because this work isn't ready to expose to real users yet.
