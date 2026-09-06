@@ -123,3 +123,26 @@ input:-webkit-autofill:focus {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+@media print {
+  nav,
+  footer,
+  .no-print,
+  button:not(.print-allow),
+  a[href]:not(.print-allow) {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .print-break-inside {
+    break-inside: avoid;
+  }
+
+  .print-break-before {
+    break-before: page;
+  }
+}
