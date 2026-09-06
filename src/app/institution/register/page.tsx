@@ -93,11 +93,11 @@ function InstitutionRegisterForm() {
     if (data.session) {
       // Email confirmation disabled - register the claim immediately
       try {
-        await institutionFetch('/api/institution-portal/register', {
+        const result = await institutionFetch('/api/institution-portal/register', {
           method: 'POST',
           body: JSON.stringify(payload),
         })
-        setDone('Your claim has been submitted and is pending admin approval. You can now sign in.')
+        setDone(result?.message || 'Your claim has been submitted and is pending admin approval. You can now sign in.')
       } catch (err: any) {
         setError(err.message || 'Failed to submit claim.')
         setLoading(false)

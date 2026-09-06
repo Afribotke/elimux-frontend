@@ -97,6 +97,27 @@ export function listInstitutions(params: InstitutionListParams = {}) {
   return request<ApiListResponse<InstitutionRow>>(`/api/institutions${buildQuery(params)}`)
 }
 
+// Employers (public search, for /join - separate from GET /api/employers, which
+// requires a logged-in student session and serves a different purpose)
+
+export interface EmployerPublicRow {
+  id: string
+  company_name: string
+  location_county: string | null
+  industry: string | null
+  website_url: string | null
+}
+
+export interface EmployerPublicListParams {
+  search?: string
+  domain?: string
+  limit?: number
+}
+
+export function listEmployersPublic(params: EmployerPublicListParams = {}) {
+  return request<{ data: EmployerPublicRow[]; count: number }>(`/api/employers-public${buildQuery(params)}`)
+}
+
 export function createInstitution(data: object, adminKey: string) {
   return request<{ data: InstitutionRow; message: string }>(
     '/api/institutions',
