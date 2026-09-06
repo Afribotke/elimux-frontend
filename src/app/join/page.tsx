@@ -226,12 +226,39 @@ export default function JoinPage() {
                         <p className="text-gray-500 text-sm mt-1">{normalizeDomain(result.websiteUrl)}</p>
                       )}
                     </div>
-                    <a
-                      href={getClaimUrl(result)}
-                      className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium shrink-0 transition-colors"
-                    >
-                      Claim Profile
-                    </a>
+                    <div className="flex flex-col gap-2 shrink-0">
+                      <a
+                        href={getClaimUrl(result)}
+                        className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium text-center transition-colors"
+                      >
+                        Claim Profile
+                      </a>
+                      {result.entityType === 'institution' && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await fetch('/api/invites/institution', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ institution_id: result.id }),
+                              });
+                              const json = await res.json();
+                              if (json.success) {
+                                await navigator.clipboard.writeText(json.data.url);
+                                alert(`Invite link copied: ${json.data.url}`);
+                              } else {
+                                alert(json.error === 'Unauthorized' ? 'Sign in to generate an invite link' : 'Failed to generate invite');
+                              }
+                            } catch {
+                              alert('Failed to generate invite');
+                            }
+                          }}
+                          className="border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+                        >
+                          Generate Invite Link
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
