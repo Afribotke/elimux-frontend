@@ -167,7 +167,7 @@ const HERO_STATS = [
   { value: '10,000+', label: 'Institutions' },
   { value: '50,000+', label: 'Programs' },
   { value: '100+', label: 'Countries' },
-  { value: '1M+', label: 'Students' },
+  { value: '30,000+', label: 'Students' },
 ];
 
 export default function NewHomePage() {
