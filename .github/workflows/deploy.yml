@@ -1,8 +1,14 @@
-name: Deploy
+name: Deploy (DISABLED - manual only)
 
+# Automatic deploy on push to main is DISABLED until CI is repaired.
+# This workflow is broken for the current repo layout (it cd's into
+# elimux-frontend/ and elimux-backend/ subfolders that do not exist, and
+# tries to `railway up` the backend from the frontend repo, which
+# BACKEND_GUARD.md forbids). Vercel's Git integration deploys the frontend;
+# the backend follows the guarded Railway process in elimux-backend.
+# Do not re-enable a push trigger without review.
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy-frontend:
