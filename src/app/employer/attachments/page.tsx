@@ -147,7 +147,8 @@ export default function EmployerAttachmentsPage() {
               <div className="bg-white rounded-xl shadow p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Student Evaluation</h2>
-                  {selectedAttachment?.status === 'active' && !evaluation && (
+                  {/* Evaluations are accepted only for completed placements (backend Slice 2). */}
+                  {selectedAttachment?.status === 'completed' && !evaluation && (
                     <button
                       onClick={() => setShowEvalForm(!showEvalForm)}
                       className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
