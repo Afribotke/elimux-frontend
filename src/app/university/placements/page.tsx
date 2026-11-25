@@ -149,6 +149,28 @@ export default function UniversityPlacementsPage() {
     }
   }
 
+  // pending -> active. New placements start as 'pending' (backend Slice 2);
+  // this is the institution's only way to start a placement from the UI.
+  async function activatePlacement(id: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/attachments/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ status: 'active' })
+    });
+    if (res.ok) {
+      setMessage('✅ Placement activated');
+      fetchData();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      setMessage(`❌ Error: ${err.error || 'Failed to activate placement'}`);
+    }
+  }
+
   if (loading) return <div className="p-8">Loading...</div>;
 
   return (
@@ -255,6 +277,14 @@ export default function UniversityPlacementsPage() {
                   </td>
                   <td className="px-4 py-3">{p.evaluation_score ?? '-'}</td>
                   <td className="px-4 py-3">
+                    {p.status === 'pending' && (
+                      <button
+                        onClick={() => activatePlacement(p.id)}
+                        className="text-green-600 hover:text-green-800 text-sm font-medium"
+                      >
+                        Activate
+                      </button>
+                    )}
                     {p.status === 'active' && (
                       <button
                         onClick={() => markComplete(p.id)}
