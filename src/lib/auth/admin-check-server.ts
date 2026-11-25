@@ -1,4 +1,4 @@
-// SERVER-ONLY. Do not import from a "use client" component.
+// SERVER-ONLY (enforced: importing this from a client component is a build error).
 //
 // DB-backed platform-admin check, mirroring elimux-backend's hasDbAdminRole:
 // admin = an active admin_users row matching the verified user's email, OR a
@@ -10,6 +10,7 @@
 // anon/authenticated roles. SUPABASE_SERVICE_ROLE_KEY has no NEXT_PUBLIC_
 // prefix, so Next.js never inlines it into client bundles; this is the same
 // pattern src/lib/dashboard-stats-server.ts already uses for this page.
+import "server-only"
 import { createClient } from "@supabase/supabase-js"
 
 const DB_ADMIN_ROLES = ["admin", "super_admin"]
