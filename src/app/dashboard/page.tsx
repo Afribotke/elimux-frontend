@@ -2,6 +2,7 @@ import { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { getDashboardStatsServer } from "@/lib/dashboard-stats-server"
+import { hasDbAdminRoleServer } from "@/lib/auth/admin-check-server"
 
 export const metadata: Metadata = {
   title: "Admin Dashboard | Elimux",
@@ -27,14 +28,9 @@ export default async function DashboardPage() {
     redirect("/")
   }
 
-  const { data: userData } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", user.id)
-    .single()
-
-  const role = userData?.role || user.user_metadata?.role || "student"
-  if (role !== "admin" && role !== "super_admin") {
+  // Admin evidence from admin_users / user_roles only (server-side check).
+  // users.role and user_metadata.role are NOT trusted.
+  if (!(await hasDbAdminRoleServer(user))) {
     redirect("/")
   }
 
