@@ -12,6 +12,9 @@ on:
 
 jobs:
   deploy-frontend:
+    # DISABLED: job never runs, even on manual dispatch. Broken for this repo
+    # layout. Do not remove without review (see header comment).
+    if: false
     runs-on: ubuntu-latest
 
     steps:
@@ -46,6 +49,9 @@ jobs:
           working-directory: ./elimux-frontend
 
   deploy-backend:
+    # DISABLED: job never runs, even on manual dispatch. Broken for this repo
+    # layout. Do not remove without review (see header comment).
+    if: false
     runs-on: ubuntu-latest
 
     steps:
