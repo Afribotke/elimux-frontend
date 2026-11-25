@@ -1,3 +1,6 @@
+// SERVER-ONLY: reads SUPABASE_SERVICE_ROLE_KEY. Importing this from a client
+// component is a build error.
+import "server-only"
 import { createClient } from "@supabase/supabase-js"
 
 function getSupabaseServer() {

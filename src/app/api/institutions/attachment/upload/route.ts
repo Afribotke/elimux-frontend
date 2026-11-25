@@ -14,39 +14,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
   }
 
-  // UNIFIED PERMISSION: institution_accounts (active) is the primary path now,
-  // matching the rest of the institution portal. Kept the original users.role
-  // check as a fallback rather than dropping it silently - the brief's rewrite
-  // pattern would have removed platform admin/super_admin's ability to use this
-  // endpoint too (they don't have an institution_accounts row), which wasn't
-  // asked for and looked like an unintended side effect of "unify", not a
-  // deliberate access removal.
-  let institutionId: string | null = null
-
-  const { data: account } = await supabase
+  // AUTHORIZATION (admin-trust hotfix): the ONLY path is an active
+  // institution_accounts row for the verified user. The old fallback read
+  // users.role / user_metadata.role - user_metadata is writable by the user
+  // themselves, so any account could set role=admin and bulk-create accounts.
+  // That fallback (and its institution_id = null orphan rows) is removed.
+  // institution_accounts.user_id is UNIQUE (elimux-sql 21_institution_accounts.sql),
+  // so maybeSingle() cannot see multiple rows; any lookup error is a deny.
+  const { data: account, error: accountError } = await supabase
     .from('institution_accounts')
     .select('institution_id')
     .eq('user_id', user.id)
     .eq('status', 'active')
     .maybeSingle()
 
-  if (account) {
-    institutionId = account.institution_id
-  } else {
-    const { data: userData } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single()
-
-    const role = userData?.role || user.user_metadata?.role || "student"
-    if (role !== "institution_admin" && role !== "institution_owner" && role !== "admin" && role !== "super_admin") {
-      return NextResponse.json({ error: "Institution owner access required" }, { status: 403 })
-    }
-    // Legacy role-based path: no institution_accounts row to resolve an id
-    // from, same as the original code (institution_id left null below,
-    // "Will be set by trigger or admin").
+  if (accountError || !account?.institution_id) {
+    return NextResponse.json({ error: "Active institution account required" }, { status: 403 })
   }
+  const institutionId: string = account.institution_id
 
   try {
     const { students } = await request.json()
@@ -104,7 +89,7 @@ export async function POST(request: Request) {
           department: s.department,
           year_of_study: s.year_of_study,
           phone: s.phone,
-          institution_id: institutionId, // Will be set by trigger or admin if null (legacy role path)
+          institution_id: institutionId, // always the caller's active institution
           status: "eligible",
           attachment_status: "not_placed"
         })
