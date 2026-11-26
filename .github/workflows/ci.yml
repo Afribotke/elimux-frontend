@@ -1,89 +1,54 @@
 name: CI
 
+# Frontend CI for this repository (the repo root IS the frontend; there are no
+# elimux-frontend/ or elimux-backend/ subfolders). Runs only checks that work
+# without any secrets or network services:
+#   - typecheck  (tsc --noEmit)
+#   - unit tests (npm run test:unit: tsc-compiled node:test suite, in-memory fakes)
+#
+# Deliberately NOT here (yet):
+#   - deployment (Vercel's Git integration deploys; deploy.yml is disabled)
+#   - lint (no ESLint config in the repo; `next lint` would prompt)
+#   - build / E2E (they need environment values; the previous workflow passed
+#     repository secrets into PR jobs - this one uses NO secrets at all)
+#
+# Node 22: @supabase/supabase-js and @supabase/auth-js declare engines node >= 22.
+
 on:
+  pull_request:          # every PR, including stacked PRs whose base is not main
   push:
-    branches: [main, develop]
-  pull_request:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read         # read-only token; this workflow writes nothing
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  checks:
+    name: typecheck + unit tests (Node 22)
     runs-on: ubuntu-latest
-
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Setup Node.js
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
 
-      - name: Install dependencies (Frontend)
-        run: |
-          cd elimux-frontend
-          npm ci
+      - name: Install dependencies (lockfile, no install scripts)
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Install dependencies (Backend)
-        run: |
-          cd elimux-backend
-          npm ci
+      - name: Typecheck
+        run: npm run typecheck
 
-      - name: Run linter (Frontend)
-        run: |
-          cd elimux-frontend
-          npm run lint
-
-      - name: Run type check (Frontend)
-        run: |
-          cd elimux-frontend
-          npm run type-check
-
-      - name: Run unit tests (Frontend)
-        run: |
-          cd elimux-frontend
-          npm run test
-
-      - name: Build frontend
-        run: |
-          cd elimux-frontend
-          npm run build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-
-      - name: Run backend tests
-        run: |
-          cd elimux-backend
-          npm run test
-
-  e2e:
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: |
-          cd elimux-frontend
-          npm ci
-
-      - name: Install Playwright
-        run: |
-          cd elimux-frontend
-          npx playwright install --with-deps
-
-      - name: Run E2E tests
-        run: |
-          cd elimux-frontend
-          npx playwright test
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      - name: Unit tests
+        run: npm run test:unit
