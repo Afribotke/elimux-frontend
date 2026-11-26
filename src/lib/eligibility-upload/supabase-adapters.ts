@@ -3,6 +3,7 @@
 import "server-only"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { AccountLookupPort, AuthPort, EligibilityPort, LogFn } from "./process"
+import { classifyUniqueViolation } from "./process"
 
 /** SQL helper prepared (NOT applied) in elimux-sql; see the Slice C PR. */
 export const LOOKUP_RPC = "eligibility_lookup_auth_users_by_email"
@@ -45,7 +46,8 @@ export function createEligibilityPort(db: SupabaseClient, log: LogFn): Eligibili
     async insert(row) {
       const { error } = await db.from("attachment_eligible_students").insert(row)
       if (!error) return "ok"
-      if (error.code === "23505") return "conflict"
+      // L-12: email-index conflict gets the email message; everything else stays the reg message.
+      if (error.code === "23505") return classifyUniqueViolation(error)
       log("upload_insert_failed", { code: error.code ?? "unknown" })
       return "error"
     },
