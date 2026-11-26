@@ -44,8 +44,22 @@ export interface EligibilityPort {
   findByRegistrationNumber(registrationNumber: string): Promise<ExistingListing[]>
   /** Listings at THIS institution whose email equals `email` case-insensitively. */
   findByEmailAtInstitution(institutionId: string, email: string): Promise<ExistingListing[]>
-  /** 'conflict' = unique violation (e.g. a concurrent upload took the registration number). */
-  insert(row: EligibilityInsert): Promise<"ok" | "conflict" | "error">
+  /** Unique violation: 'email_conflict' = the (institution, email) index;
+   *  'conflict' = registration number (or any other / unrecognised unique key). */
+  insert(row: EligibilityInsert): Promise<InsertOutcome>
+}
+
+export type InsertOutcome = "ok" | "conflict" | "email_conflict" | "error"
+
+/** L-12: unique index on (institution_id, lower(btrim(email))) - draft SQL 63. */
+export const EMAIL_UNIQUE_CONSTRAINT = "aes_institution_email_ci_key"
+
+/** Classifies a Postgres 23505 by constraint name. Anything not positively the
+ *  email index stays the generic registration-number conflict (current
+ *  behaviour), so an unknown constraint never produces a misleading message. */
+export function classifyUniqueViolation(err: { message?: string | null; details?: string | null }): "conflict" | "email_conflict" {
+  const text = `${err.message ?? ""} ${err.details ?? ""}`
+  return new RegExp(`"${EMAIL_UNIQUE_CONSTRAINT}"`).test(text) ? "email_conflict" : "conflict"
 }
 
 export type InviteResult =
@@ -214,11 +228,11 @@ export async function processUpload(rawRows: unknown[], deps: ProcessDeps): Prom
         createdUserId = null // committed: nothing to compensate
         continue
       }
-      await compensate(row, createdUserId, deps, log, rowErr, outcome === "conflict")
+      await compensate(row, createdUserId, deps, log, rowErr, outcome === "error" ? null : outcome)
       createdUserId = null
     } catch {
       log("upload_row_exception", { row })
-      await compensate(row, createdUserId, deps, log, rowErr, false)
+      await compensate(row, createdUserId, deps, log, rowErr, null)
     }
   }
 
@@ -246,7 +260,7 @@ async function compensate(
   deps: ProcessDeps,
   log: LogFn,
   rowErr: (row: number, code: ErrorCode, message: string, field?: string) => void,
-  isConflict: boolean
+  conflict: "conflict" | "email_conflict" | null
 ) {
   if (createdUserId) {
     let ok = false
@@ -258,6 +272,7 @@ async function compensate(
       return
     }
   }
-  if (isConflict) rowErr(row, "conflict", MESSAGES.regInUse, "registration_number")
+  if (conflict === "email_conflict") rowErr(row, "conflict", MESSAGES.emailHere, "email")
+  else if (conflict === "conflict") rowErr(row, "conflict", MESSAGES.regInUse, "registration_number")
   else rowErr(row, "server_error", MESSAGES.serverError)
 }

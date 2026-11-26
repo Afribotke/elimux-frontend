@@ -4,7 +4,7 @@
 import { test, beforeEach } from "node:test"
 import assert from "node:assert/strict"
 import { handleUpload, resolveInviteRedirect, HandlerDeps } from "../../src/lib/eligibility-upload/handler"
-import { MESSAGES, EligibilityInsert, InviteResult, LookupResult } from "../../src/lib/eligibility-upload/process"
+import { MESSAGES, EligibilityInsert, InviteResult, LookupResult, classifyUniqueViolation, EMAIL_UNIQUE_CONSTRAINT } from "../../src/lib/eligibility-upload/process"
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`
 const IA = id(100), IB = id(101)
@@ -15,7 +15,7 @@ const REDIRECT = "https://www.example.test/auth/reset-password"
 type Listing = { institution_id: string; registration_number: string; email: string | null; user_id: string | null }
 let listings: Listing[]
 let inserted: EligibilityInsert[]
-let insertOutcome: Map<string, "conflict" | "error"> // keyed by lowercase reg
+let insertOutcome: Map<string, "conflict" | "email_conflict" | "error"> // keyed by lowercase reg
 let throwOnLookupReg: Set<string>
 let authAccounts: Map<string, string> // email -> user id (pre-existing accounts)
 let inviteCalls: Array<{ email: string; metadata: Record<string, string>; redirectTo: string; extra: number }>
@@ -413,6 +413,40 @@ test("insert unique-violation after invite -> conflict + delete ONLY the account
   assert.equal(deleted[0], id(900)) // the account invited for row 1
   assert.ok(!authAccounts.has("student1@example.test"))
   assert.ok(authAccounts.has("student2@example.test"))
+})
+
+test("L-12: insert hits the EMAIL unique index -> email message on the email field (not the reg message) + compensation", async () => {
+  insertOutcome.set("com/001/2027", "email_conflict")
+  const res = await upload([row(1), row(2)])
+  const e = errOf(res, 1)
+  assert.equal(e?.code, "conflict")
+  assert.equal(e?.message, MESSAGES.emailHere)
+  assert.equal(e?.field, "email")
+  assert.notEqual(e?.message, MESSAGES.regInUse)
+  assert.deepEqual(deleted, [id(900)]) // only the account invited for row 1
+  assert.equal(statusOf(res, 2), "invited")
+})
+
+test("L-12: insert hits the REG unique index -> reg message on the registration_number field", async () => {
+  insertOutcome.set("com/001/2027", "conflict")
+  const e = errOf(await upload([row(1)]), 1)
+  assert.equal(e?.message, MESSAGES.regInUse)
+  assert.equal(e?.field, "registration_number")
+})
+
+test("L-12: classifyUniqueViolation picks the email index ONLY by exact constraint name", () => {
+  const msg = (c: string) => ({ message: `duplicate key value violates unique constraint "${c}"` })
+  assert.equal(EMAIL_UNIQUE_CONSTRAINT, "aes_institution_email_ci_key")
+  assert.equal(classifyUniqueViolation(msg("aes_institution_email_ci_key")), "email_conflict")
+  assert.equal(classifyUniqueViolation({ message: "x", details: 'constraint "aes_institution_email_ci_key"' }), "email_conflict")
+  // registration-number keys (today's constraint and draft 63's index) -> reg conflict
+  assert.equal(classifyUniqueViolation(msg("attachment_eligible_students_registration_number_key")), "conflict")
+  assert.equal(classifyUniqueViolation(msg("aes_registration_number_ci_key")), "conflict")
+  // unknown / prefix look-alikes / missing text -> generic reg conflict, never the email message
+  assert.equal(classifyUniqueViolation(msg("aes_institution_email_ci_key_old")), "conflict")
+  assert.equal(classifyUniqueViolation(msg("some_other_key")), "conflict")
+  assert.equal(classifyUniqueViolation({}), "conflict")
+  assert.equal(classifyUniqueViolation({ message: null, details: null }), "conflict")
 })
 
 test("insert failure for a LINKED existing account -> no deletion of the pre-existing account", async () => {
