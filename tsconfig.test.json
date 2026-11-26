@@ -1,0 +1,23 @@
+{
+  "//": "Unit tests for server-side logic. Compiles ONLY dependency-free modules + tests with the already-installed TypeScript, then runs them with node --test. No Next.js, no Supabase, no network.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": ".test-build",
+    "rootDir": ".",
+    "noEmit": false,
+    "incremental": false
+  },
+  "include": [
+    "src/lib/eligibility-upload/schema.ts",
+    "src/lib/eligibility-upload/process.ts",
+    "src/lib/eligibility-upload/handler.ts",
+    "tests/unit/**/*.ts"
+  ]
+}

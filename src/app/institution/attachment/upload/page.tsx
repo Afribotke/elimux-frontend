@@ -2,11 +2,37 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
+const MAX_ROWS = 100 // must match MAX_ROWS_PER_REQUEST on the server
+const COLUMNS = ["student_name", "registration_number", "email", "course", "department", "year_of_study", "phone"] as const
+const REQUIRED = COLUMNS.filter(c => c !== "phone")
+
+interface RowError { row: number; line?: number; field?: string; code?: string; message?: string; reason?: string }
 interface UploadResult {
   success: boolean
   created: number
   failed: number
-  errors: Array<{ row: number; reason: string }>
+  summary?: { received: number; invited: number; linked: number; already_listed: number; failed: number; retry_later: number }
+  errors: RowError[]
+  error?: string
+}
+
+/** Minimal RFC 4180 line parser: handles "quoted, fields" and "" escapes. */
+function parseCsvLine(line: string): string[] {
+  const out: string[] = []
+  let cur = ""
+  let inQuotes = false
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (inQuotes) {
+      if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++ }
+      else if (ch === '"') inQuotes = false
+      else cur += ch
+    } else if (ch === '"') inQuotes = true
+    else if (ch === ",") { out.push(cur); cur = "" }
+    else cur += ch
+  }
+  out.push(cur)
+  return out.map(v => v.trim())
 }
 
 export default function AttachmentUploadPage() {
@@ -15,43 +41,39 @@ export default function AttachmentUploadPage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<UploadResult | null>(null)
 
+  const fail = (message: string) =>
+    setResult({ success: false, created: 0, failed: 1, errors: [{ row: 0, message }] })
+
   const handleUpload = async () => {
     setLoading(true)
     setResult(null)
     try {
-      const lines = csvText.trim().split("\n")
-      if (lines.length < 2) {
-        setResult({ success: false, created: 0, failed: 1, errors: [{ row: 0, reason: "CSV must have header + at least one data row" }] })
-        return
-      }
+      const lines = csvText.replace(/\r\n?/g, "\n").split("\n")
+      const headerIdx = lines.findIndex(l => l.trim() !== "")
+      if (headerIdx < 0) return fail("CSV must have a header row and at least one data row")
 
-      const headers = lines[0].split(",").map(h => h.trim().toLowerCase().replace(/"/g, ""))
-      const required = ["student_name", "registration_number", "email", "course", "department", "year_of_study"]
-      const missing = required.filter(h => !headers.includes(h))
-      if (missing.length > 0) {
-        setResult({ success: false, created: 0, failed: 1, errors: [{ row: 0, reason: `Missing columns: ${missing.join(", ")}` }] })
-        return
-      }
+      const headers = parseCsvLine(lines[headerIdx]).map(h => h.toLowerCase())
+      const missing = REQUIRED.filter(h => !headers.includes(h))
+      if (missing.length > 0) return fail(`Missing columns: ${missing.join(", ")}`)
 
-      const students = []
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(",").map(v => v.trim().replace(/"/g, ""))
-        const row: any = {}
-        headers.forEach((h, idx) => { row[h] = values[idx] || "" })
-
-        if (!row.student_name || !row.registration_number || !row.email) {
-          continue
-        }
-
-        students.push({
-          student_name: row.student_name,
-          registration_number: row.registration_number,
-          email: row.email,
-          course: row.course,
-          department: row.department,
-          year_of_study: parseInt(row.year_of_study) || 1,
-          phone: row.phone || null
+      // Every non-blank data line is sent as-is: the server validates each row
+      // (nothing is silently skipped or defaulted). lineOf[i] = CSV line number.
+      const students: Record<string, string>[] = []
+      const lineOf: number[] = []
+      for (let i = headerIdx + 1; i < lines.length; i++) {
+        if (lines[i].trim() === "") continue
+        const values = parseCsvLine(lines[i])
+        const row: Record<string, string> = {}
+        COLUMNS.forEach(c => {
+          const idx = headers.indexOf(c)
+          if (idx >= 0) row[c] = values[idx] ?? ""
         })
+        students.push(row)
+        lineOf.push(i + 1)
+      }
+      if (students.length === 0) return fail("CSV must have a header row and at least one data row")
+      if (students.length > MAX_ROWS) {
+        return fail(`At most ${MAX_ROWS} students per upload (this file has ${students.length}). Split the file and upload each part.`)
       }
 
       const res = await fetch("/api/institutions/attachment/upload", {
@@ -59,10 +81,14 @@ export default function AttachmentUploadPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ students })
       })
-      const data = await res.json()
-      setResult(data)
+      const data: UploadResult = await res.json()
+      if (!res.ok && !data.errors) return fail(data.error || "Upload failed")
+      setResult({
+        ...data,
+        errors: (data.errors || []).map(e => ({ ...e, line: e.row > 0 ? lineOf[e.row - 1] : undefined }))
+      })
     } catch (err: any) {
-      setResult({ success: false, created: 0, failed: 1, errors: [{ row: 0, reason: err.message }] })
+      fail(err?.message || "Upload failed")
     } finally {
       setLoading(false)
     }
@@ -93,6 +119,11 @@ export default function AttachmentUploadPage() {
               Jane Smith,COM/002/2023,jane@university.ac.ke,Software Engineering,ICT,3,254723456789
             </code>
           </div>
+          <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+            Up to {MAX_ROWS} students per upload. <span className="font-mono">year_of_study</span> must be a whole number from 1 to 6.
+            New students are emailed an invitation to set their password. Uploading the same file again is safe.
+          </p>
+
         </div>
 
         <div className="mt-6 rounded-xl bg-white p-6 shadow-sm dark:bg-slate-900">
@@ -115,19 +146,27 @@ export default function AttachmentUploadPage() {
         {result && (
           <div className={`mt-6 rounded-xl p-6 shadow-sm ${result.success ? "bg-green-50 dark:bg-green-900/20" : "bg-red-50 dark:bg-red-900/20"}`}>
             <p className={`font-medium ${result.success ? "text-green-600" : "text-red-600"}`}>
-              {result.success ? `Uploaded: ${result.created} students` : `Failed: ${result.failed} errors`}
+              {result.summary
+                ? `Invited: ${result.summary.invited} · Linked existing accounts: ${result.summary.linked} · Already listed: ${result.summary.already_listed} · Failed: ${result.summary.failed} · Try again later: ${result.summary.retry_later}`
+                : result.success ? `Uploaded: ${result.created} students` : `Failed: ${result.failed} errors`}
             </p>
+            {result.summary && result.summary.invited > 0 && (
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                Invited students receive an email to set their password.
+              </p>
+            )}
             {result.errors && result.errors.length > 0 && (
               <div className="mt-4 max-h-64 overflow-auto rounded-lg border border-gray-200 dark:border-gray-700">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-100 dark:bg-slate-800">
-                    <tr><th className="px-3 py-2 text-left">Row</th><th className="px-3 py-2 text-left">Error</th></tr>
+                    <tr><th className="px-3 py-2 text-left">Line</th><th className="px-3 py-2 text-left">Field</th><th className="px-3 py-2 text-left">Error</th></tr>
                   </thead>
                   <tbody>
                     {result.errors.map((e, i) => (
                       <tr key={i} className="border-t border-gray-200 dark:border-gray-700">
-                        <td className="px-3 py-2">{e.row}</td>
-                        <td className="px-3 py-2 text-red-600">{e.reason}</td>
+                        <td className="px-3 py-2">{e.line ?? (e.row || "-")}</td>
+                        <td className="px-3 py-2 font-mono text-xs">{e.field || ""}</td>
+                        <td className="px-3 py-2 text-red-600">{e.message || e.reason}</td>
                       </tr>
                     ))}
                   </tbody>
